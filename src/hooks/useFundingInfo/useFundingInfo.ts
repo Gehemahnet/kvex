@@ -1,15 +1,10 @@
 import { computed } from "vue";
-import { useEtherealProductsQuery } from "../api/ethereal/useEtherealProducts.query.ts";
-import { usePacificaMarketsQuery } from "../api/pacifica/usePacificaMarkets.query.ts";
-import { useParadexMarketsQuery } from "../api/paradex/useParadexMarkets.query.ts";
-import type { Exchange } from "../common/types.ts";
-import type { Add1hSuffixProps, UnifiedMarketItem } from "../types";
-
-export type SummaryData = Add1hSuffixProps<Lowercase<Exchange>>;
-
-type MarketItemWithExchange = Partial<SummaryData> & {
-	symbol: string;
-};
+import { useEtherealProductsQuery } from "../../api/ethereal/useEtherealProducts.query.ts";
+import { usePacificaFundingDataQuery } from "../../api/pacifica/usePacificaFundingData.query.ts";
+import { useParadexMarketsSummaryQuery } from "../../api/paradex/useParadexMarketsSummary.query.ts";
+import type { Exchange } from "../../common/types.ts";
+import type { UnifiedMarketItem } from "../../types";
+import type { MarketItemWithExchange } from "./useFundingInfo.types.ts";
 
 const mergeExchangesData = (
 	sources: {
@@ -82,13 +77,30 @@ const buildColumns = (data: MarketItemWithExchange[]) => {
 };
 
 export const useFundingInfo = () => {
-	const { data: paradexMarkets, isFetching: isFetchingParadex } =
-		useParadexMarketsQuery();
+	const {
+		data: paradexMarkets,
+		isFetching: isFetchingParadex,
+		refetch: refetchParadex,
+	} = useParadexMarketsSummaryQuery();
 
-	const { data: pacificaMarkets, isFetching: isFetchingPacificaMarkets } =
-		usePacificaMarketsQuery();
-	const { data: etherealProducts, isFetching: isFetchingEtherealProducts } =
-		useEtherealProductsQuery();
+	const {
+		data: pacificaMarkets,
+		isFetching: isFetchingPacificaMarkets,
+		refetch: refetchPacifica,
+	} = usePacificaFundingDataQuery();
+	const {
+		data: etherealProducts,
+		isFetching: isFetchingEtherealProducts,
+		refetch: refetchEthereal,
+	} = useEtherealProductsQuery();
+
+	const refetchAllMarkets = async () => {
+		await Promise.allSettled([
+			refetchParadex,
+			refetchPacifica,
+			refetchEthereal,
+		]);
+	};
 
 	const summaryData = computed(() =>
 		mergeExchangesData([
@@ -107,5 +119,5 @@ export const useFundingInfo = () => {
 
 	const columns = computed(() => buildColumns(summaryData.value.items));
 
-	return { summaryData, isFetching, columns };
+	return { summaryData, isFetching, columns, refetchAllMarkets };
 };

@@ -31,6 +31,8 @@ export const useEtherealProductsQuery = (query: GetProductsQueryDto = {}) =>
 					.map(etherealItemToUnified);
 			} catch (e) {
 				console.error(e);
+				return [];
 			}
 		},
+		refetchInterval: 60000,
 	});

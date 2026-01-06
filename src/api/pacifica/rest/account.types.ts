@@ -2,14 +2,14 @@
 // GET /api/v1/account - Получение информации об аккаунте
 // ============================================
 
-interface AccountInfoResponse {
+export interface AccountInfoResponse {
     success: boolean;
     data: AccountInfo[];
     error: null | string;
     code: null | number;
 }
 
-interface AccountInfo {
+export interface AccountInfo {
     /** Current account balance, defined as amount of USD in account before settlement */
     balance: string;
     /** Current fee tier of account, determined by trading volume */
@@ -42,7 +42,7 @@ interface AccountInfo {
 // POST /api/v1/account/leverage - Обновление плеча
 // ============================================
 
-interface UpdateLeverageRequest {
+export interface UpdateLeverageRequest {
     /** User's wallet address */
     account: string;
     /** Trading pair symbol */
@@ -59,11 +59,11 @@ interface UpdateLeverageRequest {
     signature: string;
 }
 
-interface UpdateLeverageResponse {
+export interface UpdateLeverageResponse {
     success: boolean;
 }
 
-interface UpdateLeverageErrorResponse {
+export interface UpdateLeverageErrorResponse {
     error: string;
     code: number;
 }
@@ -72,7 +72,7 @@ interface UpdateLeverageErrorResponse {
 // GET /api/v1/positions - Получение позиций
 // ============================================
 
-interface PositionsResponse {
+export interface PositionsResponse {
     success: boolean;
     data: Position[];
     error: null | string;
@@ -81,7 +81,7 @@ interface PositionsResponse {
     last_order_id: number;
 }
 
-interface Position {
+export interface Position {
     /** Trading pair symbol */
     symbol: string;
     /** Whether the position is long/short */
