@@ -42,3 +42,9 @@ export interface SnapshotResponse {
 	seq_no?: number;
 	last_updated_at?: number;
 }
+
+export type Column = {
+	header: string;
+	columnKey: string;
+	field: string;
+};

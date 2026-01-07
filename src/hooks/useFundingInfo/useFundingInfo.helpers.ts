@@ -1,36 +1,24 @@
-import type { ComputedRef, Ref } from "vue";
-import type { LowercaseExchange } from "../../common/types";
+import type { Column, LowercaseExchange } from "../../common/types";
 import type { UnifiedMarketItem } from "../../types";
-import { ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY } from "./useFundingInfo.constants";
 import type {
 	ExchangeFundingData,
 	MarketItemWithExchange,
 	MergeExchangesDataResult,
 } from "./useFundingInfo.types";
 
-export const buildColumns = (data: MarketItemWithExchange[]) => {
-	if (data.length < 1) return;
+export const buildColumns = (data: MarketItemWithExchange[]): Column[] => {
+	if (data.length < 1) return [];
 	// Эфир всегда есть как и биток
 	const sampleItem = data.find((item) => item.symbol === "ETH");
 	if (!sampleItem) return [];
 
 	const columns = Object.keys(sampleItem)
-		.filter((key) => key !== "shortExchange" && key !== "longExchange")
+		.filter((key) =>
+			["symbol", "bestApr", "shortExchange", "longExchange"].every(
+				(item) => item !== key,
+			),
+		)
 		.map((key) => {
-			if (key === "symbol") {
-				return {
-					header: "Symbol",
-					columnKey: "symbol",
-					field: "symbol",
-				};
-			}
-			if (key === "bestApr") {
-				return {
-					header: "Best APR",
-					columnKey: "bestApr",
-					field: "bestApr",
-				};
-			}
 			const cleanedKey = key.replace(/1h$/, "");
 			return {
 				columnKey: cleanedKey,
@@ -38,14 +26,21 @@ export const buildColumns = (data: MarketItemWithExchange[]) => {
 				field: key,
 			};
 		});
+	// console.log(columns);
+	const serviceColumns = [
+		{
+			header: "Symbol",
+			columnKey: "symbol",
+			field: "symbol",
+		},
+		{
+			header: "Best APR",
+			columnKey: "bestApr",
+			field: "bestApr",
+		},
+	];
 
-	const symbolCol = columns.find((col) => col.columnKey === "symbol");
-	const bestAprCol = columns.find((col) => col.columnKey === "bestApr");
-	const exchangeCols = columns.filter(
-		(col) => col.columnKey !== "symbol" && col.columnKey !== "bestApr",
-	);
-
-	return [symbolCol, bestAprCol, ...exchangeCols];
+	return [...serviceColumns, ...columns];
 };
 
 export const mergeExchangesData = (
@@ -108,20 +103,4 @@ export const mergeExchangesData = (
 		items: unifiedItems,
 		exchangeNames,
 	};
-};
-
-export const initActiveExchanges = (
-	exchanges: ComputedRef<ExchangeFundingData[]>,
-	source: Ref<Set<LowercaseExchange>>,
-) => {
-	const localStorageData = localStorage.getItem(
-		ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY,
-	);
-	if (localStorageData) {
-		source.value = new Set(JSON.parse(localStorageData) as LowercaseExchange[]);
-	} else {
-		for (const exchange of exchanges.value) {
-			source.value.add(exchange.name);
-		}
-	}
 };

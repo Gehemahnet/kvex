@@ -1,23 +1,22 @@
-import { computed, ref } from "vue";
+import { useLocalStorage } from "@vueuse/core";
+import { computed } from "vue";
 import { useEtherealProductsQuery } from "../../api/ethereal/useEtherealProducts.query";
 import { usePacificaFundingDataQuery } from "../../api/pacifica/usePacificaFundingData.query";
 import { useParadexMarketsSummaryQuery } from "../../api/paradex/useParadexMarketsSummary.query";
+import { EXCHANGES } from "../../common/constants";
 import type { LowercaseExchange } from "../../common/types";
 import { ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY } from "./useFundingInfo.constants";
-import {
-	initActiveExchanges,
-	mergeExchangesData,
-} from "./useFundingInfo.helpers";
+import { mergeExchangesData } from "./useFundingInfo.helpers";
 import type { ExchangeFundingData } from "./useFundingInfo.types";
 
 export const useFundingInfo = () => {
-	const activeExchanges = ref<Set<LowercaseExchange>>(new Set());
+	const activeExchanges = useLocalStorage<Set<LowercaseExchange>>(
+		ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY,
+		new Set(EXCHANGES),
+	);
+
 	const setActiveExchanges = (value: LowercaseExchange[]) => {
 		activeExchanges.value = new Set(value);
-		localStorage.setItem(
-			ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY,
-			JSON.stringify(value),
-		);
 	};
 
 	const isParadexActive = computed(() => activeExchanges.value.has("paradex"));
@@ -81,8 +80,6 @@ export const useFundingInfo = () => {
 			(isPacificaActive.value && isFetchingPacificaMarkets.value) ||
 			(isEtherealActive.value && isFetchingEtherealProducts.value),
 	);
-
-	initActiveExchanges(exchanges, activeExchanges);
 
 	return {
 		exchanges,

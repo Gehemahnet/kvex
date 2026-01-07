@@ -1,10 +1,20 @@
 <script setup lang="ts">
-import { FilterMatchMode } from "@primevue/core/api";
-import { Column, DataTable, InputText, MultiSelect, Select } from "primevue";
-import { ref } from "vue";
+import {
+	Button,
+	Column,
+	DataTable,
+	InputText,
+	MultiSelect,
+	Select,
+} from "primevue";
+import { computed } from "vue";
 import { EXCHANGES } from "../../common/constants";
-import type { MarketItemWithExchange } from "../../hooks/useFundingInfo/useFundingInfo.types";
 import { FUNDING_INTERVALS } from "./FundingOverview.constants";
+import {
+	getApr,
+	getDataAccordingToMultiplier,
+	getValueColorClass,
+} from "./FundingOverview.helpers";
 import { useFundingOverviewViewModel } from "./FundingOverview.view-model";
 
 const {
@@ -14,65 +24,10 @@ const {
 	isFetching,
 	activeExchanges,
 	setActiveExchanges,
+	filters,
 } = useFundingOverviewViewModel();
 
-const filters = ref({
-	symbol: { value: null, matchMode: FilterMatchMode.CONTAINS },
-});
-
-//TODO refactor
-const getDataAccordingToMultiplier = (
-	row: MarketItemWithExchange,
-	columnKey: string,
-) => {
-	// Handle bestApr column separately
-	if (columnKey === "bestApr") {
-		const value = row.bestApr;
-		return value
-			? (Number(value) * currentIntervalMultiplier.value * 100).toFixed(6)
-			: "-";
-	}
-
-	const value = row[`${columnKey}1h` as keyof typeof row];
-
-	return value
-		? (Number(value) * currentIntervalMultiplier.value * 100).toFixed(6)
-		: "-";
-};
-
-//TODO refactor
-const getArbDisplay = (row: MarketItemWithExchange) => {
-	if (!row.bestApr || !row.shortExchange || !row.longExchange) return "-";
-
-	const arbValue = (
-		Number(row.bestApr) *
-		currentIntervalMultiplier.value *
-		100
-	).toFixed(6);
-	const shortExchange = row.shortExchange.toUpperCase();
-	const longExchange = row.longExchange.toUpperCase();
-
-	return `${arbValue}% (S: ${shortExchange}, L: ${longExchange})`;
-};
-
-//TODO refactor to color token
-const getValueColor = (row: MarketItemWithExchange, columnKey: string) => {
-	// Handle bestApr column - always green as it's an arbitrage opportunity
-	if (columnKey === "bestApr") {
-		const value = row.bestApr;
-		if (!value || value === "-") return "";
-		const numValue = Number(value);
-		return numValue > 0 ? "#22c55e" : "";
-	}
-
-	const value = row[`${columnKey}1h` as keyof typeof row];
-	if (!value || value === "-") return "";
-
-	const numValue = Number(value);
-	if (numValue > 0) return "#22c55e";
-	if (numValue < 0) return "#ef4444";
-	return "";
-};
+const hasMinimumExchanges = computed(() => activeExchanges.value.size >= 2);
 </script>
 
 <template>
@@ -95,19 +50,62 @@ const getValueColor = (row: MarketItemWithExchange, columnKey: string) => {
       </div>
     </div>
   </div>
-  <DataTable filter-display="menu" v-model:filters="filters" scrollHeight="640px" scrollable class="dataTable" :value="summaryData.items" >
-    <Column v-for="col of columns" :key="col.columnKey" :field="col.field" :header="col.header">
-        <template v-if="col.columnKey ==='symbol'" #filter="{filterModel, filterCallback}">
-          <InputText v-model="filterModel.value" type="text" @input="filterCallback()" placeholder="Search by symbol" />
+  <DataTable
+      filter-display="menu"
+      v-model:filters="filters"
+      scrollHeight="640px"
+      scrollable
+      class="dataTable"
+      :value="hasMinimumExchanges ? summaryData.items : []"
+      sort-mode="multiple"
+  >
+    <template #empty>
+      <div class="empty-state">
+        <p v-if="!hasMinimumExchanges">
+          Выберите минимум 2 биржи для отображения арбитражных возможностей
+        </p>
+        <p v-else>
+          Нет данных для отображения
+        </p>
+      </div>
+    </template>
+    <Column
+        v-for="col of columns"
+        :key="col.columnKey"
+        :field="col.field"
+        :header="col.header"
+        sortable
+    >
+        <template
+            v-if="col.columnKey ==='symbol'"
+            #filter="{filterModel, filterCallback}"
+        >
+          <InputText
+              v-model="filterModel.value"
+              type="text" @input="filterCallback()"
+              placeholder="Search by symbol"
+          />
         </template>
-      <template v-if="col.columnKey === 'bestApr'" #body="{data}">
-        <span :style="{ color: getValueColor(data, col.columnKey) }">
-          {{getArbDisplay(data)}}
-        </span>
+      <template
+          v-if="col.columnKey === 'bestApr'"
+          #body="{data}"
+      >
+        <div class="apr-field">
+          <span :class="getValueColorClass(data, col.columnKey)">
+            {{getApr(data, currentIntervalMultiplier)}}
+          </span>
+          <Button severity="secondary">
+            Подробнее
+          </Button>
+        </div>
+
       </template>
-      <template v-else-if="col.columnKey !=='symbol'" #body="{data}">
-        <span :style="{ color: getValueColor(data, col.columnKey) }">
-          {{getDataAccordingToMultiplier(data, col.columnKey)}}
+      <template
+          v-else-if="col.columnKey !=='symbol'"
+          #body="{data}"
+      >
+        <span :class="getValueColorClass(data, col.columnKey)">
+          {{getDataAccordingToMultiplier(data, col.columnKey, currentIntervalMultiplier)}}
         </span>
       </template>
     </Column>
@@ -116,6 +114,20 @@ const getValueColor = (row: MarketItemWithExchange, columnKey: string) => {
 
 
 <style scoped>
+.positive-value {
+  color: var(--p-green-500);
+}
+
+.negative-value {
+  color: var(--p-red-500);
+}
+
+.apr-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .controls-wrapper {
   display: flex;
   flex-direction: column;
@@ -129,58 +141,18 @@ const getValueColor = (row: MarketItemWithExchange, columnKey: string) => {
   gap: 1rem;
 }
 
-.exchange-toggles {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.toggles-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6b7280;
-}
-
-.exchange-toggle {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  background-color: #f9fafb;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.exchange-toggle:hover {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
-}
-
-.exchange-toggle.active {
-  background-color: #22c55e;
-  border-color: #22c55e;
-  color: white;
-}
-
-.exchange-toggle.active:hover {
-  background-color: #16a34a;
-  border-color: #16a34a;
-}
-
 .loading-indicator {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
 }
 
 .loading-dot {
   width: 8px;
   height: 8px;
-  background-color: #22c55e;
+  background-color: var(--p-green-500);
   border-radius: 50%;
   animation: pulse 1.5s ease-in-out infinite;
 }
@@ -196,6 +168,22 @@ const getValueColor = (row: MarketItemWithExchange, columnKey: string) => {
 
 .dataTable {
   max-height: 640px;
+  min-height: 640px;
   overflow: auto;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 2rem;
+}
+
+.empty-state p {
+  color: var(--p-text-muted-color);
+  font-size: 1rem;
+  text-align: center;
+  margin: 0;
 }
 </style>

@@ -8,3 +8,6 @@ export const FUNDING_INTERVALS = [
 	{ label: "7d", multiplier: 168 },
 	{ label: "1y", multiplier: 8760 },
 ];
+
+export const FUNDING_OVERVIEW_ACTIVE_TIMEFRAME_LOCAL_STORAGE_KEY =
+	"funding-overview-active-timeframe";

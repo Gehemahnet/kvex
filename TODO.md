@@ -1,4 +1,2 @@
-- Refactor table rendering functions
-- Add more comfortable settings to rule the table
-- Add local storage interaction
 - Add interactions through api such as open position, show exchange balance etc.
+- okx, binance, bybit, backpack, lighter, extended support
