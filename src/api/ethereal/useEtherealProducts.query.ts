@@ -12,7 +12,7 @@ import type {
 
 type Params = {
 	enabled: ComputedRef<boolean>;
-	query: GetProductsQueryDto;
+	query?: GetProductsQueryDto;
 };
 const etherealItemToUnified = (item: ProductDto): UnifiedMarketItem => ({
 	symbol: item.baseTokenName,

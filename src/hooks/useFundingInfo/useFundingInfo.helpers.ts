@@ -1,12 +1,12 @@
-import type { ComputedRef } from "vue";
-import type { LowercaseExchange } from "../../common/types.ts";
+import type { ComputedRef, Ref } from "vue";
+import type { LowercaseExchange } from "../../common/types";
 import type { UnifiedMarketItem } from "../../types";
-import { ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY } from "./useFundingInfo.constants.ts";
+import { ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY } from "./useFundingInfo.constants";
 import type {
 	ExchangeFundingData,
 	MarketItemWithExchange,
 	MergeExchangesDataResult,
-} from "./useFundingInfo.types.ts";
+} from "./useFundingInfo.types";
 
 export const buildColumns = (data: MarketItemWithExchange[]) => {
 	if (data.length < 1) return;
@@ -112,15 +112,16 @@ export const mergeExchangesData = (
 
 export const initActiveExchanges = (
 	exchanges: ComputedRef<ExchangeFundingData[]>,
+	source: Ref<Set<LowercaseExchange>>,
 ) => {
-	if (localStorage.getItem(ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY)) {
-		return localStorage.getItem(JSON.parse(ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY));
+	const localStorageData = localStorage.getItem(
+		ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY,
+	);
+	if (localStorageData) {
+		source.value = new Set(JSON.parse(localStorageData) as LowercaseExchange[]);
+	} else {
+		for (const exchange of exchanges.value) {
+			source.value.add(exchange.name);
+		}
 	}
-	const result = new Set<LowercaseExchange>();
-
-	for (const exchange of exchanges.value) {
-		result.add(exchange.name);
-	}
-
-	return result;
 };

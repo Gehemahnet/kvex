@@ -1,4 +1,4 @@
-import type { LowercaseExchange } from "../../common/types.ts";
+import type { LowercaseExchange } from "../../common/types";
 import type { Add1hSuffixProps, UnifiedMarketItem } from "../../types";
 
 export type SummaryData = Add1hSuffixProps<LowercaseExchange>;

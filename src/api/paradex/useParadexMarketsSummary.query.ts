@@ -5,7 +5,7 @@ import marketEndpoints, { MarketEndpointsKeys } from "./rest/markets.endpoints";
 import type {
 	MarketSummaryResp,
 	MarketsSummaryResponse,
-} from "./rest/markets.types.ts";
+} from "./rest/markets.types";
 
 type Params = {
 	enabled: ComputedRef<boolean>;

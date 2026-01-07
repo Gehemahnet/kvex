@@ -1,21 +1,23 @@
 import { computed, ref } from "vue";
-import { useEtherealProductsQuery } from "../../api/ethereal/useEtherealProducts.query.ts";
-import { usePacificaFundingDataQuery } from "../../api/pacifica/usePacificaFundingData.query.ts";
-import { useParadexMarketsSummaryQuery } from "../../api/paradex/useParadexMarketsSummary.query.ts";
-import type { LowercaseExchange } from "../../common/types.ts";
+import { useEtherealProductsQuery } from "../../api/ethereal/useEtherealProducts.query";
+import { usePacificaFundingDataQuery } from "../../api/pacifica/usePacificaFundingData.query";
+import { useParadexMarketsSummaryQuery } from "../../api/paradex/useParadexMarketsSummary.query";
+import type { LowercaseExchange } from "../../common/types";
+import { ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY } from "./useFundingInfo.constants";
 import {
 	initActiveExchanges,
 	mergeExchangesData,
-} from "./useFundingInfo.helpers.ts";
+} from "./useFundingInfo.helpers";
+import type { ExchangeFundingData } from "./useFundingInfo.types";
 
 export const useFundingInfo = () => {
 	const activeExchanges = ref<Set<LowercaseExchange>>(new Set());
-
-	const addActiveExchange = (activeExchange: LowercaseExchange) => {
-		activeExchanges.value.add(activeExchange);
-	};
-	const removeActiveExchange = (activeExchange: LowercaseExchange) => {
-		activeExchanges.value.delete(activeExchange);
+	const setActiveExchanges = (value: LowercaseExchange[]) => {
+		activeExchanges.value = new Set(value);
+		localStorage.setItem(
+			ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY,
+			JSON.stringify(value),
+		);
 	};
 
 	const isParadexActive = computed(() => activeExchanges.value.has("paradex"));
@@ -59,7 +61,7 @@ export const useFundingInfo = () => {
 		]);
 	};
 
-	const exchanges = computed(() => [
+	const exchanges = computed<ExchangeFundingData[]>(() => [
 		{ name: "paradex", items: paradexMarketsSummary.value || [] },
 		{ name: "pacifica", items: pacificaMarkets.value || [] },
 		{ name: "ethereal", items: etherealProducts.value || [] },
@@ -80,13 +82,12 @@ export const useFundingInfo = () => {
 			(isEtherealActive.value && isFetchingEtherealProducts.value),
 	);
 
-	activeExchanges.value = initActiveExchanges(exchanges);
+	initActiveExchanges(exchanges, activeExchanges);
 
 	return {
 		exchanges,
 		activeExchanges,
-		addActiveExchange,
-		removeActiveExchange,
+		setActiveExchanges,
 		summaryData,
 		isFetching,
 		refetchAllMarkets,
