@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { FilterMatchMode } from "@primevue/core/api";
-import { Column, DataTable, InputText, SelectButton } from "primevue";
+import { Column, DataTable, InputText, MultiSelect, Select } from "primevue";
 import { ref } from "vue";
+import { EXCHANGES } from "../../common/constants";
 import type { MarketItemWithExchange } from "../../hooks/useFundingInfo/useFundingInfo.types";
 import { FUNDING_INTERVALS } from "./FundingOverview.constants";
 import { useFundingOverviewViewModel } from "./FundingOverview.view-model";
@@ -12,7 +13,7 @@ const {
 	summaryData,
 	isFetching,
 	activeExchanges,
-	toggleExchange,
+	setActiveExchanges,
 } = useFundingOverviewViewModel();
 
 const filters = ref({
@@ -77,27 +78,21 @@ const getValueColor = (row: MarketItemWithExchange, columnKey: string) => {
 <template>
   <div class="controls-wrapper">
     <div class="header-controls">
-      <SelectButton
+      <Select
           v-model="currentIntervalMultiplier"
           :options="FUNDING_INTERVALS"
           option-value="multiplier"
           option-label="label"
       />
+      <MultiSelect
+          :model-value="[...activeExchanges]"
+          :options="EXCHANGES"
+          @update:model-value="setActiveExchanges"
+      />
       <div v-if="isFetching" class="loading-indicator">
         <span class="loading-dot"></span>
         Updating...
       </div>
-    </div>
-    <div class="exchange-toggles">
-      <span class="toggles-label">Exchanges:</span>
-      <button
-          v-for="exchange in ['paradex', 'pacifica', 'ethereal']"
-          :key="exchange"
-          @click="toggleExchange(exchange)"
-          :class="['exchange-toggle', { active: activeExchanges.has(exchange) }]"
-      >
-        {{ exchange.toUpperCase() }}
-      </button>
     </div>
   </div>
   <DataTable filter-display="menu" v-model:filters="filters" scrollHeight="640px" scrollable class="dataTable" :value="summaryData.items" >
