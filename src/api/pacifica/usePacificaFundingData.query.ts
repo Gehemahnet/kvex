@@ -1,25 +1,21 @@
 import { useQuery } from "@tanstack/vue-query";
+import type { ComputedRef } from "vue";
 import type { UnifiedMarketItem } from "../../types";
 import marketEndpoints, { MarketEndpointsKeys } from "./rest/markets.endpoints";
 import type { GetPricesResponse, PriceInfo } from "./rest/markets.types";
 
-/**
- * Преобразует данные о ценах Pacifica в унифицированный формат
- * Использует next_funding для получения предсказанной ставки финансирования
- */
+type Params = {
+	enabled: ComputedRef<boolean>;
+};
+
 const pacificaPriceItemToUnified = (item: PriceInfo): UnifiedMarketItem => ({
 	symbol: item.symbol,
 	fundingRate: item.next_funding,
-	tickSize: "0", // Не доступно в prices endpoint
-	maxOrderSize: "0", // Не доступно в prices endpoint
+	tickSize: "",
+	maxOrderSize: "",
 });
 
-/**
- * Хук для получения данных о финансировании Pacifica
- * Обновляется каждую минуту
- * Использует поле next_funding из /api/v1/info/prices
- */
-export const usePacificaFundingDataQuery = () =>
+export const usePacificaFundingDataQuery = ({ enabled }: Params) =>
 	useQuery({
 		queryKey: [MarketEndpointsKeys.GET_PRICES],
 		queryFn: async () => {
@@ -35,5 +31,6 @@ export const usePacificaFundingDataQuery = () =>
 				return [];
 			}
 		},
-		refetchInterval: 60000, // Обновление каждую минуту (60000 мс)
+		refetchInterval: 60000,
+		enabled,
 	});

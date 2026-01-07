@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/vue-query";
+import type { ComputedRef } from "vue";
 import type { UnifiedMarketItem } from "../../types";
 import marketEndpoints, {
 	ProductEndpointsKeys,
@@ -9,6 +10,10 @@ import type {
 	ProductDto,
 } from "./rest/products.types";
 
+type Params = {
+	enabled: ComputedRef<boolean>;
+	query: GetProductsQueryDto;
+};
 const etherealItemToUnified = (item: ProductDto): UnifiedMarketItem => ({
 	symbol: item.baseTokenName,
 	fundingRate: item.fundingRate1h,
@@ -16,12 +21,12 @@ const etherealItemToUnified = (item: ProductDto): UnifiedMarketItem => ({
 	maxOrderSize: item.maxPositionNotionalUsd,
 });
 
-export const useEtherealProductsQuery = (query: GetProductsQueryDto = {}) =>
+export const useEtherealProductsQuery = (params: Params) =>
 	useQuery({
 		queryKey: [ProductEndpointsKeys.GET_PRODUCTS],
 		queryFn: async () => {
 			try {
-				const response = await fetch(marketEndpoints.getProducts(query));
+				const response = await fetch(marketEndpoints.getProducts(params.query));
 
 				if (!response.ok) return [];
 
@@ -35,4 +40,5 @@ export const useEtherealProductsQuery = (query: GetProductsQueryDto = {}) =>
 			}
 		},
 		refetchInterval: 60000,
+		enabled: params.enabled,
 	});

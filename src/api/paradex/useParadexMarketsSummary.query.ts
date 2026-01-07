@@ -1,10 +1,15 @@
 import { useQuery } from "@tanstack/vue-query";
+import type { ComputedRef } from "vue";
 import type { UnifiedMarketItem } from "../../types";
 import marketEndpoints, { MarketEndpointsKeys } from "./rest/markets.endpoints";
 import type {
 	MarketSummaryResp,
 	MarketsSummaryResponse,
 } from "./rest/markets.types.ts";
+
+type Params = {
+	enabled: ComputedRef<boolean>;
+};
 
 const paradexSummaryToUnified = (
 	item: MarketSummaryResp,
@@ -17,7 +22,7 @@ const paradexSummaryToUnified = (
 	maxOrderSize: "",
 });
 
-export const useParadexMarketsSummaryQuery = () =>
+export const useParadexMarketsSummaryQuery = ({ enabled }: Params) =>
 	useQuery({
 		queryKey: [MarketEndpointsKeys.GET_MARKETS_SUMMARY],
 		queryFn: async () => {
@@ -40,4 +45,5 @@ export const useParadexMarketsSummaryQuery = () =>
 			}
 		},
 		refetchInterval: 5000,
+		enabled,
 	});

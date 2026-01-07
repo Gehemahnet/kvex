@@ -1,4 +1,5 @@
 export type Exchange = "PARADEX" | "PACIFICA" | "ETHEREAL";
+export type LowercaseExchange = Lowercase<Exchange>;
 export type Side = "BUY" | "SELL";
 
 export interface OrderbookLevel {
