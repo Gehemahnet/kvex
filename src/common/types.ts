@@ -1,4 +1,4 @@
-export type Exchange = "PARADEX" | "PACIFICA" | "ETHEREAL";
+export type Exchange = "PARADEX" | "PACIFICA" | "ETHEREAL" | "HYPERLIQUID";
 export type LowercaseExchange = Lowercase<Exchange>;
 export type Side = "BUY" | "SELL";
 

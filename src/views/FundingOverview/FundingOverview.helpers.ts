@@ -1,8 +1,8 @@
 import type { MarketItemWithExchange } from "../../hooks/useFundingInfo/useFundingInfo.types";
 
-export const getApr = (row: MarketItemWithExchange, multiplier: number) => {
-	const decimals = multiplier >= 24 ? 2 : 6;
-	const arbValue = (Number(row.bestApr) * multiplier * 100).toFixed(decimals);
+export const getApr = (row: MarketItemWithExchange) => {
+	const YEAR_MULTIPLIER = 8760; // 365 * 24 hours
+	const arbValue = (Number(row.bestApr) * YEAR_MULTIPLIER * 100).toFixed(2);
 
 	return `${arbValue}%`;
 };

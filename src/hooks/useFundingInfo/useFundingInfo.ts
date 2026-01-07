@@ -1,6 +1,7 @@
 import { useLocalStorage } from "@vueuse/core";
 import { computed } from "vue";
 import { useEtherealProductsQuery } from "../../api/ethereal/useEtherealProducts.query";
+import { useHyperliquidMetaQuery } from "../../api/hyperliquid/useHyperliquidMeta.query";
 import { usePacificaFundingDataQuery } from "../../api/pacifica/usePacificaFundingData.query";
 import { useParadexMarketsSummaryQuery } from "../../api/paradex/useParadexMarketsSummary.query";
 import { EXCHANGES } from "../../common/constants";
@@ -27,6 +28,9 @@ export const useFundingInfo = () => {
 	const isEtherealActive = computed(() =>
 		activeExchanges.value.has("ethereal"),
 	);
+	const isHyperliquidActive = computed(() =>
+		activeExchanges.value.has("hyperliquid"),
+	);
 
 	const {
 		data: paradexMarketsSummary,
@@ -52,11 +56,20 @@ export const useFundingInfo = () => {
 		enabled: isEtherealActive,
 	});
 
+	const {
+		data: hyperliquidMeta,
+		isFetching: isFetchingHyperliquidMeta,
+		refetch: refetchHyperliquid,
+	} = useHyperliquidMetaQuery({
+		enabled: isHyperliquidActive,
+	});
+
 	const refetchAllMarkets = async () => {
 		await Promise.allSettled([
 			refetchParadex,
 			refetchPacifica,
 			refetchEthereal,
+			refetchHyperliquid,
 		]);
 	};
 
@@ -64,6 +77,7 @@ export const useFundingInfo = () => {
 		{ name: "paradex", items: paradexMarketsSummary.value || [] },
 		{ name: "pacifica", items: pacificaMarkets.value || [] },
 		{ name: "ethereal", items: etherealProducts.value || [] },
+		{ name: "hyperliquid", items: hyperliquidMeta.value || [] },
 	]);
 
 	const summaryData = computed(() =>
@@ -78,7 +92,8 @@ export const useFundingInfo = () => {
 		() =>
 			(isParadexActive.value && isFetchingParadexMarketsSummary.value) ||
 			(isPacificaActive.value && isFetchingPacificaMarkets.value) ||
-			(isEtherealActive.value && isFetchingEtherealProducts.value),
+			(isEtherealActive.value && isFetchingEtherealProducts.value) ||
+			(isHyperliquidActive.value && isFetchingHyperliquidMeta.value),
 	);
 
 	return {

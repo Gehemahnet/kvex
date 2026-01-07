@@ -4,4 +4,5 @@ export const EXCHANGES: LowercaseExchange[] = [
 	"paradex",
 	"pacifica",
 	"ethereal",
+	"hyperliquid",
 ];

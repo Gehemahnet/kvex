@@ -6,6 +6,7 @@ import {
 	InputText,
 	MultiSelect,
 	Select,
+	Skeleton,
 } from "primevue";
 import { computed } from "vue";
 import { EXCHANGES } from "../../common/constants";
@@ -28,6 +29,47 @@ const {
 } = useFundingOverviewViewModel();
 
 const hasMinimumExchanges = computed(() => activeExchanges.value.size >= 2);
+const isInitialLoading = computed(
+	() => isFetching.value && summaryData.value.items.length === 0,
+);
+const skeletonRows = Array.from({ length: 10 }, (_, i) => ({ id: i }));
+
+const skeletonColumns = [
+	{ columnKey: "symbol", header: "Symbol", field: "symbol" },
+	{ columnKey: "bestApr", header: "Best APR", field: "bestApr" },
+	{ columnKey: "paradex", header: "paradex", field: "paradex1h" },
+	{ columnKey: "pacifica", header: "pacifica", field: "pacifica1h" },
+	{ columnKey: "ethereal", header: "ethereal", field: "ethereal1h" },
+];
+
+const displayColumns = computed(() =>
+	isInitialLoading.value && columns.value.length === 0
+		? skeletonColumns
+		: columns.value,
+);
+
+// Преобразуем данные для правильной сортировки
+const tableData = computed(() => {
+	if (isInitialLoading.value) return skeletonRows;
+	if (!hasMinimumExchanges.value) return [];
+
+	// Преобразуем строковые числа в числа для корректной сортировки
+	return summaryData.value.items.map((item) => {
+		const converted: any = { ...item };
+
+		// Преобразуем все числовые поля
+		for (const key in converted) {
+			if (key !== 'symbol' && key !== 'shortExchange' && key !== 'longExchange') {
+				const num = Number(converted[key]);
+				if (!isNaN(num)) {
+					converted[key] = num;
+				}
+			}
+		}
+
+		return converted;
+	});
+});
 </script>
 
 <template>
@@ -56,7 +98,7 @@ const hasMinimumExchanges = computed(() => activeExchanges.value.size >= 2);
       scrollHeight="640px"
       scrollable
       class="dataTable"
-      :value="hasMinimumExchanges ? summaryData.items : []"
+      :value="tableData"
       sort-mode="multiple"
   >
     <template #empty>
@@ -70,7 +112,7 @@ const hasMinimumExchanges = computed(() => activeExchanges.value.size >= 2);
       </div>
     </template>
     <Column
-        v-for="col of columns"
+        v-for="col of displayColumns"
         :key="col.columnKey"
         :field="col.field"
         :header="col.header"
@@ -90,21 +132,32 @@ const hasMinimumExchanges = computed(() => activeExchanges.value.size >= 2);
           v-if="col.columnKey === 'bestApr'"
           #body="{data}"
       >
-        <div class="apr-field">
+        <div v-if="isInitialLoading" class="apr-field">
+          <Skeleton width="80px" height="1.5rem" />
+          <Skeleton width="90px" height="2rem" />
+        </div>
+        <div v-else class="apr-field">
           <span :class="getValueColorClass(data, col.columnKey)">
-            {{getApr(data, currentIntervalMultiplier)}}
+            {{getApr(data)}}
           </span>
           <Button severity="secondary">
             Подробнее
           </Button>
         </div>
-
       </template>
       <template
-          v-else-if="col.columnKey !=='symbol'"
+          v-else-if="col.columnKey === 'symbol'"
           #body="{data}"
       >
-        <span :class="getValueColorClass(data, col.columnKey)">
+        <Skeleton v-if="isInitialLoading" width="60px" height="1.5rem" />
+        <span v-else>{{ data.symbol }}</span>
+      </template>
+      <template
+          v-else
+          #body="{data}"
+      >
+        <Skeleton v-if="isInitialLoading" width="70px" height="1.5rem" />
+        <span v-else :class="getValueColorClass(data, col.columnKey)">
           {{getDataAccordingToMultiplier(data, col.columnKey, currentIntervalMultiplier)}}
         </span>
       </template>
