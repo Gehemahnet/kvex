@@ -50,8 +50,16 @@ export const productEndpoints = {
 
 	/**
 	 * GET /v1/product/market-price
+	 * @param productIds - Array of product IDs to get prices for
 	 */
-	getMarketPrice: (): string => {
+	getMarketPrice: (productIds?: string[]): string => {
+		if (productIds && productIds.length > 0) {
+			const query = new URLSearchParams();
+			for (const id of productIds) {
+				query.append("productIds", id);
+			}
+			return `${BASE_URL}/${ProductEndpointsUrls.GET_MARKET_PRICE}?${query}`;
+		}
 		return `${BASE_URL}/${ProductEndpointsUrls.GET_MARKET_PRICE}`;
 	},
 

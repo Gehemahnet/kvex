@@ -1,16 +1,8 @@
-// Адаптеры должны вызываться в композабле для каждой квери
-export const createPacificaAdapter = (cfg?: any) => {
-	// const client = usePacificaRestClient(cfg);
-	const snapshotFn = async (market: string, depth?: number) =>
-		client.getSnapshot(market, depth);
-	const subscribeFn = (market: string, onDelta: (d: any) => void) =>
-		client.subscribeWs(market, (raw) => {
-			// assume raw contains channel/data
-			const payload = raw?.data ?? raw;
-			if (payload && (payload.inserts || payload.updates || payload.deletes))
-				onDelta(payload);
-		});
-	const place = (o: any) => client.placeOrder(o);
-	const cancel = (id: string) => client.cancelOrder(id);
-	return { snapshotFn, subscribeFn, place, cancel };
+// Pacifica adapter - placeholder for future WebSocket integration
+// TODO: Implement when Pacifica provides WebSocket API
+
+export const createPacificaAdapter = () => {
+	// Placeholder - Pacifica doesn't have a public WebSocket API for BBO
+	// Will use REST polling instead
+	return null;
 };

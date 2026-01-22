@@ -4,15 +4,23 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
+		"start": "npm run dev && npm run dev:bff:v2",
+		"dev": "vite --host 0.0.0.0",
+		"dev:bff": "cd server && npm run dev",
+		"dev:bff:v2": "cd server && npm run dev:v2",
 		"build": "vue-tsc -b && vite build",
-		"preview": "vite preview"
+		"build:bff": "cd server && npm run build",
+		"build:bff:v2": "cd server && npm run build:v2",
+		"preview": "vite preview",
+		"start:bff": "cd server && npm start",
+		"start:bff:v2": "cd server && npm run start:v2"
 	},
 	"dependencies": {
 		"@primeuix/themes": "^2.0.2",
 		"@tanstack/vue-query": "^5.92.1",
 		"@vueuse/core": "^14.1.0",
 		"primevue": "^4.5.4",
+		"socket.io-client": "^4.8.3",
 		"vue": "^3.5.24",
 		"vue-router": "^4.6.4"
 	},

@@ -1,2 +1,7 @@
 - Add interactions through api such as open position, show exchange balance etc.
 - okx, binance, bybit, backpack, lighter, extended support
+- refactoring
+- add balance and commission checking for every exchange
+- обновление данных в модальном окне визуализации
+- Проверить все что этот ебанат нагенерил
+- почистить неиспользуемые файлы

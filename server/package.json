@@ -1,0 +1,24 @@
+{
+	"name": "dex-bff-server",
+	"version": "1.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch src/index.ts",
+		"dev:v2": "tsx watch src/v2/index.ts",
+		"build": "tsup src/index.ts --format esm --dts",
+		"build:v2": "tsup src/v2/index.ts --format esm --dts --outDir dist/v2",
+		"start": "node dist/index.js",
+		"start:v2": "node dist/v2/index.js"
+	},
+	"dependencies": {
+		"socket.io": "^4.8.3",
+		"ws": "^8.18.0"
+	},
+	"devDependencies": {
+		"@types/node": "^24.10.1",
+		"@types/ws": "^8.18.1",
+		"tsup": "^8.5.1",
+		"tsx": "^4.20.0",
+		"typescript": "~5.9.3"
+	}
+}

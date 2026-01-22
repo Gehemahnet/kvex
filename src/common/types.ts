@@ -48,3 +48,75 @@ export type Column = {
 	columnKey: string;
 	field: string;
 };
+
+// Enhanced types for Lab view
+export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
+
+export interface DepthAtBps {
+	bps5: number;
+	bps10: number;
+	bps25: number;
+}
+
+export interface ExchangeFees {
+	takerFee: number;
+	makerFee: number;
+	gasFee?: number;
+}
+
+export interface ExchangeData {
+	exchange: LowercaseExchange;
+	symbol: string;
+	bid: number;
+	bidSize: number;
+	ask: number;
+	askSize: number;
+	midPrice: number;
+	bidDepthAtBps: DepthAtBps;
+	askDepthAtBps: DepthAtBps;
+	volume24h: number;
+	fundingRate?: number;
+	fees: ExchangeFees;
+	timestamp: number;
+	latencyMs: number;
+}
+
+export type OpportunityStatus = "executable" | "marginal" | "theoretical";
+
+export interface EnhancedSpreadOpportunity {
+	symbol: string;
+	buyExchange: LowercaseExchange;
+	sellExchange: LowercaseExchange;
+	buyData: ExchangeData;
+	sellData: ExchangeData;
+
+	// Spread metrics
+	rawSpreadBps: number;
+	netSpreadBps: number;
+	spreadAbsolute: number;
+
+	// Liquidity metrics
+	maxExecutableSize: number;
+	slippageAt1k: number;
+	slippageAt5k: number;
+	depthRatio: number;
+
+	// Costs
+	totalFeesBps: number;
+	fundingCostBps: number;
+
+	// Stability metrics
+	lifetimeMs: number;
+	firstSeenAt: number;
+	occurrenceCount: number;
+
+	// Risk metrics
+	volatility1m: number;
+	bookSkew: number;
+
+	// Final score and status
+	score: number;
+	status: OpportunityStatus;
+
+	lastUpdatedAt: number;
+}
