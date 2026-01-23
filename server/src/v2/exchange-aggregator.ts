@@ -1,3 +1,7 @@
+import {
+	buildOpportunity,
+	calculateDepthAtBps,
+} from "./opportunity-calculator";
 import type {
 	ArbitrageOpportunity,
 	BBOUpdate,
@@ -9,7 +13,6 @@ import type {
 	OrderBookLevel,
 	OrderBookUpdate,
 } from "./types";
-import { buildOpportunity, calculateDepthAtBps } from "./opportunity-calculator";
 
 const STALE_THRESHOLD_MS = 10000;
 
@@ -34,7 +37,9 @@ export class ExchangeAggregator {
 	// Callbacks
 	private opportunityCallbacks: Array<(opp: ArbitrageOpportunity) => void> = [];
 	private removeCallbacks: Array<(id: string) => void> = [];
-	private statusCallbacks: Array<(status: Record<Exchange, ConnectionStatus>) => void> = [];
+	private statusCallbacks: Array<
+		(status: Record<Exchange, ConnectionStatus>) => void
+	> = [];
 
 	/**
 	 * Normalize symbol to common format
@@ -83,8 +88,16 @@ export class ExchangeAggregator {
 			midPrice,
 			bids: existing?.bids ?? [{ price: bid, size: bidSize }],
 			asks: existing?.asks ?? [{ price: ask, size: askSize }],
-			bidDepthAtBps: existing?.bidDepthAtBps ?? { bps5: bid * bidSize, bps10: bid * bidSize, bps25: bid * bidSize },
-			askDepthAtBps: existing?.askDepthAtBps ?? { bps5: ask * askSize, bps10: ask * askSize, bps25: ask * askSize },
+			bidDepthAtBps: existing?.bidDepthAtBps ?? {
+				bps5: bid * bidSize,
+				bps10: bid * bidSize,
+				bps25: bid * bidSize,
+			},
+			askDepthAtBps: existing?.askDepthAtBps ?? {
+				bps5: ask * askSize,
+				bps10: ask * askSize,
+				bps25: ask * askSize,
+			},
 			fundingRate: existing?.fundingRate,
 			timestamp: update.timestamp || now,
 			receivedAt: now,
@@ -114,9 +127,12 @@ export class ExchangeAggregator {
 
 		if (!existing) return; // Need BBO first
 
+		const sorderBids = update.bids.slice().sort((a, b) => b.price - a.price);
+		const sortedAsks = update.asks.slice().sort((a, b) => a.price - b.price);
+
 		const midPrice = existing.midPrice;
-		const bidDepthAtBps = calculateDepthAtBps(update.bids, midPrice, "bid");
-		const askDepthAtBps = calculateDepthAtBps(update.asks, midPrice, "ask");
+		const bidDepthAtBps = calculateDepthAtBps(sorderBids, midPrice);
+		const askDepthAtBps = calculateDepthAtBps(sortedAsks, midPrice);
 
 		const marketData: ExchangeMarketData = {
 			...existing,
@@ -139,7 +155,11 @@ export class ExchangeAggregator {
 	/**
 	 * Update funding rate for an exchange/symbol
 	 */
-	handleFundingRate(exchange: Exchange, symbol: string, fundingRate: number): void {
+	handleFundingRate(
+		exchange: Exchange,
+		symbol: string,
+		fundingRate: number,
+	): void {
 		const normalizedSymbol = this.normalizeSymbol(symbol);
 		const exchangeMap = this.marketData.get(normalizedSymbol);
 		if (!exchangeMap) return;
@@ -299,7 +319,9 @@ export class ExchangeAggregator {
 	/**
 	 * Subscribe to status updates
 	 */
-	onStatus(cb: (status: Record<Exchange, ConnectionStatus>) => void): () => void {
+	onStatus(
+		cb: (status: Record<Exchange, ConnectionStatus>) => void,
+	): () => void {
 		this.statusCallbacks.push(cb);
 		cb({ ...this.connectionStatus }); // Emit current status immediately
 		return () => {

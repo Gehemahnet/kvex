@@ -1,5 +1,5 @@
 import { io, type Socket } from "socket.io-client";
-import { computed, onMounted, onUnmounted, ref, shallowRef } from "vue";
+import { type ComputedRef, type Ref, computed, onMounted, onUnmounted, ref, shallowRef } from "vue";
 import type { ConnectionStatus, LowercaseExchange } from "../../common/types";
 import type { ArbitrageOpportunity, ServerStats, SubscriptionConfig } from "./types";
 
@@ -16,10 +16,50 @@ interface ServerToClientEvents {
 interface ClientToServerEvents {
 	subscribe: (config?: SubscriptionConfig) => void;
 	unsubscribe: () => void;
+	subscribeToDetails: (opportunityId: string) => void;
+	unsubscribeFromDetails: (opportunityId: string) => void;
+}
+
+/**
+ * Интерфейс возвращаемого значения хука useArbitrageLabSocket.
+ */
+export interface UseArbitrageLabSocketReturn {
+	/** Ссылка на активный сокет (для использования в других хуках) */
+	socket: Ref<Socket<ServerToClientEvents, ClientToServerEvents> | null>;
+	/** Все доступные возможности, отсортированные по Score (desc) */
+	opportunities: ComputedRef<ArbitrageOpportunity[]>;
+	/** Только возможности со статусом 'executable' */
+	executableOpportunities: ComputedRef<ArbitrageOpportunity[]>;
+	/** Возможности с положительным чистым спредом */
+	positiveOpportunities: ComputedRef<ArbitrageOpportunity[]>;
+	/** Возможности со статусом 'marginal' */
+	marginalOpportunities: ComputedRef<ArbitrageOpportunity[]>;
+	/** Сырая карта возможностей (ID -> Opportunity) */
+	opportunitiesMap: Ref<Map<string, ArbitrageOpportunity>>;
+	/** Статусы подключения к биржам */
+	exchangeStatus: Ref<Record<LowercaseExchange, ConnectionStatus>>;
+	/** Статистика сервера (аптайм, кол-во обновлений) */
+	serverStats: Ref<ServerStats>;
+	/** Агрегированная статистика для UI (всего, прибыльных и т.д.) */
+	stats: ComputedRef<{
+		total: number;
+		executable: number;
+		positive: number;
+		marginal: number;
+		avgScore: number;
+		updatesPerSecond: number;
+	}>;
+	/** Флаг подключения к BFF серверу */
+	isConnected: Ref<boolean>;
+	/** Список подключенных бирж (массив строк) */
+	connectedExchanges: ComputedRef<LowercaseExchange[]>;
+	/** Функция получения возможности по ID */
+	getOpportunity: (id: string) => ArbitrageOpportunity | undefined;
 }
 
 // Shared state (singleton)
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
+const socketRef = ref<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
 
 const opportunitiesMap = shallowRef(new Map<string, ArbitrageOpportunity>());
 
@@ -52,6 +92,8 @@ const connectSocket = () => {
 		reconnectionAttempts: 10,
 		reconnectionDelay: 1000,
 	});
+	
+	socketRef.value = socket;
 
 	socket.on("connect", () => {
 		console.log("[v2] Connected to server");
@@ -65,6 +107,7 @@ const connectSocket = () => {
 	});
 
 	socket.on("snapshot", (data) => {
+		console.log(`[v2] Snapshot received: ${data.length} items`);
 		const newMap = new Map<string, ArbitrageOpportunity>();
 		for (const opp of data) {
 			newMap.set(opp.id, opp);
@@ -73,6 +116,7 @@ const connectSocket = () => {
 	});
 
 	socket.on("opportunity", (opp) => {
+		// console.log(`[v2] Update for ${opp.id}: ${opp.netSpreadBps.toFixed(2)} bps`);
 		const newMap = new Map(opportunitiesMap.value);
 		newMap.set(opp.id, opp);
 		opportunitiesMap.value = newMap;
@@ -97,10 +141,16 @@ const disconnectSocket = () => {
 	if (!socket) return;
 	socket.disconnect();
 	socket = null;
+	socketRef.value = null;
 	socketConnected.value = false;
 };
 
-export const useArbitrageLabSocket = () => {
+/**
+ * Хук для подключения к WebSocket серверу арбитража (V2).
+ * Использует паттерн Singleton для сокета: подключение создается один раз
+ * и переиспользуется всеми компонентами.
+ */
+export const useArbitrageLabSocket = (): UseArbitrageLabSocketReturn => {
 	onMounted(() => {
 		refCount++;
 		if (refCount === 1) {
@@ -155,6 +205,7 @@ export const useArbitrageLabSocket = () => {
 	}));
 
 	return {
+		socket: socketRef,
 		opportunities,
 		executableOpportunities,
 		positiveOpportunities,

@@ -51,6 +51,32 @@ const io = new Server<V2ClientToServerEvents, V2ServerToClientEvents>(httpServer
 	path: "/v2",
 });
 
+// Helper to strip heavy data for list view
+const stripOpportunity = (opp: ArbitrageOpportunity): ArbitrageOpportunity => {
+	// Create a shallow copy
+	const stripped = { ...opp };
+	
+	// Remove heavy orderbook data
+	// We keep the top-level metrics but remove the arrays
+	if (stripped.buyData) {
+		stripped.buyData = {
+			...stripped.buyData,
+			bids: [], // Remove full orderbook
+			asks: []  // Remove full orderbook
+		};
+	}
+	
+	if (stripped.sellData) {
+		stripped.sellData = {
+			...stripped.sellData,
+			bids: [], // Remove full orderbook
+			asks: []  // Remove full orderbook
+		};
+	}
+	
+	return stripped;
+};
+
 // Wire up exchange BBO handlers
 const handleBBO = (exchange: Exchange) => (update: { exchange: string; symbol: string; bid: string; bidSize: string; ask: string; askSize: string; timestamp: number }) => {
 	updateCount++;
@@ -97,7 +123,23 @@ const handleStatus = (exchange: Exchange) => (status: ConnectionStatus) => {
 // Forward opportunity updates to clients
 aggregator.onOpportunity((opportunity) => {
 	updateCount++;
-	io.emit("opportunity", opportunity);
+	
+	// Filter out garbage opportunities before emitting to everyone
+	// We only send opportunities with a minimal score or positive spread
+	// This significantly reduces network traffic and frontend load
+	// RELAXED FILTER: Allow more updates through to see depth changes
+	// Only filter out absolute garbage (very negative spread AND very low score)
+	if (opportunity.score < 0 && opportunity.netSpreadBps < -50) {
+		return;
+	}
+	
+	// 1. Send lightweight update to everyone (for the table)
+	const stripped = stripOpportunity(opportunity);
+	io.emit("opportunity", stripped);
+	
+	// 2. Send full update ONLY to subscribers of this specific opportunity (for the modal)
+	// Room name: "detail:BTC_paradex_hyperliquid"
+	io.to(`detail:${opportunity.id}`).emit("opportunity", opportunity);
 });
 
 aggregator.onStatus((status) => {
@@ -108,8 +150,11 @@ aggregator.onStatus((status) => {
 io.on("connection", (socket) => {
 	console.log(`[v2] Client connected: ${socket.id}`);
 
-	// Send current snapshot
-	const opportunities = aggregator.getAllOpportunities();
+	// Send current snapshot (stripped and filtered)
+	const opportunities = aggregator.getAllOpportunities()
+		.filter(o => o.score >= 0 || o.netSpreadBps >= -50)
+		.map(stripOpportunity);
+		
 	const status = aggregator.getConnectionStatus();
 
 	socket.emit("snapshot", opportunities);
@@ -118,6 +163,24 @@ io.on("connection", (socket) => {
 	socket.on("subscribe", (config) => {
 		console.log(`[v2] Client ${socket.id} subscribed with config:`, config);
 		// Config can be used for server-side filtering in the future
+	});
+	
+	// New: Subscribe to details
+	socket.on("subscribeToDetails", (opportunityId: string) => {
+		console.log(`[v2] Client ${socket.id} subscribed to details for ${opportunityId}`);
+		socket.join(`detail:${opportunityId}`);
+		
+		// Immediately send the full object if it exists
+		const opp = aggregator.getAllOpportunities().find(o => o.id === opportunityId);
+		if (opp) {
+			socket.emit("opportunity", opp);
+		}
+	});
+	
+	// New: Unsubscribe from details
+	socket.on("unsubscribeFromDetails", (opportunityId: string) => {
+		console.log(`[v2] Client ${socket.id} unsubscribed from details for ${opportunityId}`);
+		socket.leave(`detail:${opportunityId}`);
 	});
 
 	socket.on("disconnect", () => {

@@ -37,14 +37,14 @@ export const getValueColorClass = (
 		const value = row.bestApr;
 		if (!value || value === "-") return "";
 		const numValue = Number(value);
-		return numValue > 0 ? "positive-value" : "";
+		return numValue > 0 ? "text-success" : "";
 	}
 
 	const value = row[`${columnKey}1h` as keyof typeof row];
 	if (!value || value === "-") return "";
 
 	const numValue = Number(value);
-	if (numValue > 0) return "positive-value";
-	if (numValue < 0) return "negative-value";
+	if (numValue > 0) return "text-success";
+	if (numValue < 0) return "text-danger";
 	return "";
 };

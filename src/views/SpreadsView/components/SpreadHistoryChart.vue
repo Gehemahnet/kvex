@@ -92,7 +92,8 @@ const yAxisTicks = computed(() => {
       <path
           v-if="areaPath"
           :d="areaPath"
-          :fill="isPositive ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'"
+          :fill="isPositive ? 'var(--p-green-500)' : 'var(--p-red-500)'"
+          fill-opacity="0.2"
       />
 
       <!-- Line -->
@@ -100,7 +101,7 @@ const yAxisTicks = computed(() => {
           v-if="linePath"
           :d="linePath"
           fill="none"
-          :stroke="isPositive ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)'"
+          :stroke="isPositive ? 'var(--p-green-500)' : 'var(--p-red-500)'"
           stroke-width="2"
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -112,7 +113,7 @@ const yAxisTicks = computed(() => {
           :cx="scaleX(dataPoints.length - 1)"
           :cy="scaleY(currentValue)"
           r="4"
-          :fill="isPositive ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)'"
+          :fill="isPositive ? 'var(--p-green-500)' : 'var(--p-red-500)'"
       />
 
       <!-- Y-axis labels -->

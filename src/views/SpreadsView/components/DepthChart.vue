@@ -182,8 +182,9 @@ const formatPrice = (price: number): string => {
       <path
           v-if="bidsPath"
           :d="bidsPath"
-          fill="rgba(34, 197, 94, 0.3)"
-          stroke="rgb(34, 197, 94)"
+          fill="var(--p-green-500)"
+          fill-opacity="0.3"
+          stroke="var(--p-green-500)"
           stroke-width="2"
       />
 
@@ -191,8 +192,9 @@ const formatPrice = (price: number): string => {
       <path
           v-if="asksPath"
           :d="asksPath"
-          fill="rgba(239, 68, 68, 0.3)"
-          stroke="rgb(239, 68, 68)"
+          fill="var(--p-red-500)"
+          fill-opacity="0.3"
+          stroke="var(--p-red-500)"
           stroke-width="2"
       />
 
@@ -203,7 +205,7 @@ const formatPrice = (price: number): string => {
           :y1="PADDING.top"
           :x2="scaleX(midPrice)"
           :y2="HEIGHT - PADDING.bottom"
-          stroke="var(--p-primary-500)"
+          stroke="var(--p-primary-color)"
           stroke-width="1"
           stroke-dasharray="4,4"
       />
@@ -286,6 +288,7 @@ const formatPrice = (price: number): string => {
   gap: 1.5rem;
   margin-top: 0.5rem;
   font-size: 0.75rem;
+  color: var(--p-text-muted-color);
 }
 
 .legend-item {
@@ -301,12 +304,14 @@ const formatPrice = (price: number): string => {
 }
 
 .legend-color.bids {
-  background: rgba(34, 197, 94, 0.5);
-  border: 1px solid rgb(34, 197, 94);
+  background: var(--p-green-500);
+  opacity: 0.5;
+  border: 1px solid var(--p-green-500);
 }
 
 .legend-color.asks {
-  background: rgba(239, 68, 68, 0.5);
-  border: 1px solid rgb(239, 68, 68);
+  background: var(--p-red-500);
+  opacity: 0.5;
+  border: 1px solid var(--p-red-500);
 }
 </style>

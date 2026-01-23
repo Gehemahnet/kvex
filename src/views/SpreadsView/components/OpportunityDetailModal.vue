@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { Badge, Button, Dialog, Divider, InputNumber, Tag } from "primevue";
+import { Badge, Button, Dialog, Divider, InputNumber, Tag, ProgressSpinner } from "primevue";
 import { computed, ref, watch } from "vue";
 import type { LowercaseExchange } from "../../../common/types";
 import type {
 	ArbitrageOpportunity,
 	OpportunityStatus,
 } from "../../../hooks/useArbitrageLabSocket";
+import { useOpportunityDetails } from "../../../hooks/useOpportunityDetails";
+import ExchangeIcon from "../../../components/ExchangeIcon.vue";
 import DepthChart from "./DepthChart.vue";
 import OrderBookPanel from "./OrderBookPanel.vue";
 import SpreadHistoryChart from "./SpreadHistoryChart.vue";
@@ -17,32 +19,40 @@ const props = defineProps<{
 
 const emit = defineEmits<(e: "update:visible", value: boolean) => void>();
 
+// Use the new hook to get live details
+const opportunityId = computed(() => props.visible && props.opportunity ? props.opportunity.id : null);
+const { opportunity: liveOpportunity, isLoading } = useOpportunityDetails(opportunityId.value);
+
+// Use live data if available, otherwise fallback to prop (which might be stale/stripped)
+// But actually, prop is now stripped, so we MUST wait for live data for charts
+const displayOpportunity = computed(() => liveOpportunity.value || props.opportunity);
+
 const positionSize = ref(1000);
 
 const slippageForSize = computed(() => {
-	if (!props.opportunity) return 0;
+	if (!displayOpportunity.value) return 0;
 
 	// Simple linear interpolation based on available data
 	const size = positionSize.value;
 	if (size <= 1000) {
-		return props.opportunity.slippageAt1k * (size / 1000);
+		return displayOpportunity.value.slippageAt1k * (size / 1000);
 	} else if (size <= 5000) {
 		const ratio = (size - 1000) / 4000;
 		return (
-			props.opportunity.slippageAt1k +
-			(props.opportunity.slippageAt5k - props.opportunity.slippageAt1k) * ratio
+			displayOpportunity.value.slippageAt1k +
+			(displayOpportunity.value.slippageAt5k - displayOpportunity.value.slippageAt1k) * ratio
 		);
 	} else {
 		// Extrapolate beyond 5k
 		const ratio = size / 5000;
-		return props.opportunity.slippageAt5k * ratio;
+		return displayOpportunity.value.slippageAt5k * ratio;
 	}
 });
 
 const estimatedPnL = computed(() => {
-	if (!props.opportunity) return { gross: 0, net: 0, afterSlippage: 0 };
+	if (!displayOpportunity.value) return { gross: 0, net: 0, afterSlippage: 0 };
 	const size = positionSize.value;
-	const { rawSpreadBps, netSpreadBps } = props.opportunity;
+	const { rawSpreadBps, netSpreadBps } = displayOpportunity.value;
 
 	const gross = (rawSpreadBps / 10000) * size;
 	const net = (netSpreadBps / 10000) * size;
@@ -107,6 +117,11 @@ watch(
 		}
 	},
 );
+
+// Watch opportunityId separately to trigger hook update
+watch(opportunityId, (newId) => {
+	// The hook handles subscription automatically via its own watch
+});
 </script>
 
 <template>
@@ -114,26 +129,33 @@ watch(
       :visible="visible"
       @update:visible="emit('update:visible', $event)"
       modal
-      :header="opportunity ? `${opportunity.symbol} — Детали` : 'Детали возможности'"
+      :header="displayOpportunity ? `${displayOpportunity.symbol} — Детали` : 'Детали возможности'"
       :style="{ width: '95vw', maxWidth: '1400px' }"
       :content-style="{ padding: '0' }"
   >
-    <template v-if="opportunity">
+    <div v-if="isLoading && !liveOpportunity" class="loading-state">
+      <ProgressSpinner />
+      <p>Загрузка деталей...</p>
+    </div>
+    
+    <template v-else-if="displayOpportunity">
       <!-- Header Summary -->
       <div class="detail-header">
         <div class="header-left">
-          <span class="symbol-large">{{ opportunity.symbol }}</span>
-          <Tag :severity="getStatusSeverity(opportunity.status)">{{ opportunity.status }}</Tag>
-          <Badge :value="opportunity.score.toFixed(0)" :severity="getScoreSeverity(opportunity.score)" />
+          <span class="symbol-large">{{ displayOpportunity.symbol }}</span>
+          <Tag :severity="getStatusSeverity(displayOpportunity.status)">{{ displayOpportunity.status }}</Tag>
+          <Badge :value="displayOpportunity.score.toFixed(0)" :severity="getScoreSeverity(displayOpportunity.score)" />
         </div>
         <div class="header-right">
           <div class="exchange-flow">
-            <Tag :severity="getExchangeSeverity(opportunity.buyExchange)" size="large">
-              ПОКУПКА @ {{ opportunity.buyExchange }}
+            <Tag :severity="getExchangeSeverity(displayOpportunity.buyExchange)" size="large" class="exchange-tag">
+              <ExchangeIcon :exchange="displayOpportunity.buyExchange" size="small" class="mr-2" />
+              ПОКУПКА @ {{ displayOpportunity.buyExchange }}
             </Tag>
             <span class="flow-arrow">→</span>
-            <Tag :severity="getExchangeSeverity(opportunity.sellExchange)" size="large">
-              ПРОДАЖА @ {{ opportunity.sellExchange }}
+            <Tag :severity="getExchangeSeverity(displayOpportunity.sellExchange)" size="large" class="exchange-tag">
+              <ExchangeIcon :exchange="displayOpportunity.sellExchange" size="small" class="mr-2" />
+              ПРОДАЖА @ {{ displayOpportunity.sellExchange }}
             </Tag>
           </div>
         </div>
@@ -148,16 +170,16 @@ watch(
           <h4>Ордербуки</h4>
           <div class="orderbooks-container">
             <OrderBookPanel
-                :exchange="opportunity.buyExchange"
-                :data="opportunity.buyData"
+                :exchange="displayOpportunity.buyExchange"
+                :data="displayOpportunity.buyData"
                 side="buy"
-                :counterPrice="opportunity.sellPrice"
+                :counterPrice="displayOpportunity.sellPrice"
             />
             <OrderBookPanel
-                :exchange="opportunity.sellExchange"
-                :data="opportunity.sellData"
+                :exchange="displayOpportunity.sellExchange"
+                :data="displayOpportunity.sellData"
                 side="sell"
-                :counterPrice="opportunity.buyPrice"
+                :counterPrice="displayOpportunity.buyPrice"
             />
           </div>
         </div>
@@ -167,17 +189,17 @@ watch(
           <div class="depth-chart-container">
             <h4>Глубина рынка</h4>
             <DepthChart
-                :buyData="opportunity.buyData"
-                :sellData="opportunity.sellData"
+                :buyData="displayOpportunity.buyData"
+                :sellData="displayOpportunity.sellData"
             />
           </div>
           <div class="spread-history-container">
             <h4>История спреда</h4>
-            <SpreadHistoryChart :history="opportunity.lifecycle.spreadHistory" />
+            <SpreadHistoryChart :history="displayOpportunity.lifecycle.spreadHistory" />
             <div class="spread-stats">
-              <span>Макс: <strong>{{ opportunity.lifecycle.peakSpreadBps.toFixed(1) }} bps</strong></span>
-              <span>Средн: <strong>{{ opportunity.lifecycle.avgSpreadBps.toFixed(1) }} bps</strong></span>
-              <span>Текущий: <strong>{{ opportunity.netSpreadBps.toFixed(1) }} bps</strong></span>
+              <span>Макс: <strong>{{ displayOpportunity.lifecycle.peakSpreadBps.toFixed(1) }} bps</strong></span>
+              <span>Средн: <strong>{{ displayOpportunity.lifecycle.avgSpreadBps.toFixed(1) }} bps</strong></span>
+              <span>Текущий: <strong>{{ displayOpportunity.netSpreadBps.toFixed(1) }} bps</strong></span>
             </div>
           </div>
         </div>
@@ -221,16 +243,16 @@ watch(
             <div class="pnl-breakdown">
               <div class="pnl-row">
                 <span>Валовый спред</span>
-                <span class="pnl-value">{{ opportunity.rawSpreadBps.toFixed(1) }} bps</span>
+                <span class="pnl-value">{{ displayOpportunity.rawSpreadBps.toFixed(1) }} bps</span>
               </div>
               <div class="pnl-row">
                 <span>Комиссии</span>
-                <span class="pnl-value negative">-{{ opportunity.totalFeesBps.toFixed(1) }} bps</span>
+                <span class="pnl-value negative">-{{ displayOpportunity.totalFeesBps.toFixed(1) }} bps</span>
               </div>
               <div class="pnl-row">
                 <span>Чистый спред</span>
-                <span class="pnl-value" :class="{ positive: opportunity.netSpreadBps > 0, negative: opportunity.netSpreadBps <= 0 }">
-                  {{ opportunity.netSpreadBps.toFixed(1) }} bps
+                <span class="pnl-value" :class="{ positive: displayOpportunity.netSpreadBps > 0, negative: displayOpportunity.netSpreadBps <= 0 }">
+                  {{ displayOpportunity.netSpreadBps.toFixed(1) }} bps
                 </span>
               </div>
               <div class="pnl-row">
@@ -266,27 +288,27 @@ watch(
           <div class="metrics-grid">
             <div class="metric-item">
               <span class="metric-label">Цена покупки</span>
-              <span class="metric-value">${{ formatPrice(opportunity.buyPrice) }}</span>
+              <span class="metric-value">${{ formatPrice(displayOpportunity.buyPrice) }}</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Цена продажи</span>
-              <span class="metric-value">${{ formatPrice(opportunity.sellPrice) }}</span>
+              <span class="metric-value">${{ formatPrice(displayOpportunity.sellPrice) }}</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Макс. размер</span>
-              <span class="metric-value">${{ formatSize(opportunity.maxExecutableSize) }}</span>
+              <span class="metric-value">${{ formatSize(displayOpportunity.maxExecutableSize) }}</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Глубина покупки</span>
-              <span class="metric-value">${{ formatSize(opportunity.depthBuyAt10Bps) }}</span>
+              <span class="metric-value">${{ formatSize(displayOpportunity.depthBuyAt10Bps) }}</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Глубина продажи</span>
-              <span class="metric-value">${{ formatSize(opportunity.depthSellAt10Bps) }}</span>
+              <span class="metric-value">${{ formatSize(displayOpportunity.depthSellAt10Bps) }}</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Gas</span>
-              <span class="metric-value">${{ opportunity.gasEstimateUsd.toFixed(2) }}</span>
+              <span class="metric-value">${{ displayOpportunity.gasEstimateUsd.toFixed(2) }}</span>
             </div>
           </div>
 
@@ -295,17 +317,17 @@ watch(
           <h4>Ставки фандинга</h4>
           <div class="metrics-grid">
             <div class="metric-item">
-              <span class="metric-label">{{ opportunity.buyExchange }}</span>
-              <span class="metric-value">{{ formatPercent(opportunity.buyFundingRate * 10000) }}</span>
+              <span class="metric-label">{{ displayOpportunity.buyExchange }}</span>
+              <span class="metric-value">{{ formatPercent(displayOpportunity.buyFundingRate * 10000) }}</span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">{{ opportunity.sellExchange }}</span>
-              <span class="metric-value">{{ formatPercent(opportunity.sellFundingRate * 10000) }}</span>
+              <span class="metric-label">{{ displayOpportunity.sellExchange }}</span>
+              <span class="metric-value">{{ formatPercent(displayOpportunity.sellFundingRate * 10000) }}</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Дельта</span>
-              <span class="metric-value" :class="{ positive: opportunity.fundingDeltaBps > 0, negative: opportunity.fundingDeltaBps < 0 }">
-                {{ opportunity.fundingDeltaBps.toFixed(2) }} bps
+              <span class="metric-value" :class="{ positive: displayOpportunity.fundingDeltaBps > 0, negative: displayOpportunity.fundingDeltaBps < 0 }">
+                {{ displayOpportunity.fundingDeltaBps.toFixed(2) }} bps
               </span>
             </div>
           </div>
@@ -316,25 +338,25 @@ watch(
           <div class="metrics-grid">
             <div class="metric-item">
               <span class="metric-label">Вол. 1м</span>
-              <span class="metric-value">{{ opportunity.risk.volatility1m.toFixed(2) }}</span>
+              <span class="metric-value">{{ displayOpportunity.risk.volatility1m.toFixed(2) }}</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Вол. 5м</span>
-              <span class="metric-value">{{ opportunity.risk.volatility5m.toFixed(2) }}</span>
+              <span class="metric-value">{{ displayOpportunity.risk.volatility5m.toFixed(2) }}</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Перекос книги</span>
-              <span class="metric-value">{{ (opportunity.risk.bookSkew * 100).toFixed(1) }}%</span>
+              <span class="metric-value">{{ (displayOpportunity.risk.bookSkew * 100).toFixed(1) }}%</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Риск задержки</span>
-              <span class="metric-value">{{ opportunity.risk.latencyRisk.toFixed(0) }}мс</span>
+              <span class="metric-value">{{ displayOpportunity.risk.latencyRisk.toFixed(0) }}мс</span>
             </div>
           </div>
 
-          <div v-if="opportunity.risk.riskFlags.length > 0" class="risk-flags-section">
+          <div v-if="displayOpportunity.risk.riskFlags.length > 0" class="risk-flags-section">
             <Tag
-                v-for="flag in opportunity.risk.riskFlags"
+                v-for="flag in displayOpportunity.risk.riskFlags"
                 :key="flag"
                 severity="danger"
                 size="small"
@@ -348,9 +370,9 @@ watch(
       <!-- Footer -->
       <div class="detail-footer">
         <div class="lifecycle-info">
-          <span>Появилась: {{ new Date(opportunity.lifecycle.firstSeenAt).toLocaleTimeString() }}</span>
-          <span>Время жизни: {{ (opportunity.lifecycle.lifetimeMs / 1000).toFixed(1) }}с</span>
-          <span>Повторений: {{ opportunity.lifecycle.occurrenceCount }}</span>
+          <span>Появилась: {{ new Date(displayOpportunity.lifecycle.firstSeenAt).toLocaleTimeString() }}</span>
+          <span>Время жизни: {{ (displayOpportunity.lifecycle.lifetimeMs / 1000).toFixed(1) }}с</span>
+          <span>Повторений: {{ displayOpportunity.lifecycle.occurrenceCount }}</span>
         </div>
         <Button label="Закрыть" severity="secondary" @click="emit('update:visible', false)" />
       </div>
@@ -359,6 +381,16 @@ watch(
 </template>
 
 <style scoped>
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+  color: var(--p-text-muted-color);
+}
+
 .detail-header {
   display: flex;
   justify-content: space-between;
@@ -386,6 +418,15 @@ watch(
 .flow-arrow {
   font-size: 1.25rem;
   color: var(--p-text-muted-color);
+}
+
+.exchange-tag {
+  display: flex;
+  align-items: center;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
 }
 
 .detail-grid {

@@ -1,81 +1,134 @@
 import { FilterMatchMode } from "@primevue/core/api";
-import { computed, ref } from "vue";
-import type { Column } from "../../common/types";
-import { useSpreadsSocket } from "../../hooks/useSpreadsSocket";
+import { computed, ref, shallowRef } from "vue";
+import { useArbitrageLabSocket } from "../../hooks/useArbitrageLabSocket";
+import type {
+	ArbitrageOpportunity,
+	OpportunityStatus,
+} from "../../hooks/useArbitrageLabSocket/types";
 
-const SPREAD_FILTERS = [
-	{ label: "All", value: null },
-	{ label: "> -1%", value: -1 },
-	{ label: "> 0%", value: 0 },
-	{ label: "> 0.1%", value: 0.1 },
-	{ label: "> 0.5%", value: 0.5 },
-	{ label: "> 1%", value: 1 },
+const STATUS_FILTERS = [
+	{ label: "Все", value: null },
+	{ label: "Исполнимые", value: "executable" },
+	{ label: "Пограничные", value: "marginal" },
+	{ label: "Теоретические", value: "theoretical" },
 ] as const;
+
+const MIN_SPREAD_FILTERS = [
+	{ label: "Все", value: null },
+	{ label: "> 0 bps", value: 0 },
+	{ label: "> 5 bps", value: 5 },
+	{ label: "> 10 bps", value: 10 },
+	{ label: "> 15 bps", value: 15 },
+	{ label: "> 25 bps", value: 25 },
+] as const;
+
+const MIN_SCORE_FILTERS = [
+	{ label: "Все", value: null },
+	{ label: "> 20", value: 20 },
+	{ label: "> 40", value: 40 },
+	{ label: "> 60", value: 60 },
+	{ label: "> 80", value: 80 },
+] as const;
+
+// Русские названия статусов
+const STATUS_LABELS: Record<string, string> = {
+	executable: "Исполнимый",
+	marginal: "Пограничный",
+	theoretical: "Теоретический",
+};
+
+// Русские названия рисков
+const RISK_LABELS: Record<string, string> = {
+	latency_asymmetry: "Асимметрия задержки",
+	stale_data: "Устаревшие данные",
+	depth_imbalance: "Дисбаланс стакана",
+	high_volatility: "Высокая волатильность",
+};
 
 export const useSpreadsViewModel = () => {
 	const {
-		spreads,
 		opportunities,
+		executableOpportunities,
+		positiveOpportunities,
 		exchangeStatus,
 		isConnected,
 		connectedExchanges,
-	} = useSpreadsSocket();
+		stats,
+	} = useArbitrageLabSocket();
 
-	const minSpreadPercent = ref<number | null>(null);
+	const statusFilter = ref<OpportunityStatus | null>(null);
+	const minNetSpreadBps = ref<number | null>(null);
+	const minScore = ref<number | null>(null);
 
 	const filters = ref({
 		symbol: { value: null, matchMode: FilterMatchMode.CONTAINS },
 	});
 
-	const columns = computed<Column[]>(() => [
-		{ header: "Symbol", columnKey: "symbol", field: "symbol" },
-		{ header: "Spread %", columnKey: "spreadPercent", field: "spreadPercent" },
-		{ header: "Buy", columnKey: "buyExchange", field: "buyExchange" },
-		{ header: "Sell", columnKey: "sellExchange", field: "sellExchange" },
-		{ header: "Best Ask", columnKey: "bestAsk", field: "bestAsk" },
-		{ header: "Best Bid", columnKey: "bestBid", field: "bestBid" },
-		{
-			header: "Spread $",
-			columnKey: "spreadAbsolute",
-			field: "spreadAbsolute",
-		},
-		{
-			header: "Profit $",
-			columnKey: "potentialProfitUsd",
-			field: "potentialProfitUsd",
-		},
-	]);
+	// Detail modal state
+	const selectedOpportunity = shallowRef<ArbitrageOpportunity | null>(null);
+	const isDetailModalVisible = ref(false);
 
-	const filteredSpreads = computed(() => {
-		if (minSpreadPercent.value === null) {
-			return spreads.value;
+	const openDetailModal = (opportunity: ArbitrageOpportunity) => {
+		selectedOpportunity.value = opportunity;
+		isDetailModalVisible.value = true;
+	};
+
+	const closeDetailModal = () => {
+		isDetailModalVisible.value = false;
+		selectedOpportunity.value = null;
+	};
+
+	const filteredOpportunities = computed(() => {
+		let result = opportunities.value;
+
+		if (statusFilter.value !== null) {
+			result = result.filter((o) => o.status === statusFilter.value);
 		}
-		return spreads.value.filter(
-			(s) => s.spreadPercent >= minSpreadPercent.value,
-		);
+
+		if (minNetSpreadBps.value !== null) {
+			result = result.filter((o) => o.netSpreadBps >= minNetSpreadBps.value!);
+		}
+
+		if (minScore.value !== null) {
+			result = result.filter((o) => o.score >= minScore.value!);
+		}
+
+		return result;
 	});
 
 	const tableData = computed(() => {
-		return filteredSpreads.value.map((s) => ({
-			...s,
-			spreadPercent: s.spreadPercent,
-			spreadAbsolute: s.spreadAbsolute,
-			bestBid: s.bestBid,
-			bestAsk: s.bestAsk,
-			potentialProfitUsd: s.potentialProfitUsd ?? 0,
-			availableSize: s.availableSize,
+		return filteredOpportunities.value.map((o) => ({
+			...o,
+			// Pre-calculate display values
+			netSpreadBpsDisplay: o.netSpreadBps.toFixed(1),
+			rawSpreadBpsDisplay: o.rawSpreadBps.toFixed(1),
+			maxSizeDisplay: formatSize(o.maxExecutableSize),
+			depthBuyDisplay: formatSize(o.depthBuyAt10Bps),
+			depthSellDisplay: formatSize(o.depthSellAt10Bps),
+			fundingDeltaDisplay: o.fundingDeltaBps.toFixed(2),
+			lifetimeDisplay: formatLifetime(o.lifecycle.lifetimeMs),
+			scoreDisplay: o.score.toFixed(0),
+			volatilityDisplay: o.risk.volatility1m.toFixed(1),
+			slippageDisplay: o.slippageAt1k.toFixed(1),
+			occurrenceDisplay: o.lifecycle.occurrenceCount,
+			peakSpreadDisplay: o.lifecycle.peakSpreadBps.toFixed(1),
+			avgSpreadDisplay: o.lifecycle.avgSpreadBps.toFixed(1),
+			statusLabel: STATUS_LABELS[o.status] || o.status,
+			// Translate risks
+			riskFlagsTranslated: o.risk.riskFlags.map(flag => RISK_LABELS[flag] || flag)
 		}));
 	});
 
-	const currentSpreadFilter = computed(() => {
-		return (
-			SPREAD_FILTERS.find((f) => f.value === minSpreadPercent.value) ||
-			SPREAD_FILTERS[0]
-		);
-	});
+	const setStatusFilter = (value: OpportunityStatus | null) => {
+		statusFilter.value = value;
+	};
 
-	const setMinSpreadPercent = (value: number | null) => {
-		minSpreadPercent.value = value;
+	const setMinNetSpreadBps = (value: number | null) => {
+		minNetSpreadBps.value = value;
+	};
+
+	const setMinScore = (value: number | null) => {
+		minScore.value = value;
 	};
 
 	const connectedExchangesCount = computed(
@@ -83,22 +136,46 @@ export const useSpreadsViewModel = () => {
 	);
 
 	return {
-		// Данные
-		spreads: filteredSpreads,
-		opportunities,
+		// Data
+		opportunities: filteredOpportunities,
 		tableData,
-		columns,
+		stats,
 
-		// Фильтры
+		// Filters
 		filters,
-		spreadFilters: SPREAD_FILTERS,
-		currentSpreadFilter,
-		minSpreadPercent,
-		setMinSpreadPercent,
+		statusFilters: STATUS_FILTERS,
+		minSpreadFilters: MIN_SPREAD_FILTERS,
+		minScoreFilters: MIN_SCORE_FILTERS,
+		statusFilter,
+		minNetSpreadBps,
+		minScore,
+		setStatusFilter,
+		setMinNetSpreadBps,
+		setMinScore,
 
-		// Статусы
+		// Status
 		exchangeStatus,
 		isConnected,
 		connectedExchangesCount,
+
+		// Detail modal
+		selectedOpportunity,
+		isDetailModalVisible,
+		openDetailModal,
+		closeDetailModal,
 	};
 };
+
+// Helpers
+function formatSize(value: number): string {
+	if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+	if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+	return value.toFixed(0);
+}
+
+function formatLifetime(ms: number): string {
+	if (ms < 1000) return `${ms}ms`;
+	if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+	if (ms < 3600000) return `${(ms / 60000).toFixed(1)}m`;
+	return `${(ms / 3600000).toFixed(1)}h`;
+}

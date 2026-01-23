@@ -59,7 +59,11 @@ const tableData = computed(() => {
 
 		// Преобразуем все числовые поля
 		for (const key in converted) {
-			if (key !== 'symbol' && key !== 'shortExchange' && key !== 'longExchange') {
+			if (
+				key !== "symbol" &&
+				key !== "shortExchange" &&
+				key !== "longExchange"
+			) {
 				const num = Number(converted[key]);
 				if (!isNaN(num)) {
 					converted[key] = num;
@@ -167,14 +171,6 @@ const tableData = computed(() => {
 
 
 <style scoped>
-.positive-value {
-  color: var(--p-green-500);
-}
-
-.negative-value {
-  color: var(--p-red-500);
-}
-
 .apr-field {
   display: flex;
   align-items: center;
