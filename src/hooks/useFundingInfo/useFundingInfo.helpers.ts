@@ -1,32 +1,19 @@
 import type { Column, LowercaseExchange } from "../../common/types";
-import type { UnifiedMarketItem } from "../../types";
+import { EXCHANGES } from "../../common/constants";
+import type { BackendFundingRate } from "../../api/backend/useFundingRates.query";
 import type {
-	ExchangeFundingData,
 	MarketItemWithExchange,
 	MergeExchangesDataResult,
 } from "./useFundingInfo.types";
 
-export const buildColumns = (data: MarketItemWithExchange[]): Column[] => {
-	if (data.length < 1) return [];
-	// Эфир всегда есть как и биток
-	const sampleItem = data.find((item) => item.symbol === "ETH");
-	if (!sampleItem) return [];
+// Передаем activeExchanges, чтобы строить колонки только для выбранных бирж
+export const buildColumns = (activeExchanges: Set<LowercaseExchange>): Column[] => {
+	const exchangeColumns = Array.from(activeExchanges).map((ex) => ({
+		columnKey: ex,
+		header: ex,
+		field: `${ex}1h`,
+	}));
 
-	const columns = Object.keys(sampleItem)
-		.filter((key) =>
-			["symbol", "bestApr", "shortExchange", "longExchange"].every(
-				(item) => item !== key,
-			),
-		)
-		.map((key) => {
-			const cleanedKey = key.replace(/1h$/, "");
-			return {
-				columnKey: cleanedKey,
-				header: cleanedKey,
-				field: key,
-			};
-		});
-	// console.log(columns);
 	const serviceColumns = [
 		{
 			header: "Symbol",
@@ -40,49 +27,46 @@ export const buildColumns = (data: MarketItemWithExchange[]): Column[] => {
 		},
 	];
 
-	return [...serviceColumns, ...columns];
+	return [...serviceColumns, ...exchangeColumns];
 };
 
-export const mergeExchangesData = (
-	sources: ExchangeFundingData[],
+export const transformBackendData = (
+	data: BackendFundingRate[],
+	activeExchanges: Set<LowercaseExchange>,
 ): MergeExchangesDataResult => {
 	const exchangeNames = new Set<LowercaseExchange>();
-	const symbolMap = new Map<
-		string,
-		Map<LowercaseExchange, UnifiedMarketItem>
-	>();
+	const symbolMap = new Map<string, MarketItemWithExchange>();
 
-	for (const { name, items } of sources) {
-		exchangeNames.add(name);
+	// Группируем плоский массив из БД по монетам
+	for (const row of data) {
+		const ex = row.exchange as LowercaseExchange;
+		
+		// Игнорируем биржу, если она отключена в фильтре UI
+		if (!activeExchanges.has(ex)) continue;
+		
+		exchangeNames.add(ex);
 
-		for (const item of items) {
-			if (!symbolMap.has(item.symbol)) {
-				symbolMap.set(item.symbol, new Map());
-			}
-
-			symbolMap.get(item.symbol)?.set(name, item);
+		if (!symbolMap.has(row.symbol)) {
+			symbolMap.set(row.symbol, { symbol: row.symbol });
 		}
+		const item = symbolMap.get(row.symbol)!;
+		
+		// Сохраняем ставку (приводим к строке, как ожидал старый UI)
+		item[`${ex}1h` as keyof MarketItemWithExchange] = String(row.funding_rate);
 	}
 
 	const unifiedItems: MarketItemWithExchange[] = [];
 
-	for (const [symbol, exchangeMap] of symbolMap) {
-		if (exchangeMap.size < 2) continue;
-		const unified: MarketItemWithExchange = {
-			symbol,
-		};
-
+	for (const [symbol, item] of symbolMap) {
 		const exchangeRates: { exchange: LowercaseExchange; rate: number }[] = [];
-		for (const [exchange, item] of exchangeMap) {
-			unified[`${exchange}1h`] = item.fundingRate;
-			if (item.fundingRate) {
-				exchangeRates.push({
-					exchange,
-					rate: Number(item.fundingRate),
-				});
+		for (const ex of exchangeNames) {
+			const rateStr = item[`${ex}1h` as keyof MarketItemWithExchange] as string | undefined;
+			if (rateStr !== undefined) {
+				exchangeRates.push({ exchange: ex, rate: Number(rateStr) });
 			}
 		}
 
+		// Добавляем в итоговый список ТОЛЬКО если монета есть минимум на 2-х выбранных биржах
 		if (exchangeRates.length >= 2) {
 			const maxRateItem = exchangeRates.reduce((prev, current) =>
 				current.rate > prev.rate ? current : prev,
@@ -91,12 +75,13 @@ export const mergeExchangesData = (
 				current.rate < prev.rate ? current : prev,
 			);
 
-			unified.bestApr = String(maxRateItem.rate - minRateItem.rate);
-			unified.shortExchange = maxRateItem.exchange;
-			unified.longExchange = minRateItem.exchange;
+			item.bestApr = String(maxRateItem.rate - minRateItem.rate);
+			item.shortExchange = maxRateItem.exchange;
+			item.longExchange = minRateItem.exchange;
+			
+			unifiedItems.push(item);
 		}
-
-		unifiedItems.push(unified);
+		// Иначе просто игнорируем (скрываем мусор из выдачи)
 	}
 
 	return {
