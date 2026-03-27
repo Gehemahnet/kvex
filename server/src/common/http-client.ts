@@ -1,9 +1,9 @@
 export interface HttpClient {
 	get<Response>(url: string): Promise<Response>;
-	post<Body, Params, Response>(
+	post<Response, Body, Params = {}>(
 		url: string,
 		body: Body,
-		params: Params,
+		params?: Params,
 	): Promise<Response>;
 }
 
@@ -25,7 +25,10 @@ export class FetchHttpClient implements HttpClient {
 	): Promise<Response> {
 		const response = await fetch(url, {
 			method: "POST",
-			body,
+			body: JSON.stringify(body),
+			headers: {
+				"Content-Type": "application/json",
+			},
 			...params,
 		});
 
