@@ -1,7 +1,10 @@
 import { FetchHttpClient } from "../../common/http-client";
 import { DexRestClient } from "../../common/rest-client";
 import { Period } from "../../types";
+import { getFullMarketsMetadataAdapter } from "./adapters";
 import {
+	AdapterPerpFullMetadata,
+	GetPerpFullMetadataResponse,
 	GetPerpMetadataRequestBody,
 	GetPerpMetadataResponse,
 	HistoricalFunding,
@@ -17,16 +20,29 @@ class HyperliquidDexClient extends DexRestClient {
 	getInfoUrl() {
 		return new URL(`${this.baseUrl}/${this.endpoints.info}`);
 	}
-	// TODO нужен адаптер ответа
-	async getMarkets(fullData: boolean = false) {
-		return this.httpClient.post<
-			GetPerpMetadataResponse,
+
+	private async getMarkets(
+		fullData: boolean = false,
+	): Promise<AdapterPerpFullMetadata | GetPerpMetadataResponse> {
+		const markets = await this.httpClient.post<
+			GetPerpMetadataResponse | GetPerpFullMetadataResponse,
 			GetPerpMetadataRequestBody
 		>(this.getInfoUrl().href, {
 			type: fullData
 				? HyperliquidInfoRequestType.MetaAndAssetCtxs
 				: HyperliquidInfoRequestType.Meta,
 		});
+
+		return fullData
+			? getFullMarketsMetadataAdapter(markets as GetPerpFullMetadataResponse)
+			: (markets as GetPerpMetadataResponse);
+	}
+	async getMarketsMetadata() {
+		return (await this.getMarkets()) as GetPerpMetadataResponse;
+	}
+
+	async getFullMarketsMetadata() {
+		return (await this.getMarkets(true)) as AdapterPerpFullMetadata;
 	}
 
 	async getHistoricalFunding(period: Period, coin: string) {
@@ -37,7 +53,7 @@ class HyperliquidDexClient extends DexRestClient {
 			YEAR: 365 * 86400000,
 		};
 
-		const allData = [];
+		const allData: HistoricalFunding[] = [];
 
 		const duration = durations[period];
 		let currentStart = Date.now() - duration;

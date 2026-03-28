@@ -110,14 +110,22 @@ export interface PerpAssetCtxSchema {
 	dayBaseVlm: string;
 }
 
-export type GetPerpMetadataResponse = [
-	{
-		universe: MetaUniverse[];
-		marginTables: MarginTable[];
-		collateralToken?: number;
-	},
-	PerpAssetCtxSchema[] | undefined,
+export type GetPerpMetadataResponse = {
+	universe: MetaUniverse[];
+	marginTables: MarginTable[];
+	collateralToken?: number;
+};
+
+export type GetPerpFullMetadataResponse = [
+	GetPerpMetadataResponse,
+	PerpAssetCtxSchema[],
 ];
+
+export type AdapterPerpFullMetadata = {
+	universe: (MetaUniverse & PerpAssetCtxSchema)[];
+	marginTables: MarginTable[];
+	collateralToken?: number;
+};
 
 export interface HistoricalFundingRequestBody {
 	type: HyperliquidInfoRequestType;
