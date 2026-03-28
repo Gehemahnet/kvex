@@ -1,6 +1,7 @@
+import { DURATIONS } from "../../common/constants";
 import { FetchHttpClient } from "../../common/http-client";
 import { DexRestClient } from "../../common/rest-client";
-import { Period } from "../../types";
+import { Period } from "../../common/types";
 import { getFullMarketsMetadataAdapter } from "./adapters";
 import {
 	AdapterPerpFullMetadata,
@@ -46,16 +47,9 @@ class HyperliquidDexClient extends DexRestClient {
 	}
 
 	async getHistoricalFunding(period: Period, coin: string) {
-		const durations: Record<Period, number> = {
-			DAY: 86400000,
-			WEEK: 7 * 86400000,
-			MONTH: 30 * 86400000,
-			YEAR: 365 * 86400000,
-		};
-
 		const allData: HistoricalFunding[] = [];
 
-		const duration = durations[period];
+		const duration = DURATIONS[period];
 		let currentStart = Date.now() - duration;
 		while (currentStart < Date.now()) {
 			const page = await this.httpClient.post<
