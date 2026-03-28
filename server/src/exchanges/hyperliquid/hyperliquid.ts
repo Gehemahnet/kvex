@@ -14,7 +14,7 @@ import {
 } from "./hyperliquid.types";
 
 class HyperliquidDexClient extends DexRestClient {
-	endpoints = {
+	private endpoints = {
 		info: "info",
 	};
 

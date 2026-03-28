@@ -10,12 +10,12 @@ import {
 } from "./ethereal.types";
 
 class EtherealDexClient extends DexRestClient {
-	endpoints = {
+	private endpoints = {
 		product: "product",
 		fundingRate: "funding",
 	};
 
-	async getProducts(query: GetProductsQueryParams) {
+	async getProducts(query: GetProductsQueryParams = {}) {
 		return this.fetchData<GetProductResponse, GetProductsQueryParams>(
 			this.endpoints.product,
 			{ query },
@@ -33,11 +33,12 @@ class EtherealDexClient extends DexRestClient {
 					GetFundingQueryParams
 				>(this.endpoints.fundingRate, {
 					query: {
+						limit: 100,
 						...query,
 						cursor: nextListToken,
 					},
 				});
-				console.log(response);
+
 				if (!response) {
 					break;
 				}
