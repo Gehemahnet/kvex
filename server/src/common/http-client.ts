@@ -8,13 +8,13 @@ export interface HttpClient {
 }
 
 export class FetchHttpClient implements HttpClient {
-	async get<Response, Error>(url: string): Promise<Response | Error> {
+	async get<Response, Error = unknown>(url: string): Promise<Response | Error> {
 		try {
 			const response = await fetch(url);
 
 			return response.json();
 		} catch (error) {
-			return error;
+			return error as Error;
 		}
 	}
 
