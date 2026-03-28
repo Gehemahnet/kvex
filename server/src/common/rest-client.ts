@@ -29,13 +29,15 @@ export abstract class DexRestClient {
 		if (params?.query) {
 			Object.entries(params.query).forEach(([key, value]) => {
 				if (value && Array.isArray(value)) {
-					value.forEach((val) => url.searchParams.append(key, val));
+					value.forEach((val) => {
+						url.searchParams.append(key, val);
+					});
 				} else if (value && !Array.isArray(value)) {
-					url.searchParams.set(key, value);
+					url.searchParams.set(key, value as string);
 				}
 			});
 		}
 
-		return this.httpClient.get<ResponseData>(url);
+		return this.httpClient.get<ResponseData>(url.href);
 	}
 }
