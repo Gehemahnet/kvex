@@ -47,10 +47,7 @@ export interface MarginTable {
 	description: string;
 	/** Array of margin tiers defining leverage limits. */
 	marginTiers: {
-		/**
-		 * Lower position size boundary for this tier.
-		 * @pattern ^[0-9]+(\.[0-9]+)?$
-		 */
+		/**Lower position size boundary for this tier.*/
 		lowerBound: string;
 		/** Maximum allowed leverage for this tier. */
 		maxLeverage: number;
@@ -58,55 +55,25 @@ export interface MarginTable {
 }
 
 export interface PerpAssetCtxSchema {
-	/**
-	 * Previous day's closing price.
-	 * @pattern ^[0-9]+(\.[0-9]+)?$
-	 */
+	/**Previous day's closing price.*/
 	prevDayPx: string;
-	/**
-	 * Daily notional volume.
-	 * @pattern ^[0-9]+(\.[0-9]+)?$
-	 */
+	/**Daily notional volume.*/
 	dayNtlVlm: string;
-	/**
-	 * Mark price.
-	 * @pattern ^[0-9]+(\.[0-9]+)?$
-	 */
+	/**Mark price.*/
 	markPx: string;
-	/**
-	 * Mid price.
-	 * @pattern ^[0-9]+(\.[0-9]+)?$
-	 */
+	/**Mid price.*/
 	midPx: string | null;
-	/**
-	 * Funding rate.
-	 * @pattern ^-?[0-9]+(\.[0-9]+)?$
-	 */
+	/**Funding rate.*/
 	funding: string;
-	/**
-	 * Total open interest.
-	 * @pattern ^[0-9]+(\.[0-9]+)?$
-	 */
+	/**Total open interest.*/
 	openInterest: string;
-	/**
-	 * Premium price.
-	 * @pattern ^-?[0-9]+(\.[0-9]+)?$
-	 */
+	/**Premium price.*/
 	premium: string | null;
-	/**
-	 * Oracle price.
-	 * @pattern ^[0-9]+(\.[0-9]+)?$
-	 */
+	/**Oracle price.*/
 	oraclePx: string;
-	/**
-	 * Array of impact prices.
-	 * @pattern ^[0-9]+(\.[0-9]+)?$
-	 */
+	/**Array of impact prices.*/
 	impactPxs: string[] | null;
-	/**
-	 * Daily volume in base currency.
-	 * @pattern ^[0-9]+(\.[0-9]+)?$
-	 */
+	/**Daily volume in base currency.*/
 	dayBaseVlm: string;
 }
 
@@ -137,15 +104,9 @@ export interface HistoricalFundingRequestBody {
 export interface HistoricalFunding {
 	/** Asset symbol. */
 	coin: string;
-	/**
-	 * Funding rate.
-	 * @pattern ^-?[0-9]+(\.[0-9]+)?$
-	 */
+	/**Funding rate.*/
 	fundingRate: string;
-	/**
-	 * Premium price.
-	 * @pattern ^-?[0-9]+(\.[0-9]+)?$
-	 */
+	/**Premium price.*/
 	premium: string;
 	/** Funding record timestamp (ms since epoch). */
 	time: number;
