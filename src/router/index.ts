@@ -4,22 +4,22 @@ import {
 	type RouteRecordRaw,
 } from "vue-router";
 
-const GatewayView = () => import("../views/GatewayView.vue");
+const MainView = () => import("../views/MainView.vue");
 const FundingOverviewView = () =>
 	import("../views/FundingOverview/FundingOverview.vue");
 const SpreadsView = () => import("../views/SpreadsView/SpreadsView.vue");
 
 export enum ROUTES {
-	GATEWAY = "Gateway",
+	MAIN = "Main",
 	FUNDING_OVERVIEW = "FundingOverview",
 	SPREADS = "Spreads",
 }
 
 const routes: RouteRecordRaw[] = [
 	{
-		name: ROUTES.GATEWAY,
+		name: ROUTES.MAIN,
 		path: "",
-		component: GatewayView,
+		component: MainView,
 	},
 	{
 		name: ROUTES.FUNDING_OVERVIEW,

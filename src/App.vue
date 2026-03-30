@@ -20,7 +20,7 @@ import { ROUTES } from "./router";
 const navigationItems: MenuItem[] = [
 	{
 		label: "Home",
-		route: ROUTES.GATEWAY,
+		route: ROUTES.MAIN,
 	},
 
 	{
