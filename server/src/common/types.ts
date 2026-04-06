@@ -1,3 +1,4 @@
-export type Exchange = "paradex" | "hyperliquid" | "pacifica" | "ethereal";
+export type Exchange = "hyperliquid" | "pacifica" | "ethereal";
+// | "paradex";
 
 export type Period = "DAY" | "WEEK" | "MONTH" | "YEAR";

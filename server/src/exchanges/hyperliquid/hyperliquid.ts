@@ -86,3 +86,5 @@ export const hyperliquidRestClient = new HyperliquidDexClient({
 	baseUrl: "https://api.hyperliquid.xyz",
 	httpClient: new FetchHttpClient(),
 });
+
+export type HyperliquidDexClientType = typeof HyperliquidDexClient;

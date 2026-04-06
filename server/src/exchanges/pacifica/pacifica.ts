@@ -85,3 +85,5 @@ export const pacificaRestClient = new PacificaDexClient({
 	baseUrl: "https://api.pacifica.fi/api/v1",
 	httpClient: new FetchHttpClient(),
 });
+
+export type PacificaDexClientType = typeof PacificaDexClient;
