@@ -3,16 +3,13 @@
 	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "tsx watch src/index.ts",
-		"dev:v2": "tsx watch src/v2/index.ts",
+		"dev": "tsx ./src/server/index.ts",
 		"build": "tsup src/index.ts --format esm --dts",
-		"build:v2": "tsup src/v2/index.ts --format esm --dts --outDir dist/v2",
 		"start": "node dist/index.js",
-		"start:v2": "node dist/v2/index.js",
 		"test": "vitest"
 	},
 	"dependencies": {
-		"dotenv": "^17.3.1",
+		"dotenv": "^17.4.1",
 		"pg": "^8.20.0",
 		"socket.io": "^4.8.3",
 		"ws": "^8.18.0"
