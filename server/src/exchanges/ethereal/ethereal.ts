@@ -15,7 +15,7 @@ class EtherealDexClient extends DexRestClient {
 		fundingRate: "funding",
 	};
 
-	async getProducts(query: GetProductsQueryParams = {}) {
+	async getMarkets(query: GetProductsQueryParams = {}) {
 		return this.fetchData<GetProductResponse, GetProductsQueryParams>(
 			this.endpoints.product,
 			{ query },
@@ -59,3 +59,5 @@ export const etherealRestClient = new EtherealDexClient({
 	baseUrl: "https://api.ethereal.trade/v1",
 	httpClient: new FetchHttpClient(),
 });
+
+export type EtherealDexClientType = typeof EtherealDexClient;

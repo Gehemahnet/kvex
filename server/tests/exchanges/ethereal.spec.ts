@@ -3,7 +3,7 @@ import { etherealRestClient } from "../../src/exchanges/ethereal/ethereal";
 
 describe("Ethereal API check", () => {
 	it("Fetch markets info and get BTC ", async () => {
-		const markets = await etherealRestClient.getProducts();
+		const markets = await etherealRestClient.getMarkets();
 		const btcMarket = markets.data.find((product) =>
 			product.ticker.startsWith("BTC"),
 		);
@@ -11,7 +11,7 @@ describe("Ethereal API check", () => {
 	});
 
 	it("Fetch markets and then funding for BTC", async () => {
-		const markets = await etherealRestClient.getProducts();
+		const markets = await etherealRestClient.getMarkets();
 
 		const btcMarket = markets.data.find((product) =>
 			product.ticker.startsWith("BTC"),
