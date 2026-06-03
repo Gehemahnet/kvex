@@ -33,16 +33,23 @@ export type FundingResponse = {
 	errors: FundingExchangeError[];
 };
 
-export type FundingTableRow = {
+export type FundingOverviewExchangeCell = {
 	exchange: FundingExchange;
-	symbol: string;
 	sourceSymbol: string;
 	fundingRate?: number;
 	nextFundingRate?: number;
+	apr?: number;
 	timestamp?: number;
-	pointsCount: number;
-	isFundingAdapted: boolean;
-	requestedTimeframe: FundingTimeframe;
-	sourceTimeframe: FundingTimeframe;
 };
 
+export type FundingOverviewRow = {
+	symbol: string;
+	exchanges: Partial<Record<FundingExchange, FundingOverviewExchangeCell>>;
+};
+
+export type FundingOverviewResponse = {
+	timeframe: FundingTimeframe;
+	exchanges: FundingExchange[];
+	data: FundingOverviewRow[];
+	errors: FundingExchangeError[];
+};
