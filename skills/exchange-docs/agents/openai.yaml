@@ -1,0 +1,4 @@
+interface:
+  display_name: "Exchange Docs"
+  short_description: "Look up exchange API docs fast"
+  default_prompt: "Use this skill when you need official exchange API documentation, endpoints, auth details, market data rules, or trading integration notes for supported exchanges."
