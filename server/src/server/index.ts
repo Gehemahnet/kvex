@@ -2,11 +2,7 @@ import { createServer } from "node:http";
 import { config } from "dotenv";
 import { router } from "./router";
 
-const PORT = config().parsed?.SERVER_PORT;
-
-if (!PORT) {
-	throw new Error("PORT is not set");
-}
+const PORT = config().parsed?.SERVER_PORT ?? "3000";
 
 const server = createServer(router);
 

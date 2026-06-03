@@ -7,15 +7,31 @@ export interface HttpClient {
 	): Promise<Response>;
 }
 
-export class FetchHttpClient implements HttpClient {
-	async get<Response, Error = unknown>(url: string): Promise<Response | Error> {
-		try {
-			const response = await fetch(url);
+export class UpstreamHttpError extends Error {
+	url: string;
+	status: number;
 
-			return response.json();
-		} catch (error) {
-			return error as Error;
+	constructor(params: { url: string; status: number; statusText: string }) {
+		super(`HTTP ${params.status} for ${params.url}: ${params.statusText}`);
+		this.name = "UpstreamHttpError";
+		this.url = params.url;
+		this.status = params.status;
+	}
+}
+
+export class FetchHttpClient implements HttpClient {
+	async get<Response>(url: string): Promise<Response> {
+		const response = await fetch(url);
+
+		if (!response.ok) {
+			throw new UpstreamHttpError({
+				url,
+				status: response.status,
+				statusText: response.statusText,
+			});
 		}
+
+		return response.json();
 	}
 
 	async post<Response, Body, Params>(
@@ -31,6 +47,14 @@ export class FetchHttpClient implements HttpClient {
 			},
 			...params,
 		});
+
+		if (!response.ok) {
+			throw new UpstreamHttpError({
+				url,
+				status: response.status,
+				statusText: response.statusText,
+			});
+		}
 
 		return response.json();
 	}

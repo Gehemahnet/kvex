@@ -11,6 +11,7 @@ import {
 	MarketData,
 	PriceData,
 } from "./pacifica.types";
+import { normalizeFundingHistory } from "./pacifica.utils";
 
 class PacificaDexClient extends DexRestClient {
 	endpoints = {
@@ -77,10 +78,9 @@ class PacificaDexClient extends DexRestClient {
 			hasMore = response.has_more;
 		}
 
-		return allData.sort((a, b) => (a.created_at > b.created_at ? 1 : -1));
+		return normalizeFundingHistory(period, allData);
 	}
 }
-
 export const pacificaRestClient = new PacificaDexClient({
 	baseUrl: "https://api.pacifica.fi/api/v1",
 	httpClient: new FetchHttpClient(),

@@ -1,10 +1,39 @@
 import { IncomingMessage, ServerResponse } from "http";
+import { getFunding } from "../services/funding/funding.service";
+import { parseFundingQuery } from "./http/funding-query";
+import {
+	MethodNotAllowedError,
+	NotFoundError,
+	normalizeHttpError,
+	toErrorResponseBody,
+} from "./http/http-errors";
 
-export const router = (request: IncomingMessage, response: ServerResponse) => {
-	if (request.url === "/funding" && request.method === "GET") {
-		response.writeHead(200);
-		return response.end("Successful access to server on route /funding");
+export const router = async (
+	request: IncomingMessage,
+	response: ServerResponse,
+) => {
+	try {
+		const url = new URL(request.url ?? "/", "http://localhost");
+
+		if (url.pathname === "/funding") {
+			if (request.method !== "GET") {
+				throw new MethodNotAllowedError(request.method, url.pathname);
+			}
+
+			const query = parseFundingQuery(request.url);
+			const data = await getFunding(query);
+
+			response.writeHead(200, { "Content-Type": "application/json" });
+			return response.end(JSON.stringify(data));
+		}
+
+		throw new NotFoundError(url.pathname);
+	} catch (error) {
+		const httpError = normalizeHttpError(error);
+
+		response.writeHead(httpError.statusCode, {
+			"Content-Type": "application/json",
+		});
+		return response.end(JSON.stringify(toErrorResponseBody(httpError)));
 	}
-	response.writeHead(404);
-	return response.end("Wrong route found");
 };
