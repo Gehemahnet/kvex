@@ -28,7 +28,8 @@ const {
 	fundingStatus,
 	handleTableScroll,
 	hasMoreRows,
-	isRowPinned,
+	hasSelectedExchanges,
+	pinnedTableRows,
 	selectedExchanges,
 	selectedTimeframe,
 	symbolSearch,
@@ -38,9 +39,9 @@ const {
 </script>
 
 <template>
-	<section class="flex flex-col gap-4">
-		<div>
-			<div>
+	<section class="flex h-[calc(100vh-var(--kvex-topbar-height)-4rem)] min-h-0 flex-col gap-4 max-lg:h-[calc(100vh-var(--kvex-topbar-height)-2rem)]">
+		<div class="kvex-data-surface flex min-h-0 flex-col overflow-hidden rounded-xl border border-[var(--kvex-panel-border)] bg-[var(--kvex-panel-background)]">
+			<div class="shrink-0 bg-[var(--kvex-panel-background)] px-6 pb-2 pt-6">
 				<h1 class="m-0 text-[1.35rem] font-semibold text-[var(--p-text-color)]">
 					Funding
 				</h1>
@@ -48,13 +49,11 @@ const {
 					Perp funding monitor across enabled exchanges.
 				</p>
 			</div>
-		</div>
 
-		<div class="kvex-data-surface">
-			<div class="kvex-card-toolbar grid grid-cols-[minmax(9rem,12rem)_minmax(9rem,12rem)_minmax(16rem,1fr)_auto] items-end gap-4 p-4 max-[900px]:grid-cols-[minmax(9rem,1fr)_minmax(9rem,1fr)] max-[640px]:grid-cols-1">
+			<div class="grid shrink-0 grid-cols-[minmax(9rem,12rem)_minmax(9rem,12rem)_minmax(16rem,1fr)_auto] items-end gap-4 border-b border-[var(--kvex-panel-border)] bg-[var(--kvex-panel-background)] p-4 pt-3 max-[900px]:grid-cols-[minmax(9rem,1fr)_minmax(9rem,1fr)] max-[640px]:grid-cols-1">
 				<div class="flex flex-col gap-1.5">
 					<label
-						class="kvex-field-label"
+						class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
 						for="funding-timeframe"
 					>
 						Timeframe
@@ -70,7 +69,7 @@ const {
 
 				<div class="flex flex-col gap-1.5">
 					<label
-						class="kvex-field-label"
+						class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
 						for="funding-symbol-search"
 					>
 						Symbol
@@ -85,7 +84,7 @@ const {
 
 				<div class="flex flex-col gap-1.5">
 					<label
-						class="kvex-field-label"
+						class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
 						for="funding-exchanges"
 					>
 						Exchanges
@@ -96,7 +95,9 @@ const {
 						:options="FUNDING_EXCHANGE_OPTIONS"
 						option-label="label"
 						option-value="value"
-						display="chip"
+						:max-selected-labels="3"
+						placeholder="Select Exchanges"
+						show-clear
 					/>
 				</div>
 
@@ -128,24 +129,26 @@ const {
 			</Message>
 
 			<div
-				class="kvex-table-scroll"
+				class="min-h-0 flex-1 overflow-auto"
 				@scroll.passive="handleTableScroll"
 			>
 				<DataTable
 					:value="visibleTableRows"
+					:frozen-value="pinnedTableRows"
 					data-key="symbol"
 					:loading="fundingQuery.isLoading.value"
+					scrollable
 					table-style="min-width: 68rem"
 				>
 					<Column
 						header=""
 						class="w-20"
 					>
-						<template #body="{ data }">
+						<template #body="{ data, frozenRow }">
 							<Button
-								class="kvex-pin-button"
-								:label="isRowPinned(data.symbol) ? 'Pinned' : 'Pin'"
-								:severity="isRowPinned(data.symbol) ? 'info' : 'secondary'"
+								class="!min-h-[1.9rem] !px-2 !py-1"
+								:label="frozenRow ? 'Pinned' : 'Pin'"
+								:severity="frozenRow ? 'info' : 'secondary'"
 								size="small"
 								text
 								@click="togglePinnedRow(data.symbol)"
@@ -158,7 +161,9 @@ const {
 						header="Symbol"
 					>
 						<template #body="{ data }">
-							<span class="kvex-symbol-cell">{{ data.symbol }}</span>
+							<span class="font-bold text-[var(--kvex-symbol-color)]">
+								{{ data.symbol }}
+							</span>
 						</template>
 					</Column>
 
@@ -173,7 +178,9 @@ const {
 								class="inline-flex w-max flex-col items-start gap-1.5"
 							>
 								<div class="inline-grid grid-cols-[max-content_max-content] items-baseline gap-2">
-									<span class="kvex-rate-label">APR</span>
+									<span class="text-[0.769rem] font-semibold uppercase text-[var(--kvex-text-muted-color)]">
+										APR
+									</span>
 									<span
 										class="inline-block rounded-[4px] px-1.5 py-0.5 text-xs font-bold tabular-nums"
 										:class="getFundingValueClass(getExchangeCell(data.exchanges, column.exchange)?.apr)"
@@ -185,7 +192,9 @@ const {
 									v-if="shouldShowFunding(getExchangeCell(data.exchanges, column.exchange)?.fundingRate)"
 									class="inline-grid grid-cols-[max-content_max-content] items-baseline gap-2"
 								>
-									<span class="kvex-rate-label">{{ fundingLabel }}</span>
+									<span class="text-[0.769rem] font-semibold uppercase text-[var(--kvex-text-muted-color)]">
+										{{ fundingLabel }}
+									</span>
 									<span
 										class="text-[0.8125rem] font-bold tabular-nums"
 										:class="getFundingTextClass(getExchangeCell(data.exchanges, column.exchange)?.fundingRate)"
@@ -199,7 +208,13 @@ const {
 					</Column>
 
 					<template #empty>
-						No funding rows for the selected filters.
+						<div class="flex h-[300px] items-center justify-center text-center text-sm text-[var(--kvex-text-muted-color)]">
+							{{
+								hasSelectedExchanges
+									? "No funding rows for the selected filters."
+									: "Вы еще не выбрали источники данных."
+							}}
+						</div>
 					</template>
 				</DataTable>
 			</div>

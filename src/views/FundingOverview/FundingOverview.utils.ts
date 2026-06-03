@@ -30,8 +30,8 @@ export const normalizeFundingTimeframe = (
 	isFundingTimeframe(timeframe) ? timeframe : DEFAULT_FUNDING_TIMEFRAME;
 
 /**
- * Keeps only unique supported exchanges and restores defaults when the saved
- * selection is empty or incompatible with the current exchange list.
+ * Keeps only unique supported exchanges and restores defaults only when the
+ * saved value is incompatible with the current exchange list.
  */
 export const normalizeFundingExchanges = (
 	exchanges: unknown,
@@ -42,15 +42,13 @@ export const normalizeFundingExchanges = (
 
 	const uniqueExchanges = [...new Set(exchanges)].filter(isFundingExchange);
 
-	return uniqueExchanges.length > 0
-		? uniqueExchanges
-		: [...DEFAULT_FUNDING_EXCHANGES];
+	return uniqueExchanges;
 };
 
 export const isFundingExchangeList = (
 	value: unknown,
 ): value is FundingExchange[] =>
-	Array.isArray(value) && value.length > 0 && value.every(isFundingExchange);
+	Array.isArray(value) && value.every(isFundingExchange);
 
 export const isStringList = (value: unknown): value is string[] =>
 	Array.isArray(value) && value.every((item) => typeof item === "string");
@@ -164,12 +162,26 @@ export const getFirstExchangeTimestamp = (
 		)
 		.find((timestamp) => timestamp !== undefined);
 
-export const getFundingValueClass = (rate?: number | null) => ({
-	"kvex-rate-pill-positive": (rate ?? 0) > 0,
-	"kvex-rate-pill-negative": (rate ?? 0) < 0,
-});
+export const getFundingValueClass = (rate?: number | null): string => {
+	if ((rate ?? 0) > 0) {
+		return "bg-[var(--kvex-success-background)] text-[var(--kvex-success-color)]";
+	}
 
-export const getFundingTextClass = (rate?: number | null) => ({
-	"kvex-rate-positive": (rate ?? 0) > 0,
-	"kvex-rate-negative": (rate ?? 0) < 0,
-});
+	if ((rate ?? 0) < 0) {
+		return "bg-[var(--kvex-danger-background)] text-[var(--kvex-danger-color)]";
+	}
+
+	return "";
+};
+
+export const getFundingTextClass = (rate?: number | null): string => {
+	if ((rate ?? 0) > 0) {
+		return "text-[var(--kvex-success-color)]";
+	}
+
+	if ((rate ?? 0) < 0) {
+		return "text-[var(--kvex-danger-color)]";
+	}
+
+	return "";
+};

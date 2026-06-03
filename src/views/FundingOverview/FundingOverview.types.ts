@@ -1,4 +1,4 @@
-export type FundingExchange = "hyperliquid" | "pacifica" | "ethereal";
+export type FundingExchange = "hyperliquid" | "pacifica" | "ethereal" | "nado";
 
 export type FundingTimeframe = "DAY" | "WEEK" | "MONTH" | "YEAR";
 

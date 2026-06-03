@@ -20,6 +20,7 @@ export const DEFAULT_FUNDING_EXCHANGES: FundingExchange[] = [
 	"hyperliquid",
 	"pacifica",
 	"ethereal",
+	"nado",
 ];
 
 export const FUNDING_OVERVIEW_ACTIVE_TIMEFRAME_LOCAL_STORAGE_KEY =
@@ -37,10 +38,13 @@ export const FUNDING_OVERVIEW_ROWS_INCREMENT = 50;
 
 export const FUNDING_OVERVIEW_SCROLL_LOAD_OFFSET_PX = 160;
 
+export const FUNDING_OVERVIEW_CACHE_TTL_MS = 3 * 60 * 1000;
+
 export const FUNDING_EXCHANGE_OPTIONS = [
 	{ label: "Hyperliquid", value: "hyperliquid" },
 	{ label: "Pacifica", value: "pacifica" },
 	{ label: "Ethereal", value: "ethereal" },
+	{ label: "Nado", value: "nado" },
 ];
 
 export const FUNDING_TIMEFRAME_OPTIONS = [

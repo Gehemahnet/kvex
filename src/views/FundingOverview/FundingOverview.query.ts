@@ -5,6 +5,7 @@ import type {
 	FundingOverviewResponse,
 	FundingTimeframe,
 } from "./FundingOverview.types";
+import { FUNDING_OVERVIEW_CACHE_TTL_MS } from "./FundingOverview.constants";
 
 type FundingOverviewRequestParams = {
 	timeframe: FundingTimeframe;
@@ -53,9 +54,13 @@ export const useFundingOverviewQuery = (
 			toValue(params.timeframe),
 			toValue(params.exchanges).join(","),
 		]),
+		enabled: computed(() => toValue(params.exchanges).length > 0),
 		queryFn: () =>
 			getFundingOverview({
 				timeframe: toValue(params.timeframe),
 				exchanges: toValue(params.exchanges),
 			}),
+		staleTime: FUNDING_OVERVIEW_CACHE_TTL_MS,
+		gcTime: FUNDING_OVERVIEW_CACHE_TTL_MS,
+		refetchInterval: FUNDING_OVERVIEW_CACHE_TTL_MS,
 	});

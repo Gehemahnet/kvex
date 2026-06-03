@@ -1,7 +1,38 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
 /* Global Styles using PrimeVue Variables */
 
 :root {
-	font-family: 'Inter', sans-serif;
+	--kvex-app-background: #f8fafc;
+	--kvex-panel-background: #ffffff;
+	--kvex-panel-muted-background: #ffffff;
+	--kvex-panel-row-alt-background: #ffffff;
+	--kvex-control-background: #ffffff;
+	--kvex-control-text: #475569;
+	--kvex-control-border: #cbd5e1;
+	--kvex-text-color: #334155;
+	--kvex-text-muted-color: #64748b;
+	--kvex-symbol-color: #0f172a;
+	--kvex-shell-background: #ffffff;
+	--kvex-logo-background: #10b981;
+	--kvex-topbar-background: #ffffff;
+	--kvex-accent-color: #10b981;
+	--kvex-success-color: #10b981;
+	--kvex-success-background: #d1fae5;
+	--kvex-danger-color: #ef4444;
+	--kvex-danger-background: #fee2e2;
+	--kvex-focus-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.18);
+	--kvex-shell-border: #e2e8f0;
+	--kvex-panel-border: #e2e8f0;
+	--kvex-panel-hover-background: #f8fafc;
+	--kvex-panel-shadow: none;
+	--kvex-sidebar-width: 17rem;
+	--kvex-topbar-height: 3.5rem;
+	--kvex-content-max-width: 1520px;
+
+	font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	font-size: 14px;
 	line-height: 1.5;
 	font-weight: 400;
 
@@ -15,9 +46,35 @@
 	-moz-osx-font-smoothing: grayscale;
 }
 
+.kvex-dark {
+	--kvex-app-background: #09090b;
+	--kvex-panel-background: #18181b;
+	--kvex-panel-muted-background: #18181b;
+	--kvex-panel-row-alt-background: #18181b;
+	--kvex-control-background: #18181b;
+	--kvex-control-text: #f4f4f5;
+	--kvex-control-border: #3f3f46;
+	--kvex-text-color: #f4f4f5;
+	--kvex-text-muted-color: #a1a1aa;
+	--kvex-symbol-color: #ffffff;
+	--kvex-shell-background: #18181b;
+	--kvex-logo-background: #10b981;
+	--kvex-topbar-background: #18181b;
+	--kvex-accent-color: #10b981;
+	--kvex-success-color: #34d399;
+	--kvex-success-background: rgba(16, 185, 129, 0.16);
+	--kvex-danger-color: #f87171;
+	--kvex-danger-background: rgba(239, 68, 68, 0.16);
+	--kvex-focus-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.22);
+	--kvex-shell-border: #27272a;
+	--kvex-panel-border: #27272a;
+	--kvex-panel-hover-background: #27272a;
+	--kvex-panel-shadow: none;
+}
+
 body {
 	margin: 0;
-	background-color: var(--p-surface-0); /* App background */
+	background-color: var(--kvex-app-background);
 	color: var(--p-text-color);
 }
 
@@ -38,45 +95,265 @@ a:hover {
 	color: var(--p-primary-hover-color);
 }
 
-/* --- Semantic Text Colors --- */
-
-.text-success,
-.text-profit {
-	color: var(--p-green-400) !important;
+.kvex-theme-switch .p-toggleswitch-slider {
+	background: var(--kvex-control-border);
 }
 
-.text-danger,
-.text-loss,
-.text-error {
-	color: var(--p-red-400) !important;
+.kvex-theme-switch.p-toggleswitch-checked .p-toggleswitch-slider {
+	background: var(--kvex-accent-color);
 }
 
-.text-warn,
-.text-warning {
-	color: var(--p-orange-400) !important;
+.kvex-data-surface .p-inputtext,
+.kvex-data-surface .p-select,
+.kvex-data-surface .p-multiselect {
+	background: var(--kvex-control-background);
+	border-color: var(--kvex-control-border);
+	border-radius: 6px;
+	color: var(--kvex-control-text);
+	box-shadow: none;
+	font-size: 0.875rem;
+	min-height: 2.5rem;
+	transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
-.text-info {
-	color: var(--p-blue-400) !important;
+.kvex-data-surface .p-inputtext::placeholder {
+	color: var(--kvex-text-muted-color);
+	opacity: 1;
 }
 
-.text-muted,
-.text-secondary {
-	color: var(--p-text-muted-color) !important;
+.kvex-data-surface .p-inputtext {
+	padding: 0.625rem 0.75rem;
 }
 
-/* --- Utility Classes --- */
+.kvex-data-surface .p-select-label,
+.kvex-data-surface .p-multiselect-label {
+	color: var(--kvex-control-text);
+	padding-block: 0.625rem;
+}
 
-.font-bold {
+.kvex-data-surface .p-select-dropdown,
+.kvex-data-surface .p-multiselect-dropdown {
+	color: var(--kvex-control-text);
+	width: 2.5rem;
+}
+
+.kvex-data-surface .p-inputtext:hover,
+.kvex-data-surface .p-select:hover,
+.kvex-data-surface .p-multiselect:hover {
+	border-color: var(--kvex-accent-color);
+}
+
+.kvex-data-surface .p-inputtext:enabled:focus,
+.kvex-data-surface .p-select:not(.p-disabled).p-focus,
+.kvex-data-surface .p-multiselect:not(.p-disabled).p-focus {
+	border-color: var(--kvex-accent-color);
+	box-shadow: var(--kvex-focus-shadow);
+}
+
+.kvex-data-surface .p-multiselect-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.p-select-overlay,
+.p-multiselect-overlay {
+	border-color: var(--kvex-panel-border);
+	background: var(--kvex-panel-background);
+	color: var(--kvex-text-color);
+	box-shadow: var(--kvex-panel-shadow);
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.p-select-list,
+.p-multiselect-list,
+.p-multiselect-header,
+.p-multiselect-list-container {
+	background: var(--kvex-panel-background);
+	color: var(--kvex-text-color);
+}
+
+.p-multiselect-header {
+	border-color: var(--kvex-panel-border);
+}
+
+.p-select-option,
+.p-multiselect-option {
+	background: transparent;
+	color: var(--kvex-text-color);
+	font-size: 0.875rem;
+	padding: 0.75rem 1rem;
+}
+
+.p-select-option.p-select-option-selected,
+.p-select-option.p-focus,
+.p-multiselect-option.p-multiselect-option-selected,
+.p-multiselect-option.p-focus {
+	background: var(--kvex-panel-hover-background);
+	color: var(--kvex-symbol-color);
+}
+
+.p-select-option:not(.p-disabled):hover,
+.p-multiselect-option:not(.p-disabled):hover {
+	background: var(--kvex-panel-hover-background);
+	color: var(--kvex-symbol-color);
+}
+
+.p-multiselect-option .p-checkbox-box {
+	background: var(--kvex-control-background);
+	border-color: var(--kvex-control-border);
+}
+
+.p-multiselect-option .p-checkbox-checked .p-checkbox-box {
+	background: var(--kvex-accent-color);
+	border-color: var(--kvex-accent-color);
+}
+
+.p-multiselect-option .p-checkbox-icon {
+	color: #ffffff;
+}
+
+.kvex-dark .p-select-overlay,
+.kvex-dark .p-multiselect-overlay,
+.kvex-dark .p-select-list,
+.kvex-dark .p-multiselect-list,
+.kvex-dark .p-multiselect-header,
+.kvex-dark .p-multiselect-list-container,
+.kvex-dark .p-select-option,
+.kvex-dark .p-multiselect-option {
+	background: var(--kvex-panel-background);
+	color: var(--kvex-text-color);
+}
+
+.kvex-dark .p-select-option.p-select-option-selected,
+.kvex-dark .p-select-option.p-focus,
+.kvex-dark .p-multiselect-option.p-multiselect-option-selected,
+.kvex-dark .p-multiselect-option.p-focus {
+	background: var(--kvex-panel-muted-background);
+	color: var(--kvex-symbol-color);
+}
+
+.kvex-dark .p-select-option:not(.p-disabled):hover,
+.kvex-dark .p-multiselect-option:not(.p-disabled):hover {
+	background: var(--kvex-panel-hover-background);
+	color: var(--kvex-symbol-color);
+}
+
+.kvex-dark .p-multiselect-overlay .p-multiselect-option,
+.kvex-dark .p-multiselect-overlay .p-multiselect-option[data-p-selected="true"] {
+	background: var(--kvex-panel-background) !important;
+	color: var(--kvex-text-color) !important;
+}
+
+.kvex-dark .p-multiselect-overlay .p-multiselect-option.p-focus,
+.kvex-dark .p-multiselect-overlay .p-multiselect-option[data-p-focused="true"],
+.kvex-dark .p-multiselect-overlay .p-multiselect-option:not(.p-disabled):hover {
+	background: var(--kvex-panel-hover-background) !important;
+	color: var(--kvex-symbol-color) !important;
+}
+
+.kvex-dark .p-select-overlay .p-select-option,
+.kvex-dark .p-select-overlay .p-select-option[data-p-selected="true"] {
+	background: var(--kvex-panel-background) !important;
+	color: var(--kvex-text-color) !important;
+}
+
+.kvex-dark .p-select-overlay .p-select-option.p-focus,
+.kvex-dark .p-select-overlay .p-select-option[data-p-focused="true"],
+.kvex-dark .p-select-overlay .p-select-option:not(.p-disabled):hover {
+	background: var(--kvex-panel-hover-background) !important;
+	color: var(--kvex-symbol-color) !important;
+}
+
+.kvex-data-surface .p-button {
+	border-radius: 6px;
 	font-weight: 700;
+	min-height: 2.35rem;
 }
 
-.font-medium {
-	font-weight: 500;
+.kvex-data-surface .p-datatable {
+	background: var(--kvex-panel-background);
+	color: var(--kvex-text-color);
+	font-size: 0.875rem;
 }
 
-.font-mono {
-	font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace;
+.kvex-data-surface .p-datatable-table-container,
+.kvex-data-surface .p-datatable-wrapper {
+	background: var(--kvex-panel-background);
+}
+
+.kvex-data-surface .p-datatable-header,
+.kvex-data-surface .p-datatable-thead > tr > th {
+	background: var(--kvex-panel-muted-background);
+}
+
+.kvex-data-surface .p-datatable-thead > tr > th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	border-color: var(--kvex-panel-border);
+	color: var(--kvex-text-muted-color);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	letter-spacing: 0;
+	padding: 1rem 1.25rem;
+	text-transform: none;
+}
+
+.kvex-data-surface .p-datatable-tbody > tr > td {
+	background: var(--kvex-panel-background);
+	border-color: var(--kvex-panel-border);
+	color: var(--kvex-text-color);
+	padding: 1rem 1.25rem;
+	vertical-align: middle;
+}
+
+.kvex-data-surface .p-datatable-tbody > tr:nth-child(even) > td {
+	background: var(--kvex-panel-row-alt-background);
+}
+
+.kvex-data-surface .p-datatable-tbody > tr:hover > td {
+	background: var(--kvex-panel-hover-background);
+}
+
+.kvex-dark .kvex-data-surface .p-datatable,
+.kvex-dark .kvex-data-surface .p-datatable-table,
+.kvex-dark .kvex-data-surface .p-datatable-table-container,
+.kvex-dark .kvex-data-surface .p-datatable-wrapper {
+	background: var(--kvex-panel-background);
+	color: var(--kvex-text-color);
+}
+
+.kvex-dark .kvex-data-surface .p-datatable-thead > tr > th {
+	background: var(--kvex-panel-muted-background);
+	border-color: var(--kvex-panel-border);
+	color: var(--kvex-text-muted-color);
+}
+
+.kvex-dark .kvex-data-surface .p-datatable-tbody > tr,
+.kvex-dark .kvex-data-surface .p-datatable-tbody > tr > td,
+.kvex-dark .kvex-data-surface .p-datatable-tbody > tr.p-row-odd > td,
+.kvex-dark .kvex-data-surface .p-datatable-tbody > tr.p-row-even > td {
+	background: var(--kvex-panel-background);
+	border-color: var(--kvex-panel-border);
+	color: var(--kvex-text-color);
+}
+
+.kvex-dark .kvex-data-surface .p-datatable-tbody > tr:nth-child(even) > td,
+.kvex-dark .kvex-data-surface .p-datatable-tbody > tr.p-row-odd:nth-child(even) > td,
+.kvex-dark .kvex-data-surface .p-datatable-tbody > tr.p-row-even:nth-child(even) > td {
+	background: var(--kvex-panel-row-alt-background);
+}
+
+.kvex-dark .kvex-data-surface .p-datatable-tbody > tr:hover > td {
+	background: var(--kvex-panel-hover-background);
+	color: var(--kvex-text-color);
+}
+
+.kvex-dark .kvex-data-surface .p-datatable-empty-message > td {
+	background: var(--kvex-panel-background);
+	color: var(--kvex-text-muted-color);
 }
 
 /* --- Scrollbar Styling --- */

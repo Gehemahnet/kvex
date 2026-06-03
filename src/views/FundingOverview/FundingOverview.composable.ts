@@ -17,7 +17,6 @@ import {
 	filterFundingOverviewRows,
 	formatLastUpdatedAt,
 	getFirstExchangeTimestamp,
-	getVisibleFundingOverviewRows,
 	isFundingExchangeList,
 	isFundingTimeframe,
 	isStringList,
@@ -75,21 +74,24 @@ export const useFundingOverview = () => {
 		filterFundingOverviewRows(tableRows.value, symbolSearch.value),
 	);
 
-	const visibleTableRows = computed(() =>
-		getVisibleFundingOverviewRows(
-			filteredTableRows.value,
-			pinnedSymbols.value,
-			visibleRegularRowCount.value,
+	const pinnedSymbolSet = computed(() => new Set(pinnedSymbols.value));
+
+	const pinnedTableRows = computed(() =>
+		filteredTableRows.value.filter((row) => pinnedSymbolSet.value.has(row.symbol)),
+	);
+
+	const regularTableRows = computed(() =>
+		filteredTableRows.value.filter(
+			(row) => !pinnedSymbolSet.value.has(row.symbol),
 		),
 	);
 
-	const pinnedSymbolSet = computed(() => new Set(pinnedSymbols.value));
+	const visibleTableRows = computed(() =>
+		regularTableRows.value.slice(0, visibleRegularRowCount.value),
+	);
 
 	const regularRowCount = computed(
-		() =>
-			filteredTableRows.value.filter(
-				(row) => !pinnedSymbolSet.value.has(row.symbol),
-			).length,
+		() => regularTableRows.value.length,
 	);
 
 	const hasMoreRows = computed(
@@ -109,7 +111,13 @@ export const useFundingOverview = () => {
 
 	const fundingLabel = computed(() => selectedTimeframe.value);
 
+	const hasSelectedExchanges = computed(() => selectedExchanges.value.length > 0);
+
 	const fundingStatus = computed(() => {
+		if (!hasSelectedExchanges.value) {
+			return "Select data sources to load funding overview.";
+		}
+
 		if (fundingQuery.isLoading.value) {
 			return "Loading funding overview...";
 		}
@@ -176,8 +184,10 @@ export const useFundingOverview = () => {
 		fundingStatus,
 		handleTableScroll,
 		hasMoreRows,
+		hasSelectedExchanges,
 		isRowPinned,
 		pinnedSymbols,
+		pinnedTableRows,
 		selectedExchanges,
 		selectedTimeframe,
 		symbolSearch,
