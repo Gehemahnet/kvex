@@ -2,18 +2,21 @@
 	"name": "kvex",
 	"private": true,
 	"version": "0.0.0",
+	"packageManager": "pnpm@10.18.3",
 	"type": "module",
 	"scripts": {
-		"start": "npm run dev && npm run dev:bff:v2",
+		"start": "pnpm dev && pnpm dev:bff:v2",
 		"dev": "vite --host 0.0.0.0",
-		"dev:bff": "cd server && npm run dev",
-		"dev:bff:v2": "cd server && npm run dev:v2",
+		"dev:bff": "pnpm --dir server dev",
+		"dev:bff:v2": "pnpm --dir server dev:v2",
 		"build": "vue-tsc -b && vite build",
-		"build:bff": "cd server && npm run build",
-		"build:bff:v2": "cd server && npm run build:v2",
+		"build:bff": "pnpm --dir server build",
+		"build:bff:v2": "pnpm --dir server build:v2",
+		"lint": "oxlint src server/src",
+		"lint:fix": "oxlint --fix src server/src",
 		"preview": "vite preview",
-		"start:bff": "cd server && npm start",
-		"start:bff:v2": "cd server && npm run start:v2"
+		"start:bff": "pnpm --dir server start",
+		"start:bff:v2": "pnpm --dir server start:v2"
 	},
 	"dependencies": {
 		"@primeuix/themes": "^2.0.2",
@@ -25,15 +28,18 @@
 		"vue-router": "^4.6.4"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.3.8",
 		"@types/node": "^24.10.1",
 		"@vitejs/plugin-vue": "^6.0.1",
 		"@vue/tsconfig": "^0.8.1",
+		"oxlint": "^1.60.0",
 		"typescript": "~5.9.3",
 		"vite": "npm:rolldown-vite@7.2.5",
+		"vite-plugin-vue-devtools": "^8.0.5",
 		"vue-tsc": "^3.1.4"
 	},
-	"resolutions": {
-		"vite": "npm:rolldown-vite@7.2.5"
+	"pnpm": {
+		"overrides": {
+			"vite": "npm:rolldown-vite@7.2.5"
+		}
 	}
 }
