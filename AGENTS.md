@@ -1,0 +1,40 @@
+## KVEX
+
+- Monorepo: `src` frontend, `server` backend.
+- Frontend: Vue 3, Vue Router, TanStack Query, PrimeVue, Vite.
+- MCP docs: `docs/MCP.md`
+- Backend: Node.js + TypeScript, `http.createServer`, exchange REST clients, tests on Vitest.
+- Current product: server-first perp/funding monitor. Main active work is in `server`.
+- Exchanges wired now: `hyperliquid`, `pacifica`, `ethereal`.
+- Current API contract:
+  - `GET /funding?symbol=BTC&timeframe=DAY&exchanges=hyperliquid,pacifica`
+  - filters: required `symbol`, required `timeframe`, optional `exchanges`
+  - response: aggregated per-exchange funding series with partial per-exchange errors
+- Code organization rule:
+  - if constants are used outside one file, move them to a separate constants file at the nearest shared level
+  - if more than one file uses the same value, lift it one level higher than the consumers
+  - avoid keeping reusable constants inline inside feature clients
+  - move small service/helper functions to adjacent `*.utils.ts` files instead of leaving them inline in route, service, or client files
+  - if helper functions are shared by multiple files, move them to the nearest shared `*.utils.ts` level
+- Docs:
+  - canonical plan: `docs/ROADMAP.md`
+- Project command permissions:
+  - Codex may run package and verification commands needed to keep the project healthy
+  - allowed package management: `pnpm install`
+  - allowed root checks: `pnpm run lint`, `pnpm run build`, `oxlint src server/src`, `vue-tsc -b`
+  - allowed backend checks: `pnpm --dir server test`, `pnpm --dir server build`, `vitest run`
+  - allowed direct local-bin checks when package scripts are unavailable: `node ./node_modules/vue-tsc/bin/vue-tsc.js -b`, `node ./node_modules/vitest/vitest.mjs run`, `./node_modules/.bin/oxlint.CMD src server/src`
+  - if the sandbox requires approval for these commands, Codex should request escalation with a narrow `prefix_rule` matching the command family
+- Known state:
+  - frontend is not source of truth and may be cleaned or rebuilt to match backend
+  - frontend currently exposes only Funding
+  - `socket.io` and `pg` exist in deps, not integrated yet
+- Canonical direction:
+  - scope is arbitrage, portfolio, trading
+  - market focus is perp/funding first, not onchain DEX execution first
+  - backend-first evolution
+  - first frontend data flow should use one funding endpoint with query filters
+  - keep connectors isolated by exchange/network
+  - move hot market data to Redis, history to Postgres/Timescale
+  - add execution only after portfolio, secrets, and risk controls
+- Docs/code mismatches already normalized in `docs/ROADMAP.md`; treat deleted docs as obsolete drafts
