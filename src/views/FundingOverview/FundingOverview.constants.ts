@@ -11,3 +11,16 @@ export const FUNDING_INTERVALS = [
 
 export const FUNDING_OVERVIEW_ACTIVE_TIMEFRAME_LOCAL_STORAGE_KEY =
 	"funding-overview-active-timeframe";
+
+export const FUNDING_EXCHANGE_OPTIONS = [
+	{ label: "Hyperliquid", value: "hyperliquid" },
+	{ label: "Pacifica", value: "pacifica" },
+	{ label: "Ethereal", value: "ethereal" },
+];
+
+export const FUNDING_TIMEFRAME_OPTIONS = [
+	{ label: "Day", value: "DAY" },
+	{ label: "Week", value: "WEEK" },
+	{ label: "Month", value: "MONTH" },
+	{ label: "Year", value: "YEAR" },
+];
