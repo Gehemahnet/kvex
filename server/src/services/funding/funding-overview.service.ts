@@ -6,6 +6,12 @@ import type { ProductData } from "../../exchanges/ethereal/ethereal.types";
 import { hyperliquidRestClient } from "../../exchanges/hyperliquid/hyperliquid";
 import { normalizeHyperliquidError } from "../../exchanges/hyperliquid/hyperliquid.error-handler";
 import type { AdapterPerpFullMetadata } from "../../exchanges/hyperliquid/hyperliquid.types";
+import { nadoClient } from "../../exchanges/nado/nado";
+import { normalizeNadoError } from "../../exchanges/nado/nado.error-handler";
+import type {
+	NadoFundingRatesResponse,
+	NadoSymbol,
+} from "../../exchanges/nado/nado.types";
 import { pacificaRestClient } from "../../exchanges/pacifica/pacifica";
 import { normalizePacificaError } from "../../exchanges/pacifica/pacifica.error-handler";
 import type { MarketData } from "../../exchanges/pacifica/pacifica.types";
@@ -116,6 +122,24 @@ const getEtherealFundingOverview = async (): Promise<FundingOverviewExchangeCell
 				}),
 	);
 
+const getNadoFundingOverview = async (): Promise<FundingOverviewExchangeCell[]> =>
+	getCachedValue(
+		"funding-overview:markets:nado",
+		FUNDING_OVERVIEW_MARKETS_CACHE_TTL_MS,
+		async () => {
+			try {
+				const symbols = await nadoClient.getSymbols();
+				const perpSymbols = symbols.filter(isLiveNadoPerpSymbol);
+				const productIds = perpSymbols.map((symbol) => symbol.product_id);
+				const fundingRates = await nadoClient.getFundingRates(productIds);
+
+				return mapNadoFundingOverview(perpSymbols, fundingRates);
+			} catch (error) {
+				throw normalizeNadoError(error);
+			}
+		},
+	);
+
 const mapHyperliquidFundingOverview = (
 	markets: AdapterPerpFullMetadata,
 ): FundingOverviewExchangeCell[] =>
@@ -165,6 +189,31 @@ const mapEtherealFundingOverview = (
 			};
 		});
 
+const mapNadoFundingOverview = (
+	symbols: NadoSymbol[],
+	fundingRates: NadoFundingRatesResponse,
+): FundingOverviewExchangeCell[] =>
+	symbols.flatMap((symbol) => {
+		const fundingRate = fundingRates[String(symbol.product_id)];
+
+		if (!fundingRate) {
+			return [];
+		}
+
+		const hourlyFundingRate = Number(fundingRate.funding_rate_x18) / 1e18 / 24;
+
+		return {
+			exchange: "nado",
+			sourceSymbol: normalizeOverviewSymbol(symbol.symbol),
+			fundingRate: hourlyFundingRate,
+			apr: annualizeHourlyFundingRate(hourlyFundingRate),
+			timestamp: normalizeOptionalTimestamp(Number(fundingRate.update_time)),
+		};
+	});
+
+const isLiveNadoPerpSymbol = (symbol: NadoSymbol): boolean =>
+	symbol.type === "perp" && symbol.trading_status === "live";
+
 const mapFundingOverviewSettledResult = (context: {
 	exchange: Exchange;
 	result: PromiseSettledResult<FundingOverviewExchangeCell[]>;
@@ -194,4 +243,5 @@ const FUNDING_OVERVIEW_EXCHANGE_FETCHERS: Record<
 	hyperliquid: getHyperliquidFundingOverview,
 	pacifica: getPacificaFundingOverview,
 	ethereal: getEtherealFundingOverview,
+	nado: getNadoFundingOverview,
 };

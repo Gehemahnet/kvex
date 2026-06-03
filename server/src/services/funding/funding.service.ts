@@ -9,6 +9,9 @@ import type {
 import { hyperliquidRestClient } from "../../exchanges/hyperliquid/hyperliquid";
 import { normalizeHyperliquidError } from "../../exchanges/hyperliquid/hyperliquid.error-handler";
 import type { HistoricalFunding } from "../../exchanges/hyperliquid/hyperliquid.types";
+import { nadoClient } from "../../exchanges/nado/nado";
+import { normalizeNadoError } from "../../exchanges/nado/nado.error-handler";
+import type { NadoFundingRate } from "../../exchanges/nado/nado.types";
 import { pacificaRestClient } from "../../exchanges/pacifica/pacifica";
 import { normalizePacificaError } from "../../exchanges/pacifica/pacifica.error-handler";
 import type { FundingRateHistory } from "../../exchanges/pacifica/pacifica.types";
@@ -185,6 +188,43 @@ const getEtherealFunding = async (
 			throw normalizeEtherealError(error);
 		});
 
+/** Fetch latest Nado 24h funding and adapt it to the requested timeframe. */
+const getNadoFunding = async (
+	symbol: string,
+	timeframe: Period,
+): Promise<FundingSeries> =>
+	nadoClient
+		.getSymbols()
+		.then((symbols) => {
+			const market = symbols.find(
+				(item) =>
+					item.type === "perp" &&
+					item.trading_status === "live" &&
+					item.symbol.toUpperCase().startsWith(symbol.toUpperCase()),
+			);
+
+			if (!market) {
+				throw new Error(`Symbol ${symbol} was not found on nado`);
+			}
+
+			return nadoClient.getFundingRate(market.product_id).then((fundingRate) =>
+				createFundingSeries(
+					"nado",
+					symbol,
+					market.symbol,
+					[mapNadoFundingPoint(fundingRate, timeframe)],
+					{
+						isFundingAdapted: timeframe !== "DAY",
+						requestedTimeframe: timeframe,
+						sourceTimeframe: "DAY",
+					},
+				),
+			);
+		})
+		.catch((error) => {
+			throw normalizeNadoError(error);
+		});
+
 /** Resolve the actual Ethereal timeframe used for a requested funding window. */
 const getEtherealSourceTimeframe = (timeframe: Period): Period => {
 	if (timeframe === "YEAR") {
@@ -226,6 +266,34 @@ const mapEtherealFundingPoint = (item: EtherealFundingData): FundingPoint => ({
 	fundingRate: Number(item.fundingRate1h),
 });
 
+/** Convert Nado 24h funding payloads into the requested shared funding point shape. */
+const mapNadoFundingPoint = (
+	item: NadoFundingRate,
+	timeframe: Period,
+): FundingPoint => ({
+	timestamp: Number(item.update_time) * 1000,
+	fundingRate:
+		(Number(item.funding_rate_x18) / 1e18) *
+		getNadoTimeframeMultiplier(timeframe),
+});
+
+/** Resolve the multiplier from Nado's 24h funding source value. */
+const getNadoTimeframeMultiplier = (timeframe: Period): number => {
+	if (timeframe === "WEEK") {
+		return 7;
+	}
+
+	if (timeframe === "MONTH") {
+		return 30;
+	}
+
+	if (timeframe === "YEAR") {
+		return 365;
+	}
+
+	return 1;
+};
+
 /** Find the first Ethereal market matching the requested normalized symbol. */
 const findEtherealMarket = (
 	markets: ProductData[],
@@ -237,4 +305,5 @@ const FUNDING_EXCHANGE_FETCHERS: Record<Exchange, FundingExchangeFetcher> = {
 	hyperliquid: getHyperliquidFunding,
 	pacifica: getPacificaFunding,
 	ethereal: getEtherealFunding,
+	nado: getNadoFunding,
 };

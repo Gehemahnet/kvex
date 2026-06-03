@@ -4,6 +4,7 @@ export const SUPPORTED_FUNDING_EXCHANGES: Exchange[] = [
 	"hyperliquid",
 	"pacifica",
 	"ethereal",
+	"nado",
 ];
 
 export const SUPPORTED_ETHEREAL_PERIODS: Period[] = ["DAY", "WEEK", "MONTH"];
