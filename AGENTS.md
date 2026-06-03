@@ -25,6 +25,10 @@
   - allowed backend checks: `pnpm --dir server test`, `pnpm --dir server build`, `vitest run`
   - allowed direct local-bin checks when package scripts are unavailable: `node ./node_modules/vue-tsc/bin/vue-tsc.js -b`, `node ./node_modules/vitest/vitest.mjs run`, `./node_modules/.bin/oxlint.CMD src server/src`
   - if the sandbox requires approval for these commands, Codex should request escalation with a narrow `prefix_rule` matching the command family
+- Environment files:
+  - Codex must not read, open, print, quote, edit, delete, stage, commit, or otherwise interact with `.env` files
+  - this includes `.env`, `.env.*`, `server/.env`, and any other environment/secrets file
+  - if environment values are needed, Codex should ask the user for non-secret configuration or use safe documented defaults in code
 - Known state:
   - frontend is not source of truth and may be cleaned or rebuilt to match backend
   - frontend currently exposes only Funding
