@@ -19,17 +19,8 @@ import { ROUTES } from "./router";
 
 const navigationItems: MenuItem[] = [
 	{
-		label: "Home",
-		route: ROUTES.MAIN,
-	},
-
-	{
-		label: "Funding overview",
+		label: "Funding",
 		route: ROUTES.FUNDING_OVERVIEW,
-	},
-	{
-		label: "Spreads",
-		route: ROUTES.SPREADS,
 	},
 ];
 </script>
