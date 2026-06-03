@@ -19,18 +19,30 @@ export class UpstreamHttpError extends Error {
 	}
 }
 
+type FetchHttpClientOptions = {
+	retryAttempts?: number;
+	retryDelayMs?: number;
+	sleep?: (durationMs: number) => Promise<void>;
+};
+
 export class FetchHttpClient implements HttpClient {
+	private retryAttempts: number;
+	private retryDelayMs: number;
+	private sleep: (durationMs: number) => Promise<void>;
+
+	constructor(options: FetchHttpClientOptions = {}) {
+		this.retryAttempts = options.retryAttempts ?? 2;
+		this.retryDelayMs = options.retryDelayMs ?? 250;
+		this.sleep =
+			options.sleep ??
+			((durationMs) =>
+				new Promise((resolve) => {
+					setTimeout(resolve, durationMs);
+				}));
+	}
+
 	async get<Response>(url: string): Promise<Response> {
-		const response = await fetch(url);
-
-		if (!response.ok) {
-			throw new UpstreamHttpError({
-				url,
-				status: response.status,
-				statusText: response.statusText,
-			});
-		}
-
+		const response = await this.fetchWithRetry(url);
 		return response.json();
 	}
 
@@ -39,7 +51,7 @@ export class FetchHttpClient implements HttpClient {
 		body: Body,
 		params: Params,
 	): Promise<Response> {
-		const response = await fetch(url, {
+		const response = await this.fetchWithRetry(url, {
 			method: "POST",
 			body: JSON.stringify(body),
 			headers: {
@@ -48,14 +60,43 @@ export class FetchHttpClient implements HttpClient {
 			...params,
 		});
 
-		if (!response.ok) {
-			throw new UpstreamHttpError({
-				url,
-				status: response.status,
-				statusText: response.statusText,
-			});
+		return response.json();
+	}
+
+	private async fetchWithRetry(
+		url: string,
+		init?: RequestInit,
+	): Promise<Response> {
+		for (let attempt = 0; attempt <= this.retryAttempts; attempt += 1) {
+			const response = await fetch(url, init);
+
+			if (response.ok) {
+				return response;
+			}
+
+			if (!this.shouldRetry(response.status, attempt)) {
+				throw new UpstreamHttpError({
+					url,
+					status: response.status,
+					statusText: response.statusText,
+				});
+			}
+
+			await this.sleep(this.retryDelayMs * (attempt + 1));
 		}
 
-		return response.json();
+		throw new UpstreamHttpError({
+			url,
+			status: 500,
+			statusText: "Retry attempts exhausted",
+		});
+	}
+
+	private shouldRetry(status: number, attempt: number): boolean {
+		if (attempt >= this.retryAttempts) {
+			return false;
+		}
+
+		return status === 429 || status >= 500;
 	}
 }

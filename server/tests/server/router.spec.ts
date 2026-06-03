@@ -72,4 +72,21 @@ describe("router error handling", () => {
 			},
 		});
 	});
+
+	it("returns 400 with explanation for invalid funding overview query", async () => {
+		const response = createMockResponse();
+
+		await router(
+			{ method: "GET", url: "/funding/overview?timeframe=HOUR" },
+			response as never,
+		);
+
+		expect(response.statusCode).toBe(400);
+		expect(JSON.parse(response.body ?? "")).toEqual({
+			error: {
+				code: "INVALID_TIMEFRAME",
+				message: "Query param `timeframe` must be one of DAY,WEEK,MONTH,YEAR",
+			},
+		});
+	});
 });

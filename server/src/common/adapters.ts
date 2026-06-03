@@ -2,7 +2,7 @@ export type MarketsAdapter<InputData, AdaptedData> = {
 	adapt(data: InputData): AdaptedData;
 };
 
-type MarketSnapshot = {
+export type MarketSnapshot = {
 	exchange: string;
 	symbol: string;
 	timestamp: number;
@@ -25,7 +25,7 @@ type MarketSnapshot = {
 	spread: number;
 };
 
-type HistoricalPoint = {
+export type HistoricalPoint = {
 	timestamp: number;
 	symbol: string;
 	markPrice: number;

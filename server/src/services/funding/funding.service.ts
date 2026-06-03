@@ -92,8 +92,8 @@ const getPacificaFunding = async (
 	timeframe: Period,
 ): Promise<FundingSeries> =>
 	pacificaRestClient
-		.getMarkets()
-		.then((markets) => {
+	.getMarkets()
+	.then((markets) => {
 			const market = markets?.find(
 				(item) => item.symbol.toUpperCase() === symbol.toUpperCase(),
 			);
@@ -102,22 +102,33 @@ const getPacificaFunding = async (
 				throw new Error(`Symbol ${symbol} was not found on pacifica`);
 			}
 
+			const sourceTimeframe = getPacificaSourceTimeframe(timeframe);
+
 			return pacificaRestClient
-				.getFundingRateHistory(timeframe, {
+				.getFundingRateHistory(sourceTimeframe, {
 					symbol: market.symbol,
 				})
-				.then((points) =>
-					createFundingSeries(
+				.then((points) => {
+					const normalizedPoints =
+						timeframe === "YEAR"
+							? annualizeFundingPoints(
+									points.map(mapPacificaFundingPoint),
+									12,
+								)
+							: points.map(mapPacificaFundingPoint);
+
+					return createFundingSeries(
 						"pacifica",
 						symbol,
 						market.symbol,
-						points.map(mapPacificaFundingPoint),
+						normalizedPoints,
 						{
+							isFundingAdapted: timeframe === "YEAR",
 							requestedTimeframe: timeframe,
-							sourceTimeframe: timeframe,
+							sourceTimeframe,
 						},
-					),
-				);
+					);
+				});
 		})
 		.catch((error) => {
 			throw normalizePacificaError(error);
@@ -182,6 +193,15 @@ const getEtherealSourceTimeframe = (timeframe: Period): Period => {
 
 	if (!SUPPORTED_ETHEREAL_PERIODS.includes(timeframe)) {
 		throw new Error(`Timeframe ${timeframe} is not supported on ethereal`);
+	}
+
+	return timeframe;
+};
+
+/** Resolve the Pacifica timeframe used while avoiding heavy yearly pagination. */
+const getPacificaSourceTimeframe = (timeframe: Period): Period => {
+	if (timeframe === "YEAR") {
+		return "MONTH";
 	}
 
 	return timeframe;
