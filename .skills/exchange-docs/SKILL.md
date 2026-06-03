@@ -1,6 +1,6 @@
 ---
 name: exchange-docs
-description: Find and use official exchange API documentation for market data, funding, symbols, authentication, balances, orders, and trading integration. Use when Codex needs to inspect or compare exchange docs, confirm endpoint behavior, map symbols, understand funding data semantics, or add new exchange connectors for Variational, Nado, Ethereal, Pacifica, and Hyperliquid.
+description: Find and use official exchange API documentation for market data, funding, symbols, authentication, balances, orders, and trading integration. Use when Codex needs to inspect or compare exchange docs, confirm endpoint behavior, map symbols, understand funding data semantics, or add new exchange connectors for Variational, Nado, Ethereal, Pacifica, Hyperliquid, and OKX.
 ---
 
 # Exchange Docs

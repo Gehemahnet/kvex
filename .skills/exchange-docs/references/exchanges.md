@@ -44,6 +44,13 @@ Use these official documentation sources first.
 - api reference: https://apidocs.lighter.xyz/docs/get-started
 - use for: trading API, API keys, sub-accounts, and endpoint reference
 
+## OKX
+
+- docs: https://www.okx.com/docs-v5/en/#overview
+- agent tradekit: https://www.okx.com/ru/agent-tradekit
+- use for: API structure, REST and WebSocket endpoints, market data, funding, account, trading, authentication, rate limits, and error codes
+- use agent tradekit for: MCP server, OKX agent skills, CLI workflow, read-only/demo/live trading modes, and AI trading safety model
+
 ## Comparison Checklist
 
 When reading docs for implementation, extract these fields if available:
