@@ -1,10 +1,14 @@
 import { createServer } from "node:http";
-import { config } from "dotenv";
+import { startMarketDataStreams } from "../services/markets/market-data-streams";
+import { attachMarketDataSocket } from "./realtime/market-data-socket";
 import { router } from "./router";
 
-const PORT = config().parsed?.SERVER_PORT ?? "3000";
+const PORT = process.env.SERVER_PORT ?? "3000";
 
 const server = createServer(router);
+
+attachMarketDataSocket(server);
+startMarketDataStreams();
 
 server.listen(PORT, () => {
 	console.log(`Server running at ${PORT}`);
