@@ -5,7 +5,7 @@
 - MCP docs: `docs/MCP.md`
 - Backend: Node.js + TypeScript, `http.createServer`, exchange REST clients, tests on Vitest.
 - Current product: server-first perp/funding monitor. Main active work is in `server`.
-- Exchanges wired now: `hyperliquid`, `pacifica`, `ethereal`, `nado`.
+- Exchanges wired now: `hyperliquid`, `pacifica`, `ethereal`, `nado`, `okx`.
 - Current API contract:
   - `GET /funding?symbol=BTC&timeframe=DAY&exchanges=hyperliquid,pacifica`
   - filters: required `symbol`, required `timeframe`, optional `exchanges`
@@ -32,9 +32,10 @@
 - Known state:
   - frontend is not source of truth and may be cleaned or rebuilt to match backend
   - frontend currently exposes only Funding
-  - `socket.io` and `pg` exist in deps, not integrated yet
+  - `pg` exists in deps, not integrated yet
+  - `socket.io` is integrated for backend-to-frontend market data delivery
   - exchange docs skill lives in `.skills/exchange-docs`
-  - OKX official API docs and OKX Agent Trade Kit/MCP are recorded as future connector sources
+  - OKX official API docs and OKX Agent Trade Kit/MCP are recorded as connector sources
 - Canonical direction:
   - scope is arbitrage, portfolio, trading
   - market focus is perp/funding first, not onchain DEX execution first

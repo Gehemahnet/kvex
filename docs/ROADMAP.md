@@ -36,15 +36,19 @@
 
 ## Current Reality
 
-- frontend should expose only the Funding page until the first data flow is useful
+- frontend exposes Funding and Spreads pages
 - frontend theme direction is Sakai Vue inspired: compact dashboard shell, light/dark mode, Tailwind atomic layout classes, and PrimeVue component overrides only where component internals require them
 - backend route `GET /funding` is implemented through `server/src/server/router.ts`
 - backend route `GET /funding/overview` is implemented for the all-symbol table
+- backend route `GET /markets/snapshots` is implemented for normalized market snapshots
+- backend route `GET /spreads` is implemented for ranked spread opportunities
 - funding query parsing validates required `symbol`, required `timeframe`, and optional `exchanges`
-- funding service aggregates per-exchange data from `hyperliquid`, `pacifica`, `ethereal`, and `nado`
+- funding service aggregates per-exchange data from `hyperliquid`, `pacifica`, `ethereal`, `nado`, and `okx`
 - funding response includes normalized per-exchange series plus partial per-exchange errors
 - Funding frontend consumes `/funding/overview` and renders one row per normalized symbol
-- `socket.io` and `pg` are installed but not wired
+- Spreads frontend consumes `/spreads`, subscribes to Socket.IO updates, and renders executable spread opportunities
+- Socket.IO is wired for market snapshots and spreads on `/market-data`
+- `pg` exists in dependencies but is not integrated yet
 
 ## Current Funding Contract
 
@@ -95,18 +99,16 @@
 
 ## Immediate Build Order
 
-1. Finish visual acceptance for the Sakai-based Funding shell in light and dark mode.
-2. Keep Funding page aligned with `/funding/overview` and `/funding` query contracts.
-3. Research OKX market data/funding integration from official API docs and Agent Trade Kit/MCP sources.
-4. Keep Vite devtools enabled for local inspection.
-5. Finish backend contract for spreads.
-6. Add normalized market snapshot model.
-7. Add Redis for hot state and pubsub.
-8. Add spread/opportunity engine with confidence scoring.
-9. Add Postgres/Timescale for history.
-10. Add portfolio ingestion and secrets model.
-11. Add paper trading and execution audit log.
-12. Add live trading only with strict risk controls.
+1. Visually verify the current Spreads table and filters in light/dark mode.
+2. Keep Funding aligned with `/funding/overview` and `/funding` query contracts.
+3. Keep Spreads aligned with `/markets/snapshots`, `/spreads`, and Socket.IO contracts.
+4. Add frontend component/integration tests when Vue component test tooling is introduced.
+5. Add Redis for hot state and pubsub after spreads are accepted.
+6. Add Postgres/Timescale for market and opportunity history.
+7. Add portfolio ingestion and secrets model.
+8. Replace documented fee fallbacks with account-specific fee profiles.
+9. Add paper trading and execution audit log.
+10. Add live trading only with strict risk controls.
 
 ## Non-Negotiables
 
@@ -120,3 +122,4 @@
 - first supported CEX set: `okx`, `binance`, `bybit`, `backpack`, `lighter`?
 - first wallet coverage order: EVM, BTC, Solana?
 - whether execution stays centralized in backend only, which is the recommended path
+- how to model collateral compatibility once exchanges expose enough collateral metadata
