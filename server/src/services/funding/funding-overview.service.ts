@@ -1,4 +1,5 @@
 import { getCachedValue } from "../../common/cache.utils";
+import { normalizeOptionalNumber } from "../../common/number.utils";
 import type { Exchange } from "../../common/types";
 import { etherealRestClient } from "../../exchanges/ethereal/ethereal";
 import { normalizeEtherealError } from "../../exchanges/ethereal/ethereal.error-handler";
@@ -10,26 +11,35 @@ import { nadoClient } from "../../exchanges/nado/nado";
 import { normalizeNadoError } from "../../exchanges/nado/nado.error-handler";
 import type {
 	NadoFundingRatesResponse,
+	NadoPerpPricesResponse,
 	NadoSymbol,
 } from "../../exchanges/nado/nado.types";
+import { okxClient } from "../../exchanges/okx/okx";
+import { mapOkxTickerToFundingOverviewCell } from "../../exchanges/okx/okx.utils";
 import { pacificaRestClient } from "../../exchanges/pacifica/pacifica";
 import { normalizePacificaError } from "../../exchanges/pacifica/pacifica.error-handler";
 import type { MarketData } from "../../exchanges/pacifica/pacifica.types";
+import type { PriceData } from "../../exchanges/pacifica/pacifica.types";
 import {
+	FUNDING_INTERVAL_HOURS,
 	FUNDING_OVERVIEW_MARKETS_CACHE_TTL_MS,
 	FUNDING_OVERVIEW_RESPONSE_CACHE_TTL_MS,
+	DOCUMENTED_BASE_PERP_FEES,
 } from "./funding.constants";
 import { normalizeFundingServiceError } from "./funding.error-handler";
 import type { FundingExchangeError } from "./funding.types";
 import type {
+	FundingOverviewExchangeCellsResponse,
 	FundingOverviewExchangeCell,
 	FundingOverviewQuery,
 	FundingOverviewResponse,
 } from "./funding-overview.types";
 import {
+	annualizeFundingRate,
 	annualizeHourlyFundingRate,
 	createFundingOverviewCacheKey,
 	createFundingOverviewRows,
+	normalizeFundingRateToHourly,
 	normalizeOptionalTimestamp,
 	normalizeOverviewSymbol,
 	scaleFundingOverviewCellsToTimeframe,
@@ -41,6 +51,7 @@ type FundingOverviewSettledResult =
 	| { data: FundingOverviewExchangeCell[]; error?: never }
 	| { data?: never; error: FundingExchangeError };
 
+/** Returns cached funding overview rows for the requested timeframe and exchanges. */
 export const getFundingOverview = async (
 	query: FundingOverviewQuery,
 ): Promise<FundingOverviewResponse> =>
@@ -53,25 +64,38 @@ export const getFundingOverview = async (
 const getFreshFundingOverview = async (
 	query: FundingOverviewQuery,
 ): Promise<FundingOverviewResponse> => {
-	const results = await Promise.allSettled(
-		query.exchanges.map((exchange) => getFundingOverviewByExchange(exchange)),
-	);
-
-	const mappedResults = results.map((result, index) =>
-		mapFundingOverviewSettledResult({
-			exchange: query.exchanges[index],
-			result,
-		}),
-	);
+	const cells = await getFundingOverviewExchangeCells(query.exchanges);
 
 	return {
 		...query,
 		data: createFundingOverviewRows(
 			scaleFundingOverviewCellsToTimeframe(
-				mappedResults.flatMap((result) => result.data ?? []),
+				cells.data,
 				query.timeframe,
 			),
 		),
+		errors: cells.errors,
+	};
+};
+
+/** Loads raw funding overview cells from every requested exchange with partial error capture. */
+export const getFundingOverviewExchangeCells = async (
+	exchanges: Exchange[],
+): Promise<FundingOverviewExchangeCellsResponse> => {
+	const results = await Promise.allSettled(
+		exchanges.map((exchange) => getFundingOverviewByExchange(exchange)),
+	);
+
+	const mappedResults = results.map((result, index) =>
+		mapFundingOverviewSettledResult({
+			exchange: exchanges[index],
+			result,
+		}),
+	);
+
+	return {
+		exchanges,
+		data: mappedResults.flatMap((result) => result.data ?? []),
 		errors: mappedResults.flatMap((result) =>
 			result.error ? [result.error] : [],
 		),
@@ -100,13 +124,18 @@ const getPacificaFundingOverview = async (): Promise<FundingOverviewExchangeCell
 	getCachedValue(
 		"funding-overview:markets:pacifica",
 		FUNDING_OVERVIEW_MARKETS_CACHE_TTL_MS,
-		() =>
-			pacificaRestClient
-				.getMarkets()
-				.then((markets) => mapPacificaFundingOverview(markets ?? []))
-				.catch((error) => {
-					throw normalizePacificaError(error);
-				}),
+		async () => {
+			try {
+				const [markets, prices] = await Promise.all([
+					pacificaRestClient.getMarkets(),
+					pacificaRestClient.getPrices(),
+				]);
+
+				return mapPacificaFundingOverview(markets ?? [], prices ?? []);
+			} catch (error) {
+				throw normalizePacificaError(error);
+			}
+		},
 	);
 
 const getEtherealFundingOverview = async (): Promise<FundingOverviewExchangeCell[]> =>
@@ -131,12 +160,29 @@ const getNadoFundingOverview = async (): Promise<FundingOverviewExchangeCell[]> 
 				const symbols = await nadoClient.getSymbols();
 				const perpSymbols = symbols.filter(isLiveNadoPerpSymbol);
 				const productIds = perpSymbols.map((symbol) => symbol.product_id);
-				const fundingRates = await nadoClient.getFundingRates(productIds);
+				const [fundingRates, perpPrices] = await Promise.all([
+					nadoClient.getFundingRates(productIds),
+					nadoClient.getPerpPrices(productIds),
+				]);
 
-				return mapNadoFundingOverview(perpSymbols, fundingRates);
+				return mapNadoFundingOverview(perpSymbols, fundingRates, perpPrices);
 			} catch (error) {
 				throw normalizeNadoError(error);
 			}
+		},
+	);
+
+const getOkxFundingOverview = async (): Promise<FundingOverviewExchangeCell[]> =>
+	getCachedValue(
+		"funding-overview:markets:okx",
+		FUNDING_OVERVIEW_MARKETS_CACHE_TTL_MS,
+		async () => {
+			const tickers = await okxClient.getSwapTickers();
+
+			return tickers.map((ticker) => ({
+				...mapOkxTickerToFundingOverviewCell(ticker),
+				...getDocumentedBasePerpFees("okx"),
+			}));
 		},
 	);
 
@@ -152,14 +198,24 @@ const mapHyperliquidFundingOverview = (
 				exchange: "hyperliquid",
 				sourceSymbol: normalizeOverviewSymbol(market.name),
 				fundingRate,
+				fundingIntervalHours: FUNDING_INTERVAL_HOURS.HYPERLIQUID,
 				apr: annualizeHourlyFundingRate(fundingRate),
+				markPrice: normalizeOptionalNumber(market.markPx),
+				indexPrice: normalizeOptionalNumber(market.oraclePx),
+				midPrice: normalizeOptionalNumber(market.midPx),
+				openInterest: normalizeOptionalNumber(market.openInterest),
+				volume24h: normalizeOptionalNumber(market.dayNtlVlm),
+				...getDocumentedBasePerpFees("hyperliquid"),
+				maxLeverage: market.maxLeverage,
 			};
 		});
 
 const mapPacificaFundingOverview = (
 	markets: MarketData[],
+	prices: PriceData[],
 ): FundingOverviewExchangeCell[] =>
 	markets.map((market) => {
+		const price = prices.find((item) => item.symbol === market.symbol);
 		const fundingRate = Number(market.funding_rate);
 		const nextFundingRate = Number(market.next_funding_rate);
 
@@ -168,7 +224,18 @@ const mapPacificaFundingOverview = (
 			sourceSymbol: normalizeOverviewSymbol(market.symbol),
 			fundingRate,
 			nextFundingRate,
+			fundingIntervalHours: FUNDING_INTERVAL_HOURS.PACIFICA,
 			apr: annualizeHourlyFundingRate(fundingRate),
+			markPrice: normalizeOptionalNumber(price?.mark),
+			indexPrice: normalizeOptionalNumber(price?.oracle),
+			midPrice: normalizeOptionalNumber(price?.mid),
+			openInterest: normalizeOptionalNumber(price?.open_interest),
+			volume24h: normalizeOptionalNumber(price?.volume_24h),
+			...getDocumentedBasePerpFees("pacifica"),
+			maxLeverage: market.max_leverage,
+			minOrderSize: normalizeOptionalNumber(market.min_order_size),
+			maxOrderSize: normalizeOptionalNumber(market.max_order_size),
+			timestamp: normalizeOptionalTimestamp(price?.timestamp),
 		};
 	});
 
@@ -184,7 +251,16 @@ const mapEtherealFundingOverview = (
 				exchange: "ethereal",
 				sourceSymbol: normalizeOverviewSymbol(market.baseTokenName),
 				fundingRate,
+				fundingIntervalHours: FUNDING_INTERVAL_HOURS.ETHEREAL,
 				apr: annualizeHourlyFundingRate(fundingRate),
+				openInterest: normalizeOptionalNumber(market.openInterest),
+				volume24h: normalizeOptionalNumber(market.volume24h),
+				makerFeeRate: normalizeOptionalNumber(market.makerFee),
+				takerFeeRate: normalizeOptionalNumber(market.takerFee),
+				feeSource: "api",
+				maxLeverage: market.maxLeverage,
+				minOrderSize: normalizeOptionalNumber(market.minQuantity),
+				maxOrderSize: normalizeOptionalNumber(market.maxQuantity),
 				timestamp: normalizeOptionalTimestamp(market.fundingUpdatedAt),
 			};
 		});
@@ -192,24 +268,60 @@ const mapEtherealFundingOverview = (
 const mapNadoFundingOverview = (
 	symbols: NadoSymbol[],
 	fundingRates: NadoFundingRatesResponse,
+	perpPrices: NadoPerpPricesResponse,
 ): FundingOverviewExchangeCell[] =>
 	symbols.flatMap((symbol) => {
 		const fundingRate = fundingRates[String(symbol.product_id)];
+		const perpPrice = perpPrices[String(symbol.product_id)];
 
 		if (!fundingRate) {
 			return [];
 		}
 
-		const hourlyFundingRate = Number(fundingRate.funding_rate_x18) / 1e18 / 24;
+		const sourceFundingRate = Number(fundingRate.funding_rate_x18) / 1e18;
+		const hourlyFundingRate = normalizeFundingRateToHourly(
+			sourceFundingRate,
+			FUNDING_INTERVAL_HOURS.NADO,
+		);
 
 		return {
 			exchange: "nado",
 			sourceSymbol: normalizeOverviewSymbol(symbol.symbol),
-			fundingRate: hourlyFundingRate,
-			apr: annualizeHourlyFundingRate(hourlyFundingRate),
-			timestamp: normalizeOptionalTimestamp(Number(fundingRate.update_time)),
+			...(hourlyFundingRate !== undefined ? { fundingRate: hourlyFundingRate } : {}),
+			fundingIntervalHours: FUNDING_INTERVAL_HOURS.NADO,
+			apr: annualizeFundingRate(sourceFundingRate, FUNDING_INTERVAL_HOURS.NADO),
+			markPrice: normalizeX18Number(perpPrice?.mark_price_x18),
+			indexPrice: normalizeX18Number(perpPrice?.index_price_x18),
+			makerFeeRate: normalizeX18Number(symbol.maker_fee_rate_x18),
+			takerFeeRate: normalizeX18Number(symbol.taker_fee_rate_x18),
+			feeSource: "api",
+			timestamp: normalizeOptionalTimestamp(
+				Number(perpPrice?.update_time ?? fundingRate.update_time),
+			),
 		};
 	});
+
+const normalizeX18Number = (value?: string): number | undefined => {
+	const numberValue = normalizeOptionalNumber(value);
+
+	return numberValue === undefined ? undefined : numberValue / 1e18;
+};
+
+const getDocumentedBasePerpFees = (
+	exchange: Exchange,
+): Pick<
+	FundingOverviewExchangeCell,
+	"makerFeeRate" | "takerFeeRate" | "feeSource"
+> => {
+	const fees = DOCUMENTED_BASE_PERP_FEES[exchange];
+
+	return fees === undefined
+		? {}
+		: {
+			...fees,
+			feeSource: "documentation",
+		};
+};
 
 const isLiveNadoPerpSymbol = (symbol: NadoSymbol): boolean =>
 	symbol.type === "perp" && symbol.trading_status === "live";
@@ -244,4 +356,5 @@ const FUNDING_OVERVIEW_EXCHANGE_FETCHERS: Record<
 	pacifica: getPacificaFundingOverview,
 	ethereal: getEtherealFundingOverview,
 	nado: getNadoFundingOverview,
+	okx: getOkxFundingOverview,
 };

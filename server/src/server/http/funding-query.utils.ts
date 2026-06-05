@@ -57,6 +57,13 @@ export const parseFundingSymbol = (url: URL): string =>
 		value.toUpperCase(),
 	);
 
+/** Parse and normalize an optional symbol filter. */
+export const parseOptionalFundingSymbol = (url: URL): string | undefined => {
+	const value = url.searchParams.get("symbol")?.trim();
+
+	return value ? value.toUpperCase() : undefined;
+};
+
 /** Parse, validate, and deduplicate requested funding exchanges. */
 export const parseFundingExchanges = (url: URL): Exchange[] => {
 	const exchangesParam = url.searchParams.get("exchanges")?.trim();

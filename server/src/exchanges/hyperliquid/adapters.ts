@@ -3,6 +3,7 @@ import {
 	GetPerpFullMetadataResponse,
 } from "./hyperliquid.types";
 
+/** Combines Hyperliquid universe metadata with the matching per-market runtime fields. */
 export const getFullMarketsMetadataAdapter = (
 	markets: GetPerpFullMetadataResponse,
 ): AdapterPerpFullMetadata => ({

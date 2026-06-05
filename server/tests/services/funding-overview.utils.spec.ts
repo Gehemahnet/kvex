@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { FundingOverviewExchangeCell } from "../../src/services/funding/funding-overview.types";
 import {
+	annualizeFundingRate,
 	annualizeHourlyFundingRate,
 	createFundingOverviewCacheKey,
 	createFundingOverviewRows,
+	normalizeFundingRateToHourly,
 	normalizeOptionalTimestamp,
 	scaleFundingOverviewCellsToTimeframe,
 } from "../../src/services/funding/funding-overview.utils";
@@ -12,6 +14,12 @@ describe("funding overview utils", () => {
 	it("annualizes hourly funding rates", () => {
 		expect(annualizeHourlyFundingRate(0.01)).toBeCloseTo(87.6);
 		expect(annualizeHourlyFundingRate(undefined)).toBeUndefined();
+	});
+
+	it("normalizes funding rates from their source interval", () => {
+		expect(normalizeFundingRateToHourly(0.008, 8)).toBeCloseTo(0.001);
+		expect(annualizeFundingRate(0.008, 8)).toBeCloseTo(8.76);
+		expect(normalizeFundingRateToHourly(undefined, 8)).toBeUndefined();
 	});
 
 	it("groups exchange cells into one row per symbol", () => {

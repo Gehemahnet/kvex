@@ -89,4 +89,56 @@ describe("router error handling", () => {
 			},
 		});
 	});
+
+	it("returns 405 for unsupported market snapshots method", async () => {
+		const response = createMockResponse();
+
+		await router(
+			{ method: "POST", url: "/markets/snapshots" },
+			response as never,
+		);
+
+		expect(response.statusCode).toBe(405);
+		expect(JSON.parse(response.body ?? "")).toEqual({
+			error: {
+				code: "METHOD_NOT_ALLOWED",
+				message: "Method POST is not allowed for /markets/snapshots",
+			},
+		});
+	});
+
+	it("returns 400 with explanation for invalid market snapshots query", async () => {
+		const response = createMockResponse();
+
+		await router(
+			{ method: "GET", url: "/markets/snapshots?exchanges=unknown" },
+			response as never,
+		);
+
+		expect(response.statusCode).toBe(400);
+		expect(JSON.parse(response.body ?? "")).toEqual({
+			error: {
+				code: "UNSUPPORTED_EXCHANGES",
+				message: "Unsupported exchanges: unknown",
+			},
+		});
+	});
+
+	it("returns 400 with explanation for invalid spreads query", async () => {
+		const response = createMockResponse();
+
+		await router(
+			{ method: "GET", url: "/spreads?minPriceSpreadPercent=-1" },
+			response as never,
+		);
+
+		expect(response.statusCode).toBe(400);
+		expect(JSON.parse(response.body ?? "")).toEqual({
+			error: {
+				code: "INVALID_PERCENT_FILTER",
+				message:
+					"Query param `minPriceSpreadPercent` must be a non-negative number",
+			},
+		});
+	});
 });

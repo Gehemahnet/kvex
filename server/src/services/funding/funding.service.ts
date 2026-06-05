@@ -64,7 +64,15 @@ const getFundingByExchange = async (
 	exchange: Exchange,
 	symbol: string,
 	timeframe: Period,
-): Promise<FundingSeries> => FUNDING_EXCHANGE_FETCHERS[exchange](symbol, timeframe);
+): Promise<FundingSeries> => {
+	const fetcher = FUNDING_EXCHANGE_FETCHERS[exchange];
+
+	if (!fetcher) {
+		throw new Error(`${exchange} historical funding is not supported yet`);
+	}
+
+	return fetcher(symbol, timeframe);
+};
 
 /** Fetch and normalize Hyperliquid funding history. */
 const getHyperliquidFunding = async (
@@ -301,7 +309,7 @@ const findEtherealMarket = (
 ): ProductData | undefined =>
 	markets.find((market) => market.ticker.toUpperCase().startsWith(symbol));
 
-const FUNDING_EXCHANGE_FETCHERS: Record<Exchange, FundingExchangeFetcher> = {
+const FUNDING_EXCHANGE_FETCHERS: Partial<Record<Exchange, FundingExchangeFetcher>> = {
 	hyperliquid: getHyperliquidFunding,
 	pacifica: getPacificaFunding,
 	ethereal: getEtherealFunding,

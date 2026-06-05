@@ -56,6 +56,7 @@ const ETHEREAL_ERROR_NORMALIZERS: ErrorNormalizer[] = [
 	},
 ];
 
+/** Converts Ethereal-specific failures into the shared service error shape. */
 export const normalizeEtherealError = (error: unknown): ServiceError =>
 	ETHEREAL_ERROR_NORMALIZERS.find((normalizer) =>
 		normalizer.canHandle(error),

@@ -23,3 +23,20 @@ export type NadoPerpPrice = {
 };
 
 export type NadoPerpPricesResponse = Record<string, NadoPerpPrice>;
+
+export type NadoMarketLiquidityLevel = [priceX18: string, sizeX18: string];
+
+export type NadoMarketLiquidity = {
+	bids: NadoMarketLiquidityLevel[];
+	asks: NadoMarketLiquidityLevel[];
+	product_id: number;
+	timestamp: string;
+};
+
+export type NadoMarketLiquidityResponse = {
+	status: "success" | "failure";
+	data?: NadoMarketLiquidity;
+	error?: string;
+	error_code?: number;
+	request_type: string;
+};

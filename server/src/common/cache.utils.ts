@@ -5,6 +5,7 @@ type CacheEntry<Value> = {
 
 const memoryCache = new Map<string, CacheEntry<unknown>>();
 
+/** Returns a cached async value or refreshes it when the in-memory TTL has expired. */
 export const getCachedValue = async <Value>(
 	key: string,
 	ttlMs: number,
@@ -26,7 +27,7 @@ export const getCachedValue = async <Value>(
 	return value;
 };
 
+/** Clears all in-memory cache entries, primarily for tests and manual resets. */
 export const clearMemoryCache = (): void => {
 	memoryCache.clear();
 };
-

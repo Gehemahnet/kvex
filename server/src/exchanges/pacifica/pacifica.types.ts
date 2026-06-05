@@ -43,7 +43,7 @@ export interface PriceData {
 	/** Timestamp in milliseconds */
 	timestamp: number;
 	/** Volume (USD) in the past 24 hours */
-	volume_24h: boolean;
+	volume_24h: string;
 	/** Oracle price 24 hours ago (USD) */
 	yesterday_price: string;
 }

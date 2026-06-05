@@ -6,7 +6,7 @@ describe("parseFundingOverviewQuery", () => {
 	it("parses timeframe and defaults exchanges", () => {
 		expect(parseFundingOverviewQuery("/funding/overview?timeframe=day")).toEqual({
 			timeframe: "DAY",
-			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado"],
+			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx"],
 		});
 	});
 

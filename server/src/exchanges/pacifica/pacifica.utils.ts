@@ -2,6 +2,7 @@ import { HOUR_IN_MS, PERIOD_POINTS } from "../../common/constants";
 import { Period } from "../../common/types";
 import type { FundingRateHistory } from "./pacifica.types";
 
+/** Fills missing Pacifica hourly funding points by carrying forward the last known value. */
 export const normalizeFundingHistory = (
 	period: Period,
 	rows: FundingRateHistory[],
@@ -47,5 +48,6 @@ export const normalizeFundingHistory = (
 	return normalizedRows;
 };
 
+/** Floors a timestamp to the beginning of its UTC hour. */
 export const toHourTimestamp = (timestamp: number): number =>
 	Math.floor(timestamp / HOUR_IN_MS) * HOUR_IN_MS;

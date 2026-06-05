@@ -6,7 +6,23 @@ export type FundingOverviewExchangeCell = {
 	sourceSymbol: string;
 	fundingRate?: number;
 	nextFundingRate?: number;
+	fundingIntervalHours?: number;
 	apr?: number;
+	bidPrice?: number;
+	askPrice?: number;
+	bidSize?: number;
+	askSize?: number;
+	markPrice?: number;
+	indexPrice?: number;
+	midPrice?: number;
+	openInterest?: number;
+	volume24h?: number;
+	makerFeeRate?: number;
+	takerFeeRate?: number;
+	feeSource?: "api" | "documentation";
+	maxLeverage?: number;
+	minOrderSize?: number;
+	maxOrderSize?: number;
 	timestamp?: number;
 };
 
@@ -22,5 +38,11 @@ export type FundingOverviewQuery = {
 
 export type FundingOverviewResponse = FundingOverviewQuery & {
 	data: FundingOverviewRow[];
+	errors: FundingExchangeError[];
+};
+
+export type FundingOverviewExchangeCellsResponse = {
+	exchanges: Exchange[];
+	data: FundingOverviewExchangeCell[];
 	errors: FundingExchangeError[];
 };

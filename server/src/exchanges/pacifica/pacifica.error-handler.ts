@@ -44,6 +44,7 @@ const PACIFICA_ERROR_NORMALIZERS: ErrorNormalizer[] = [
 	},
 ];
 
+/** Converts Pacifica-specific failures into the shared service error shape. */
 export const normalizePacificaError = (error: unknown): ServiceError =>
 	PACIFICA_ERROR_NORMALIZERS.find((normalizer) =>
 		normalizer.canHandle(error),

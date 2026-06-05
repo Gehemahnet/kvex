@@ -1,5 +1,6 @@
 import { ServiceError } from "../../common/errors/service-errors";
 
+/** Converts Nado-specific failures into the shared service error shape. */
 export const normalizeNadoError = (error: unknown): ServiceError => {
 	if (error instanceof ServiceError) {
 		return error;

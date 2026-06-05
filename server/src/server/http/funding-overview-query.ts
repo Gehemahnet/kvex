@@ -5,6 +5,7 @@ import {
 	parseFundingTimeframe,
 } from "./funding-query.utils";
 
+/** Parses and validates query parameters for the funding overview endpoint. */
 export const parseFundingOverviewQuery = (
 	requestUrl?: string,
 ): FundingOverviewQuery => {

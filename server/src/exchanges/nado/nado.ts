@@ -2,6 +2,8 @@ import { FetchHttpClient, type HttpClient } from "../../common/http-client";
 import type {
 	NadoFundingRate,
 	NadoFundingRatesResponse,
+	NadoMarketLiquidity,
+	NadoMarketLiquidityResponse,
 	NadoPerpPricesResponse,
 	NadoSymbol,
 } from "./nado.types";
@@ -72,9 +74,37 @@ class NadoClient {
 			createArchiveRequestInit(),
 		);
 	}
+
+	async getMarketLiquidity(
+		productId: number,
+		depth: number,
+	): Promise<NadoMarketLiquidity | undefined> {
+		const response = await this.httpClient.post<
+			NadoMarketLiquidityResponse,
+			{ type: "market_liquidity"; product_id: number; depth: number },
+			RequestInit
+		>(
+			`${this.gatewayBaseUrl}/query`,
+			{
+				type: "market_liquidity",
+				product_id: productId,
+				depth,
+			},
+			createGatewayRequestInit(),
+		);
+
+		return response.status === "success" ? response.data : undefined;
+	}
 }
 
 const createArchiveRequestInit = (): RequestInit => ({
+	headers: {
+		"Content-Type": "application/json",
+		"Accept-Encoding": "gzip, br, deflate",
+	},
+});
+
+const createGatewayRequestInit = (): RequestInit => ({
 	headers: {
 		"Content-Type": "application/json",
 		"Accept-Encoding": "gzip, br, deflate",

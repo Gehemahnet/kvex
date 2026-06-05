@@ -32,6 +32,7 @@ const HYPERLIQUID_ERROR_NORMALIZERS: ErrorNormalizer[] = [
 	},
 ];
 
+/** Converts Hyperliquid-specific failures into the shared service error shape. */
 export const normalizeHyperliquidError = (error: unknown): ServiceError =>
 	HYPERLIQUID_ERROR_NORMALIZERS.find((normalizer) =>
 		normalizer.canHandle(error),
