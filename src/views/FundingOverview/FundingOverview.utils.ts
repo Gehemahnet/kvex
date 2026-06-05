@@ -45,11 +45,13 @@ export const normalizeFundingExchanges = (
 	return uniqueExchanges;
 };
 
+/** Checks whether a persisted value is a valid list of funding exchanges. */
 export const isFundingExchangeList = (
 	value: unknown,
 ): value is FundingExchange[] =>
 	Array.isArray(value) && value.every(isFundingExchange);
 
+/** Checks whether a persisted value is a plain list of strings. */
 export const isStringList = (value: unknown): value is string[] =>
 	Array.isArray(value) && value.every((item) => typeof item === "string");
 
@@ -91,6 +93,7 @@ export const formatFundingRate = (rate?: number | null): string => {
 	return `${(rate * 100).toFixed(6)}%`;
 };
 
+/** Formats the table status timestamp in a compact user-facing form. */
 export const formatLastUpdatedAt = (timestamp?: number): string => {
 	if (!timestamp) {
 		return "";
@@ -144,6 +147,7 @@ export const getVisibleFundingOverviewRows = (
 	return [...pinnedRows, ...regularRows.slice(0, visibleRegularRowCount)];
 };
 
+/** Reads a single exchange cell from a funding overview row. */
 export const getExchangeCell = (
 	rowExchanges: Partial<Record<FundingExchange, FundingOverviewExchangeCell>>,
 	exchange: FundingExchange,
@@ -162,6 +166,7 @@ export const getFirstExchangeTimestamp = (
 		)
 		.find((timestamp) => timestamp !== undefined);
 
+/** Returns badge classes for positive and negative funding values. */
 export const getFundingValueClass = (rate?: number | null): string => {
 	if ((rate ?? 0) > 0) {
 		return "bg-[var(--kvex-success-background)] text-[var(--kvex-success-color)]";
@@ -174,6 +179,7 @@ export const getFundingValueClass = (rate?: number | null): string => {
 	return "";
 };
 
+/** Returns text color classes for positive and negative funding values. */
 export const getFundingTextClass = (rate?: number | null): string => {
 	if ((rate ?? 0) > 0) {
 		return "text-[var(--kvex-success-color)]";

@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
+@import "primeicons/primeicons.css";
 
 /* Global Styles using PrimeVue Variables */
 
@@ -11,6 +12,20 @@
 	--kvex-control-background: #ffffff;
 	--kvex-control-text: #475569;
 	--kvex-control-border: #cbd5e1;
+	--kvex-button-secondary-background: #f8fafc;
+	--kvex-button-secondary-text: #334155;
+	--kvex-button-secondary-border: #cbd5e1;
+	--kvex-button-secondary-hover-background: #f1f5f9;
+	--kvex-button-secondary-hover-text: #0f172a;
+	--kvex-overlay-background: #ffffff;
+	--kvex-overlay-text: #334155;
+	--kvex-overlay-muted-text: #64748b;
+	--kvex-overlay-border: #e2e8f0;
+	--kvex-overlay-hover-background: #f8fafc;
+	--kvex-paginator-background: #ffffff;
+	--kvex-paginator-text: #64748b;
+	--kvex-paginator-active-background: #d1fae5;
+	--kvex-paginator-active-text: #047857;
 	--kvex-text-color: #334155;
 	--kvex-text-muted-color: #64748b;
 	--kvex-symbol-color: #0f172a;
@@ -51,9 +66,23 @@
 	--kvex-panel-background: #18181b;
 	--kvex-panel-muted-background: #18181b;
 	--kvex-panel-row-alt-background: #18181b;
-	--kvex-control-background: #18181b;
+	--kvex-control-background: #09090b;
 	--kvex-control-text: #f4f4f5;
 	--kvex-control-border: #3f3f46;
+	--kvex-button-secondary-background: transparent;
+	--kvex-button-secondary-text: #e4e4e7;
+	--kvex-button-secondary-border: #71717a;
+	--kvex-button-secondary-hover-background: #27272a;
+	--kvex-button-secondary-hover-text: #ffffff;
+	--kvex-overlay-background: #18181b;
+	--kvex-overlay-text: #f4f4f5;
+	--kvex-overlay-muted-text: #a1a1aa;
+	--kvex-overlay-border: #3f3f46;
+	--kvex-overlay-hover-background: #27272a;
+	--kvex-paginator-background: #18181b;
+	--kvex-paginator-text: #a1a1aa;
+	--kvex-paginator-active-background: rgba(16, 185, 129, 0.22);
+	--kvex-paginator-active-text: #d1fae5;
 	--kvex-text-color: #f4f4f5;
 	--kvex-text-muted-color: #a1a1aa;
 	--kvex-symbol-color: #ffffff;
@@ -158,9 +187,9 @@ a:hover {
 
 .p-select-overlay,
 .p-multiselect-overlay {
-	border-color: var(--kvex-panel-border);
-	background: var(--kvex-panel-background);
-	color: var(--kvex-text-color);
+	border-color: var(--kvex-overlay-border);
+	background: var(--kvex-overlay-background);
+	color: var(--kvex-overlay-text);
 	box-shadow: var(--kvex-panel-shadow);
 	border-radius: 6px;
 	overflow: hidden;
@@ -170,18 +199,18 @@ a:hover {
 .p-multiselect-list,
 .p-multiselect-header,
 .p-multiselect-list-container {
-	background: var(--kvex-panel-background);
-	color: var(--kvex-text-color);
+	background: var(--kvex-overlay-background);
+	color: var(--kvex-overlay-text);
 }
 
 .p-multiselect-header {
-	border-color: var(--kvex-panel-border);
+	border-color: var(--kvex-overlay-border);
 }
 
 .p-select-option,
 .p-multiselect-option {
 	background: transparent;
-	color: var(--kvex-text-color);
+	color: var(--kvex-overlay-text);
 	font-size: 0.875rem;
 	padding: 0.75rem 1rem;
 }
@@ -190,13 +219,13 @@ a:hover {
 .p-select-option.p-focus,
 .p-multiselect-option.p-multiselect-option-selected,
 .p-multiselect-option.p-focus {
-	background: var(--kvex-panel-hover-background);
+	background: var(--kvex-overlay-hover-background);
 	color: var(--kvex-symbol-color);
 }
 
 .p-select-option:not(.p-disabled):hover,
 .p-multiselect-option:not(.p-disabled):hover {
-	background: var(--kvex-panel-hover-background);
+	background: var(--kvex-overlay-hover-background);
 	color: var(--kvex-symbol-color);
 }
 
@@ -222,54 +251,163 @@ a:hover {
 .kvex-dark .p-multiselect-list-container,
 .kvex-dark .p-select-option,
 .kvex-dark .p-multiselect-option {
-	background: var(--kvex-panel-background);
-	color: var(--kvex-text-color);
+	background: var(--kvex-overlay-background);
+	color: var(--kvex-overlay-text);
 }
 
 .kvex-dark .p-select-option.p-select-option-selected,
 .kvex-dark .p-select-option.p-focus,
 .kvex-dark .p-multiselect-option.p-multiselect-option-selected,
 .kvex-dark .p-multiselect-option.p-focus {
-	background: var(--kvex-panel-muted-background);
+	background: var(--kvex-overlay-hover-background);
 	color: var(--kvex-symbol-color);
 }
 
 .kvex-dark .p-select-option:not(.p-disabled):hover,
 .kvex-dark .p-multiselect-option:not(.p-disabled):hover {
-	background: var(--kvex-panel-hover-background);
+	background: var(--kvex-overlay-hover-background);
 	color: var(--kvex-symbol-color);
 }
 
 .kvex-dark .p-multiselect-overlay .p-multiselect-option,
 .kvex-dark .p-multiselect-overlay .p-multiselect-option[data-p-selected="true"] {
-	background: var(--kvex-panel-background) !important;
-	color: var(--kvex-text-color) !important;
+	background: var(--kvex-overlay-background) !important;
+	color: var(--kvex-overlay-text) !important;
 }
 
 .kvex-dark .p-multiselect-overlay .p-multiselect-option.p-focus,
 .kvex-dark .p-multiselect-overlay .p-multiselect-option[data-p-focused="true"],
 .kvex-dark .p-multiselect-overlay .p-multiselect-option:not(.p-disabled):hover {
-	background: var(--kvex-panel-hover-background) !important;
+	background: var(--kvex-overlay-hover-background) !important;
 	color: var(--kvex-symbol-color) !important;
 }
 
 .kvex-dark .p-select-overlay .p-select-option,
 .kvex-dark .p-select-overlay .p-select-option[data-p-selected="true"] {
-	background: var(--kvex-panel-background) !important;
-	color: var(--kvex-text-color) !important;
+	background: var(--kvex-overlay-background) !important;
+	color: var(--kvex-overlay-text) !important;
 }
 
 .kvex-dark .p-select-overlay .p-select-option.p-focus,
 .kvex-dark .p-select-overlay .p-select-option[data-p-focused="true"],
 .kvex-dark .p-select-overlay .p-select-option:not(.p-disabled):hover {
-	background: var(--kvex-panel-hover-background) !important;
+	background: var(--kvex-overlay-hover-background) !important;
 	color: var(--kvex-symbol-color) !important;
+}
+
+.kvex-filters-popover.p-popover {
+	background: var(--kvex-overlay-background);
+	border-color: var(--kvex-overlay-border);
+	color: var(--kvex-overlay-text);
+	box-shadow: var(--kvex-panel-shadow);
+}
+
+.kvex-filters-popover .p-popover-content {
+	background: var(--kvex-overlay-background);
+	color: var(--kvex-overlay-text);
+}
+
+.kvex-filters-popover::before,
+.kvex-filters-popover::after {
+	border-bottom-color: var(--kvex-overlay-background);
+}
+
+.kvex-filters-popover .p-popover-arrow {
+	background: var(--kvex-overlay-background);
+	border-color: var(--kvex-overlay-border);
+}
+
+.kvex-filters-popover .p-inputtext,
+.kvex-filters-popover .p-inputnumber-input,
+.kvex-filters-popover .p-multiselect {
+	background: var(--kvex-control-background);
+	border-color: var(--kvex-control-border);
+	color: var(--kvex-control-text);
+	box-shadow: none;
+}
+
+.kvex-filters-popover .p-inputtext::placeholder {
+	color: var(--kvex-text-muted-color);
+	opacity: 1;
+}
+
+.kvex-filters-popover .p-multiselect-label,
+.kvex-filters-popover .p-multiselect-dropdown,
+.kvex-filters-popover .p-checkbox-label,
+.kvex-filters-popover label {
+	color: var(--kvex-control-text);
+}
+
+.kvex-filters-popover .p-inputtext:hover,
+.kvex-filters-popover .p-inputnumber-input:hover,
+.kvex-filters-popover .p-multiselect:hover {
+	border-color: var(--kvex-accent-color);
+}
+
+.kvex-filters-popover .p-inputtext:enabled:focus,
+.kvex-filters-popover .p-inputnumber-input:enabled:focus,
+.kvex-filters-popover .p-multiselect:not(.p-disabled).p-focus {
+	border-color: var(--kvex-accent-color);
+	box-shadow: var(--kvex-focus-shadow);
+}
+
+.kvex-filters-popover .p-checkbox-box {
+	background: var(--kvex-control-background);
+	border-color: var(--kvex-control-border);
+}
+
+.kvex-filters-popover .p-checkbox-checked .p-checkbox-box {
+	background: var(--kvex-accent-color);
+	border-color: var(--kvex-accent-color);
+}
+
+.kvex-dark .kvex-filters-popover.p-popover,
+.kvex-dark .kvex-filters-popover .p-popover-content,
+.kvex-dark .kvex-filters-popover .p-popover-arrow {
+	background: var(--kvex-overlay-background) !important;
+	color: var(--kvex-overlay-text) !important;
+}
+
+.kvex-dark .kvex-filters-popover .p-inputtext,
+.kvex-dark .kvex-filters-popover .p-inputnumber-input,
+.kvex-dark .kvex-filters-popover .p-multiselect {
+	background: var(--kvex-control-background) !important;
+	border-color: var(--kvex-control-border) !important;
+	color: var(--kvex-control-text) !important;
 }
 
 .kvex-data-surface .p-button {
 	border-radius: 6px;
 	font-weight: 700;
 	min-height: 2.35rem;
+}
+
+.kvex-data-surface .p-button.p-button-secondary,
+.kvex-filters-popover .p-button.p-button-secondary {
+	background: var(--kvex-button-secondary-background);
+	border-color: var(--kvex-button-secondary-border);
+	color: var(--kvex-button-secondary-text);
+}
+
+.kvex-data-surface .p-button.p-button-secondary:not(:disabled):hover,
+.kvex-filters-popover .p-button.p-button-secondary:not(:disabled):hover {
+	background: var(--kvex-button-secondary-hover-background);
+	border-color: var(--kvex-button-secondary-border);
+	color: var(--kvex-button-secondary-hover-text);
+}
+
+.kvex-data-surface .p-button.p-button-secondary.p-button-outlined,
+.kvex-filters-popover .p-button.p-button-secondary.p-button-outlined {
+	background: transparent;
+	border-color: var(--kvex-button-secondary-border);
+	color: var(--kvex-button-secondary-text);
+}
+
+.kvex-data-surface .p-button.p-button-secondary.p-button-outlined:not(:disabled):hover,
+.kvex-filters-popover .p-button.p-button-secondary.p-button-outlined:not(:disabled):hover {
+	background: var(--kvex-button-secondary-hover-background);
+	border-color: var(--kvex-button-secondary-border);
+	color: var(--kvex-button-secondary-hover-text);
 }
 
 .kvex-data-surface .p-datatable {
@@ -279,7 +417,11 @@ a:hover {
 }
 
 .kvex-data-surface .p-datatable-table-container,
-.kvex-data-surface .p-datatable-wrapper {
+.kvex-data-surface .p-datatable-wrapper,
+.kvex-data-surface .p-datatable-scrollable-table,
+.kvex-data-surface .p-datatable-scrollable-body,
+.kvex-data-surface .p-datatable-scrollable-footer,
+.kvex-data-surface .p-datatable-footer {
 	background: var(--kvex-panel-background);
 }
 
@@ -317,10 +459,51 @@ a:hover {
 	background: var(--kvex-panel-hover-background);
 }
 
+.kvex-data-surface .p-paginator {
+	background: var(--kvex-paginator-background);
+	border-color: var(--kvex-panel-border);
+	color: var(--kvex-paginator-text);
+}
+
+.kvex-data-surface .p-paginator-bottom,
+.kvex-data-surface .p-paginator-content {
+	background: var(--kvex-paginator-background);
+	border-color: var(--kvex-panel-border);
+	color: var(--kvex-paginator-text);
+}
+
+.kvex-data-surface .p-paginator .p-paginator-page,
+.kvex-data-surface .p-paginator .p-paginator-first,
+.kvex-data-surface .p-paginator .p-paginator-prev,
+.kvex-data-surface .p-paginator .p-paginator-next,
+.kvex-data-surface .p-paginator .p-paginator-last {
+	background: transparent;
+	color: var(--kvex-paginator-text);
+	border-color: transparent;
+}
+
+.kvex-data-surface .p-paginator .p-paginator-page.p-paginator-page-selected,
+.kvex-data-surface .p-paginator .p-paginator-page[data-p-selected="true"] {
+	background: var(--kvex-paginator-active-background);
+	color: var(--kvex-paginator-active-text);
+}
+
+.kvex-data-surface .p-paginator .p-select,
+.kvex-data-surface .p-paginator .p-select-label,
+.kvex-data-surface .p-paginator .p-select-dropdown {
+	background: var(--kvex-control-background);
+	border-color: var(--kvex-control-border);
+	color: var(--kvex-control-text);
+}
+
 .kvex-dark .kvex-data-surface .p-datatable,
 .kvex-dark .kvex-data-surface .p-datatable-table,
 .kvex-dark .kvex-data-surface .p-datatable-table-container,
-.kvex-dark .kvex-data-surface .p-datatable-wrapper {
+.kvex-dark .kvex-data-surface .p-datatable-wrapper,
+.kvex-dark .kvex-data-surface .p-datatable-scrollable-table,
+.kvex-dark .kvex-data-surface .p-datatable-scrollable-body,
+.kvex-dark .kvex-data-surface .p-datatable-scrollable-footer,
+.kvex-dark .kvex-data-surface .p-datatable-footer {
 	background: var(--kvex-panel-background);
 	color: var(--kvex-text-color);
 }
@@ -354,6 +537,44 @@ a:hover {
 .kvex-dark .kvex-data-surface .p-datatable-empty-message > td {
 	background: var(--kvex-panel-background);
 	color: var(--kvex-text-muted-color);
+}
+
+.kvex-dark .kvex-data-surface .p-paginator,
+.kvex-dark .kvex-data-surface .p-paginator-bottom,
+.kvex-dark .kvex-data-surface .p-paginator-content {
+	background: var(--kvex-paginator-background) !important;
+	border-color: var(--kvex-panel-border) !important;
+	color: var(--kvex-paginator-text) !important;
+}
+
+.kvex-dark .kvex-data-surface .p-paginator .p-paginator-page,
+.kvex-dark .kvex-data-surface .p-paginator .p-paginator-first,
+.kvex-dark .kvex-data-surface .p-paginator .p-paginator-prev,
+.kvex-dark .kvex-data-surface .p-paginator .p-paginator-next,
+.kvex-dark .kvex-data-surface .p-paginator .p-paginator-last {
+	background: transparent !important;
+	color: var(--kvex-paginator-text) !important;
+}
+
+.kvex-dark .kvex-data-surface .p-paginator .p-paginator-page.p-paginator-page-selected,
+.kvex-dark .kvex-data-surface .p-paginator .p-paginator-page[data-p-selected="true"] {
+	background: var(--kvex-paginator-active-background) !important;
+	color: var(--kvex-paginator-active-text) !important;
+}
+
+.kvex-dark .kvex-data-surface .p-paginator .p-select,
+.kvex-dark .kvex-data-surface .p-paginator .p-select-label,
+.kvex-dark .kvex-data-surface .p-paginator .p-select-dropdown {
+	background: var(--kvex-control-background) !important;
+	border-color: var(--kvex-control-border) !important;
+	color: var(--kvex-control-text) !important;
+}
+
+.p-tooltip .p-tooltip-text {
+	font-size: 0.75rem;
+	line-height: 1.35;
+	max-width: 20rem;
+	white-space: pre-line;
 }
 
 /* --- Scrollbar Styling --- */

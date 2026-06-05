@@ -8,6 +8,7 @@ import {
 } from "./theme.constants";
 import { isThemeMode, normalizeThemeMode } from "./theme.utils";
 
+/** Keeps the active PrimeVue theme mode synchronized with localStorage and the document root class. */
 export const useThemeMode = () => {
 	const storedThemeMode = useValidatedLocalStorage<ThemeMode>(
 		THEME_MODE_LOCAL_STORAGE_KEY,

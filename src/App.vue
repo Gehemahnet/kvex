@@ -5,15 +5,16 @@
 		<header class="fixed inset-x-0 top-0 z-20 flex h-[var(--kvex-topbar-height)] items-center justify-between border-b border-[var(--kvex-shell-border)] bg-[var(--kvex-topbar-background)] px-6 max-lg:px-4">
 			<div class="flex min-w-0 items-center gap-3">
 				<button
-					class="flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1 rounded-full border-0 bg-transparent p-0 hover:bg-[var(--kvex-panel-hover-background)]"
+					class="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-[var(--kvex-panel-border)] bg-[var(--kvex-panel-muted-background)] px-3 py-0 text-sm font-semibold text-[var(--kvex-text-color)] hover:bg-[var(--kvex-panel-hover-background)]"
 					type="button"
-					aria-label="Toggle navigation"
 					:aria-expanded="isSidebarOpen"
 					@click="toggleSidebar"
 				>
-					<span class="block h-0.5 w-4 rounded-full bg-[var(--kvex-text-color)]" />
-					<span class="block h-0.5 w-4 rounded-full bg-[var(--kvex-text-color)]" />
-					<span class="block h-0.5 w-4 rounded-full bg-[var(--kvex-text-color)]" />
+					<span class="flex flex-col items-center justify-center gap-1">
+						<span class="block h-0.5 w-4 rounded-full bg-current" />
+						<span class="block h-0.5 w-4 rounded-full bg-current" />
+						<span class="block h-0.5 w-4 rounded-full bg-current" />
+					</span>
 				</button>
 				<router-link
 					class="inline-flex items-center gap-3 text-xl font-bold text-[var(--kvex-symbol-color)] no-underline"
@@ -26,13 +27,17 @@
 				</router-link>
 			</div>
 
-			<div class="inline-flex items-center gap-3 rounded-full border border-[var(--kvex-panel-border)] bg-[var(--kvex-panel-muted-background)] px-3 py-2 text-sm font-semibold text-[var(--kvex-text-muted-color)]">
-				<span>{{ themeModeLabel }}</span>
-				<ToggleSwitch
-					v-model="isDarkTheme"
-					class="kvex-theme-switch"
+			<button
+				class="grid h-10 w-10 cursor-pointer place-items-center rounded-full border border-[var(--kvex-panel-border)] bg-[var(--kvex-panel-muted-background)] text-[var(--kvex-text-color)] shadow-sm hover:bg-[var(--kvex-panel-hover-background)]"
+				type="button"
+				:aria-label="themeToggleLabel"
+				@click="toggleThemeMode"
+			>
+				<i
+					class="text-lg"
+					:class="themeMode === 'dark' ? 'pi pi-moon' : 'pi pi-sun'"
 				/>
-			</div>
+			</button>
 		</header>
 
 		<aside
@@ -53,45 +58,60 @@
 					<span class="h-3 w-3 rounded-[3px] border border-current" />
 					<span>Funding</span>
 				</router-link>
+				<router-link
+					class="flex w-full items-center gap-2.5 rounded-md px-3.5 py-3 text-sm font-bold text-[var(--kvex-text-muted-color)] hover:bg-[var(--kvex-panel-hover-background)] hover:text-[var(--kvex-accent-color)] [&.router-link-active]:bg-[var(--kvex-panel-hover-background)] [&.router-link-active]:text-[var(--kvex-accent-color)]"
+					:to="{ name: ROUTES.SPREADS_OVERVIEW }"
+				>
+					<span class="h-3 w-3 rounded-full border border-current" />
+					<span>Spreads</span>
+				</router-link>
 			</nav>
 		</aside>
 
-		<button
-			v-if="isSidebarOpen"
-			class="fixed inset-x-0 bottom-0 top-[var(--kvex-topbar-height)] z-[25] hidden border-0 bg-slate-900/35 p-0 max-lg:block"
-			type="button"
-			aria-label="Close navigation"
-			@click="closeSidebar"
-		/>
-
 		<main
-			class="ml-[var(--kvex-sidebar-width)] mt-[var(--kvex-topbar-height)] min-h-[calc(100vh-var(--kvex-topbar-height))] px-8 pb-8 pt-8 transition-[margin-left] duration-200 max-lg:ml-0 max-lg:px-4 max-lg:pb-4 max-lg:pt-4"
-			:class="{ 'ml-0': !isSidebarOpen }"
+			class="mt-[var(--kvex-topbar-height)] min-h-[calc(100vh-var(--kvex-topbar-height))] px-8 pb-8 pt-8 transition-[margin-left] duration-200 max-lg:px-4 max-lg:pb-4 max-lg:pt-4"
+			:style="{ marginLeft: mainMarginLeft }"
 		>
-			<div class="max-w-[var(--kvex-content-max-width)]">
+			<div>
 				<RouterView />
 			</div>
 		</main>
 	</div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import ToggleSwitch from "primevue/toggleswitch";
+import { computed, onBeforeUnmount, ref } from "vue";
 import { ROUTES } from "./router";
 import { useThemeMode } from "./theme/theme.composable";
 
-const { isDarkTheme, themeMode } = useThemeMode();
-const isSidebarOpen = ref(!window.matchMedia("(max-width: 1024px)").matches);
+const { themeMode } = useThemeMode();
+const desktopMediaQuery = window.matchMedia("(min-width: 1025px)");
+const isDesktopViewport = ref(desktopMediaQuery.matches);
+const isSidebarOpen = ref(isDesktopViewport.value);
 
-const themeModeLabel = computed(() =>
-	themeMode.value === "dark" ? "Dark" : "Light",
+const themeToggleLabel = computed(() =>
+	themeMode.value === "dark" ? "Switch to light theme" : "Switch to dark theme",
+);
+const mainMarginLeft = computed(() =>
+	isSidebarOpen.value && isDesktopViewport.value
+		? "var(--kvex-sidebar-width)"
+		: "0",
 );
 
 const toggleSidebar = () => {
 	isSidebarOpen.value = !isSidebarOpen.value;
 };
 
-const closeSidebar = () => {
-	isSidebarOpen.value = false;
+const toggleThemeMode = () => {
+	themeMode.value = themeMode.value === "dark" ? "light" : "dark";
 };
+
+const handleDesktopViewportChange = (event: MediaQueryListEvent) => {
+	isDesktopViewport.value = event.matches;
+};
+
+desktopMediaQuery.addEventListener("change", handleDesktopViewportChange);
+
+onBeforeUnmount(() => {
+	desktopMediaQuery.removeEventListener("change", handleDesktopViewportChange);
+});
 </script>

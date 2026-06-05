@@ -1,4 +1,9 @@
-export type FundingExchange = "hyperliquid" | "pacifica" | "ethereal" | "nado";
+export type FundingExchange =
+	| "hyperliquid"
+	| "pacifica"
+	| "ethereal"
+	| "nado"
+	| "okx";
 
 export type FundingTimeframe = "DAY" | "WEEK" | "MONTH" | "YEAR";
 
@@ -38,6 +43,11 @@ export type FundingOverviewExchangeCell = {
 	sourceSymbol: string;
 	fundingRate?: number;
 	nextFundingRate?: number;
+	fundingIntervalHours?: number;
+	bidPrice?: number;
+	askPrice?: number;
+	bidSize?: number;
+	askSize?: number;
 	apr?: number;
 	timestamp?: number;
 };

@@ -11,9 +11,15 @@ export default defineConfig(({ mode }) => {
 		plugins: [tailwindcss(), vue(), vueDevTools()],
 		server: {
 			proxy: {
-				"/funding": {
+				"/api": {
 					target: `http://localhost:${serverPort}`,
 					changeOrigin: true,
+					rewrite: (path) => path.replace(/^\/api/, ""),
+				},
+				"/market-data": {
+					target: `http://localhost:${serverPort}`,
+					changeOrigin: true,
+					ws: true,
 				},
 			},
 		},

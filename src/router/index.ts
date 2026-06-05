@@ -6,9 +6,12 @@ import {
 
 const FundingOverviewView = () =>
 	import("../views/FundingOverview/FundingOverview.vue");
+const SpreadsOverviewView = () =>
+	import("../views/SpreadsOverview/SpreadsOverview.vue");
 
 export enum ROUTES {
 	FUNDING_OVERVIEW = "FundingOverview",
+	SPREADS_OVERVIEW = "SpreadsOverview",
 }
 
 const routes: RouteRecordRaw[] = [
@@ -16,6 +19,11 @@ const routes: RouteRecordRaw[] = [
 		name: ROUTES.FUNDING_OVERVIEW,
 		path: "",
 		component: FundingOverviewView,
+	},
+	{
+		name: ROUTES.SPREADS_OVERVIEW,
+		path: "/spreads",
+		component: SpreadsOverviewView,
 	},
 	{
 		path: "/funding-overview",

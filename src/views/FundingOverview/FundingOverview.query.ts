@@ -19,6 +19,7 @@ type UseFundingOverviewQueryParams = {
 
 export const FUNDING_OVERVIEW_QUERY_KEY = "funding-overview";
 
+/** Requests the funding overview endpoint with timeframe and exchange filters. */
 const getFundingOverview = async (
 	params: FundingOverviewRequestParams,
 ): Promise<FundingOverviewResponse> => {
@@ -30,7 +31,7 @@ const getFundingOverview = async (
 		query.set("exchanges", params.exchanges.join(","));
 	}
 
-	const response = await fetch(`/funding/overview?${query.toString()}`);
+	const response = await fetch(`/api/funding/overview?${query.toString()}`);
 
 	if (!response.ok) {
 		const body = await response.json().catch(() => undefined) as
@@ -45,6 +46,7 @@ const getFundingOverview = async (
 	return response.json() as Promise<FundingOverviewResponse>;
 };
 
+/** Creates a cached TanStack Query resource for the funding overview table. */
 export const useFundingOverviewQuery = (
 	params: UseFundingOverviewQueryParams,
 ) =>

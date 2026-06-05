@@ -25,6 +25,7 @@ import {
 	normalizeFundingTimeframe,
 } from "./FundingOverview.utils";
 
+/** Coordinates funding overview filters, persisted preferences, query state, and table scrolling. */
 export const useFundingOverview = () => {
 	const storedTimeframe = useValidatedLocalStorage<FundingTimeframe>(
 		FUNDING_OVERVIEW_ACTIVE_TIMEFRAME_LOCAL_STORAGE_KEY,
