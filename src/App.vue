@@ -1,5 +1,7 @@
 <template>
+	<RouterView v-if="isStandaloneRoute" />
 	<div
+		v-else
 		class="min-h-screen bg-[var(--kvex-app-background)] text-[var(--kvex-text-color)]"
 	>
 		<header class="fixed inset-x-0 top-0 z-20 flex h-[var(--kvex-topbar-height)] items-center justify-between border-b border-[var(--kvex-shell-border)] bg-[var(--kvex-topbar-background)] px-6 max-lg:px-4">
@@ -27,17 +29,65 @@
 				</router-link>
 			</div>
 
-			<button
-				class="grid h-10 w-10 cursor-pointer place-items-center rounded-full border border-[var(--kvex-panel-border)] bg-[var(--kvex-panel-muted-background)] text-[var(--kvex-text-color)] shadow-sm hover:bg-[var(--kvex-panel-hover-background)]"
-				type="button"
-				:aria-label="themeToggleLabel"
-				@click="toggleThemeMode"
-			>
-				<i
-					class="text-lg"
-					:class="themeMode === 'dark' ? 'pi pi-moon' : 'pi pi-sun'"
+			<div class="flex items-center gap-2">
+				<button
+					class="grid h-10 w-10 cursor-pointer place-items-center rounded-full border border-[var(--kvex-panel-border)] bg-[var(--kvex-panel-muted-background)] text-[var(--kvex-text-color)] shadow-sm hover:bg-[var(--kvex-panel-hover-background)]"
+					type="button"
+					:aria-label="themeToggleLabel"
+					@click="toggleThemeMode"
+				>
+					<i
+						class="text-lg"
+						:class="themeMode === 'dark' ? 'pi pi-moon' : 'pi pi-sun'"
+					/>
+				</button>
+
+				<button
+					v-if="authState"
+					class="grid h-10 w-10 cursor-pointer place-items-center rounded-full border border-[var(--kvex-panel-border)] bg-[var(--kvex-panel-muted-background)] text-[var(--kvex-text-color)] shadow-sm hover:bg-[var(--kvex-panel-hover-background)]"
+					type="button"
+					aria-label="User menu"
+					@click="toggleUserMenu"
+				>
+					<i class="pi pi-user text-lg" />
+				</button>
+				<Button
+					v-else
+					icon="pi pi-sign-in"
+					label="Login"
+					severity="secondary"
+					@click="goToLogin"
 				/>
-			</button>
+			</div>
+
+			<Popover
+				v-if="authState"
+				ref="userMenuPopover"
+				class="kvex-user-popover"
+			>
+				<div class="flex min-w-56 flex-col gap-3">
+					<div class="border-b border-[var(--kvex-panel-border)] pb-3">
+						<span class="block text-sm font-bold text-[var(--kvex-symbol-color)]">
+							{{ authState.user.login }}
+						</span>
+						<span
+							v-if="authState.user.email"
+							class="block text-xs text-[var(--kvex-text-muted-color)]"
+						>
+							{{ authState.user.email }}
+						</span>
+					</div>
+
+					<Button
+						class="w-full justify-start"
+						icon="pi pi-sign-out"
+						label="Logout"
+						severity="secondary"
+						text
+						@click="logout"
+					/>
+				</div>
+			</Popover>
 		</header>
 
 		<aside
@@ -79,14 +129,32 @@
 	</div>
 </template>
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import Button from "primevue/button";
+import Popover from "primevue/popover";
 import { ROUTES } from "./router";
+import { logoutAuthUser } from "./views/Auth/Auth.api";
+import { useAuthSession } from "./views/Auth/Auth.composable";
 import { useThemeMode } from "./theme/theme.composable";
 
+const route = useRoute();
+const router = useRouter();
 const { themeMode } = useThemeMode();
+const {
+	authState,
+	clearAuthSession,
+	refreshAuthSession,
+	restoreAuthSession,
+} = useAuthSession();
 const desktopMediaQuery = window.matchMedia("(min-width: 1025px)");
 const isDesktopViewport = ref(desktopMediaQuery.matches);
 const isSidebarOpen = ref(isDesktopViewport.value);
+const userMenuPopover = ref<{
+	hide: () => void;
+	toggle: (event: Event) => void;
+} | null>(null);
+let sessionRefreshTimeoutId: number | undefined;
 
 const themeToggleLabel = computed(() =>
 	themeMode.value === "dark" ? "Switch to light theme" : "Switch to dark theme",
@@ -96,6 +164,7 @@ const mainMarginLeft = computed(() =>
 		? "var(--kvex-sidebar-width)"
 		: "0",
 );
+const isStandaloneRoute = computed(() => route.meta.standalone === true);
 
 const toggleSidebar = () => {
 	isSidebarOpen.value = !isSidebarOpen.value;
@@ -105,13 +174,71 @@ const toggleThemeMode = () => {
 	themeMode.value = themeMode.value === "dark" ? "light" : "dark";
 };
 
+const toggleUserMenu = (event: Event) => {
+	userMenuPopover.value?.toggle(event);
+};
+
+const logout = async () => {
+	const csrfToken = authState.value?.csrfToken;
+
+	if (csrfToken !== undefined) {
+		await logoutAuthUser(csrfToken).catch(() => undefined);
+	}
+
+	clearSessionRefreshTimeout();
+	clearAuthSession();
+	userMenuPopover.value?.hide();
+	await router.push({ name: ROUTES.AUTH_LOGIN });
+};
+
+const goToLogin = async () => {
+	userMenuPopover.value?.hide();
+	await router.push({ name: ROUTES.AUTH_LOGIN });
+};
+
 const handleDesktopViewportChange = (event: MediaQueryListEvent) => {
 	isDesktopViewport.value = event.matches;
 };
 
 desktopMediaQuery.addEventListener("change", handleDesktopViewportChange);
 
+onMounted(() => {
+	void restoreAuthSession();
+});
+
+watch(
+	() => authState.value?.expiresAt,
+	() => {
+		scheduleSessionRefresh();
+	},
+);
+
 onBeforeUnmount(() => {
+	clearSessionRefreshTimeout();
 	desktopMediaQuery.removeEventListener("change", handleDesktopViewportChange);
 });
+
+const scheduleSessionRefresh = () => {
+	clearSessionRefreshTimeout();
+
+	if (authState.value === null) {
+		return;
+	}
+
+	const expiresAt = Date.parse(authState.value.expiresAt);
+	const delayMs = Math.max(expiresAt - Date.now() - 60_000, 5_000);
+
+	sessionRefreshTimeoutId = window.setTimeout(async () => {
+		if (await refreshAuthSession()) {
+			scheduleSessionRefresh();
+		}
+	}, delayMs);
+};
+
+const clearSessionRefreshTimeout = () => {
+	if (sessionRefreshTimeoutId !== undefined) {
+		window.clearTimeout(sessionRefreshTimeoutId);
+		sessionRefreshTimeoutId = undefined;
+	}
+};
 </script>

@@ -8,8 +8,18 @@ const FundingOverviewView = () =>
 	import("../views/FundingOverview/FundingOverview.vue");
 const SpreadsOverviewView = () =>
 	import("../views/SpreadsOverview/SpreadsOverview.vue");
+const LoginView = () => import("../views/Auth/LoginView.vue");
+const RegisterView = () => import("../views/Auth/RegisterView.vue");
+const ErrorView = () => import("../views/Auth/ErrorView.vue");
+const ForgotPasswordView = () => import("../views/Auth/ForgotPasswordView.vue");
+const ResetPasswordView = () => import("../views/Auth/ResetPasswordView.vue");
 
 export enum ROUTES {
+	AUTH_ERROR = "AuthError",
+	AUTH_FORGOT_PASSWORD = "AuthForgotPassword",
+	AUTH_LOGIN = "AuthLogin",
+	AUTH_REGISTER = "AuthRegister",
+	AUTH_RESET_PASSWORD = "AuthResetPassword",
 	FUNDING_OVERVIEW = "FundingOverview",
 	SPREADS_OVERVIEW = "SpreadsOverview",
 }
@@ -26,8 +36,42 @@ const routes: RouteRecordRaw[] = [
 		component: SpreadsOverviewView,
 	},
 	{
+		name: ROUTES.AUTH_LOGIN,
+		path: "/auth/login",
+		component: LoginView,
+		meta: { standalone: true },
+	},
+	{
+		name: ROUTES.AUTH_REGISTER,
+		path: "/auth/register",
+		component: RegisterView,
+		meta: { standalone: true },
+	},
+	{
+		name: ROUTES.AUTH_ERROR,
+		path: "/auth/error",
+		component: ErrorView,
+		meta: { standalone: true },
+	},
+	{
+		name: ROUTES.AUTH_FORGOT_PASSWORD,
+		path: "/auth/forgot-password",
+		component: ForgotPasswordView,
+		meta: { standalone: true },
+	},
+	{
+		name: ROUTES.AUTH_RESET_PASSWORD,
+		path: "/auth/reset-password",
+		component: ResetPasswordView,
+		meta: { standalone: true },
+	},
+	{
 		path: "/funding-overview",
 		redirect: { name: ROUTES.FUNDING_OVERVIEW },
+	},
+	{
+		path: "/:pathMatch(.*)*",
+		redirect: { name: ROUTES.AUTH_ERROR },
 	},
 ];
 

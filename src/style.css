@@ -145,6 +145,48 @@ a:hover {
 	transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
+.kvex-auth-surface .p-inputtext,
+.kvex-auth-surface .p-password,
+.kvex-auth-surface .p-password-input {
+	width: 100%;
+}
+
+.kvex-auth-surface .p-inputtext,
+.kvex-auth-surface .p-password-input {
+	background: var(--kvex-control-background);
+	border-color: var(--kvex-control-border);
+	border-radius: 6px;
+	color: var(--kvex-control-text);
+	box-shadow: none;
+	font-size: 0.95rem;
+	min-height: 2.75rem;
+	padding: 0.75rem 0.85rem;
+	transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.kvex-auth-surface .p-inputtext::placeholder,
+.kvex-auth-surface .p-password-input::placeholder {
+	color: var(--kvex-text-muted-color);
+	opacity: 1;
+}
+
+.kvex-auth-surface .p-inputtext:hover,
+.kvex-auth-surface .p-password-input:hover {
+	border-color: var(--kvex-accent-color);
+}
+
+.kvex-auth-surface .p-inputtext:enabled:focus,
+.kvex-auth-surface .p-password-input:enabled:focus {
+	border-color: var(--kvex-accent-color);
+	box-shadow: var(--kvex-focus-shadow);
+}
+
+.kvex-auth-surface .p-button {
+	border-radius: 6px;
+	font-weight: 700;
+	min-height: 2.75rem;
+}
+
 .kvex-data-surface .p-inputtext::placeholder {
 	color: var(--kvex-text-muted-color);
 	opacity: 1;
@@ -300,6 +342,23 @@ a:hover {
 	border-color: var(--kvex-overlay-border);
 	color: var(--kvex-overlay-text);
 	box-shadow: var(--kvex-panel-shadow);
+}
+
+.kvex-user-popover.p-popover {
+	background: var(--kvex-overlay-background);
+	border-color: var(--kvex-overlay-border);
+	color: var(--kvex-overlay-text);
+	box-shadow: var(--kvex-panel-shadow);
+}
+
+.kvex-user-popover .p-popover-content {
+	background: var(--kvex-overlay-background);
+	color: var(--kvex-overlay-text);
+}
+
+.kvex-user-popover .p-popover-arrow {
+	background: var(--kvex-overlay-background);
+	border-color: var(--kvex-overlay-border);
 }
 
 .kvex-filters-popover .p-popover-content {
