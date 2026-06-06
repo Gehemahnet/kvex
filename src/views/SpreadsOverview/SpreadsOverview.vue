@@ -63,10 +63,17 @@ const filtersPopover = ref<{
 	hide: () => void;
 	toggle: (event: Event) => void;
 } | null>(null);
+const guidePopover = ref<{
+	toggle: (event: Event) => void;
+} | null>(null);
 
 const toggleFilters = (event: Event) => {
 	syncDraftFilters();
 	filtersPopover.value?.toggle(event);
+};
+
+const toggleGuide = (event: Event) => {
+	guidePopover.value?.toggle(event);
 };
 
 const applyFilters = () => {
@@ -88,12 +95,49 @@ const handleTablePage = (event: { rows: number }) => {
 	<section class="flex h-[calc(100vh-var(--kvex-topbar-height)-4rem)] min-h-0 flex-col gap-4 max-lg:h-[calc(100vh-var(--kvex-topbar-height)-2rem)]">
 		<div class="kvex-data-surface flex min-h-0 flex-col overflow-hidden rounded-xl border border-[var(--kvex-panel-border)] bg-[var(--kvex-panel-background)]">
 			<div class="shrink-0 bg-[var(--kvex-panel-background)] px-6 pb-2 pt-6">
-				<h1 class="m-0 text-[1.35rem] font-semibold text-[var(--p-text-color)]">
-					Spreads
-				</h1>
-				<p class="m-0 mt-1 text-[0.8125rem] text-[var(--p-text-muted-color)]">
-					Perp spread monitor across live market-data sources.
-				</p>
+				<div class="flex items-start justify-between gap-3">
+					<div>
+						<h1 class="m-0 text-[1.35rem] font-semibold text-[var(--p-text-color)]">
+							Spreads
+						</h1>
+						<p class="m-0 mt-1 text-[0.8125rem] text-[var(--p-text-muted-color)]">
+							Perp spread monitor across live market-data sources.
+						</p>
+					</div>
+					<Button
+						aria-label="Spreads metrics guide"
+						class="shrink-0"
+						icon="pi pi-question-circle"
+						rounded
+						severity="secondary"
+						text
+						@click="toggleGuide"
+					/>
+				</div>
+				<Popover ref="guidePopover">
+					<div class="grid w-[min(34rem,calc(100vw-2rem))] gap-3 text-sm">
+						<div>
+							<span class="block font-semibold text-[var(--p-text-color)]">Confidence</span>
+							<span class="text-[var(--kvex-text-muted-color)]">Quality score from price source, data age, funding, fee precision, and liquidity.</span>
+						</div>
+						<div>
+							<span class="block font-semibold text-[var(--p-text-color)]">Net Est.</span>
+							<span class="text-[var(--kvex-text-muted-color)]">Estimated spread after available fee and holding-period funding adjustments.</span>
+						</div>
+						<div>
+							<span class="block font-semibold text-[var(--p-text-color)]">Funding Impact</span>
+							<span class="text-[var(--kvex-text-muted-color)]">Expected funding contribution for the selected hold time.</span>
+						</div>
+						<div>
+							<span class="block font-semibold text-[var(--p-text-color)]">Seen</span>
+							<span class="text-[var(--kvex-text-muted-color)]">Number of live updates that saw the opportunity and its current lifetime.</span>
+						</div>
+						<div>
+							<span class="block font-semibold text-[var(--p-text-color)]">Freshness</span>
+							<span class="text-[var(--kvex-text-muted-color)]">Age of the latest price data used on each side of the spread.</span>
+						</div>
+					</div>
+				</Popover>
 			</div>
 
 			<div class="flex shrink-0 flex-wrap items-end gap-4 border-b border-[var(--kvex-panel-border)] bg-[var(--kvex-panel-background)] p-4 pt-3">

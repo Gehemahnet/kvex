@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createSpreadsUrl } from "./SpreadsOverview.api";
 import { createSpreadsQueryKey } from "./SpreadsOverview.query";
 
 describe("SpreadsOverview query", () => {
@@ -74,5 +75,35 @@ describe("SpreadsOverview query", () => {
 				holdingPeriodHours: 24,
 			}),
 		);
+	});
+
+	it("creates public spreads API urls from active request filters", () => {
+		expect(
+			createSpreadsUrl({
+				exchanges: ["hyperliquid", "okx"],
+				symbol: " BTC ",
+				minPriceSpreadPercent: 0,
+				maxSnapshotAgeMs: 120_000,
+				positionSizeUsd: 5_000,
+				minOccurrences: 2.9,
+				minLifetimeMs: 10_000,
+				holdingPeriodHours: 8,
+			}),
+		).toBe(
+			"/api/spreads?exchanges=hyperliquid%2Cokx&symbol=BTC&minPriceSpreadPercent=0&maxSnapshotAgeMs=120000&positionSizeUsd=5000&minOccurrences=2&minLifetimeMs=10000&holdingPeriodHours=8",
+		);
+	});
+
+	it("omits disabled optional spreads API filters", () => {
+		expect(
+			createSpreadsUrl({
+				exchanges: [],
+				symbol: " ",
+				positionSizeUsd: 0,
+				minOccurrences: 0,
+				minLifetimeMs: 0,
+				holdingPeriodHours: 0,
+			}),
+		).toBe("/api/spreads");
 	});
 });

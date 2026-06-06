@@ -4,35 +4,12 @@ export type SpreadPriceSource = "depth" | "bbo" | "mark" | "mid" | "index";
 
 export type SpreadSide = {
 	exchange: FundingExchange;
-	symbol: string;
-	baseAsset?: string;
 	quoteAsset?: string;
 	settlementAsset?: string;
-	contractType?: "perp" | "unknown";
-	assetClass?: "crypto" | "equity" | "synthetic" | "unknown";
 	price: number;
 	priceSource: SpreadPriceSource;
-	bidPrice?: number;
-	askPrice?: number;
-	bidSize?: number;
-	askSize?: number;
-	orderBookBidLevels?: number;
-	orderBookAskLevels?: number;
-	slippagePercent?: number;
-	fundingRate?: number;
-	fundingApr?: number;
-	fundingIntervalHours?: number;
-	makerFeeRate?: number;
-	takerFeeRate?: number;
 	feeSource?: "api" | "documentation";
-	timestamp?: number;
-	priceReceivedAt?: number;
-	fundingReceivedAt?: number;
-	liquidityReceivedAt?: number;
 	ageMs?: number;
-	priceAgeMs?: number;
-	fundingAgeMs?: number;
-	liquidityAgeMs?: number;
 };
 
 export type SpreadOpportunity = {
@@ -62,14 +39,9 @@ export type SpreadExecutableNotionalReason =
 	| "missing-short-bid-size";
 
 export type SpreadStability = {
-	firstSeenAt: number;
-	lastSeenAt: number;
 	occurrences: number;
 	lifetimeMs: number;
-	averagePriceSpread: number;
 	averagePriceSpreadPercent: number;
-	averageFeeAdjustedPriceSpreadPercent?: number;
-	averageFundingAprSpread?: number;
 	averageEstimatedNetSpreadPercent?: number;
 };
 
@@ -81,7 +53,6 @@ export type SpreadConfidenceBreakdown = Partial<Record<
 export type SpreadConfidenceComponent = {
 	score: number;
 	weight: number;
-	weightedScore: number;
 	reason: string;
 };
 

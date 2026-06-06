@@ -2,18 +2,10 @@ import { useQuery } from "@tanstack/vue-query";
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import type { FundingExchange } from "../FundingOverview/FundingOverview.types";
 import { SPREADS_CACHE_TTL_MS } from "./SpreadsOverview.constants";
-import type { SpreadsResponse } from "./SpreadsOverview.types";
-
-type SpreadsRequestParams = {
-	exchanges: FundingExchange[];
-	symbol?: string;
-	minPriceSpreadPercent?: number;
-	maxSnapshotAgeMs?: number;
-	positionSizeUsd?: number;
-	minOccurrences?: number;
-	minLifetimeMs?: number;
-	holdingPeriodHours?: number;
-};
+import {
+	getSpreads,
+	type SpreadsRequestParams,
+} from "./SpreadsOverview.api";
 
 type UseSpreadsQueryParams = {
 	exchanges: MaybeRefOrGetter<FundingExchange[]>;
@@ -45,58 +37,6 @@ export const createSpreadsQueryKey = (params: SpreadsRequestParams) => [
 	normalizePositiveNumberFilter(params.holdingPeriodHours),
 ];
 
-const getSpreads = async (
-	params: SpreadsRequestParams,
-): Promise<SpreadsResponse> => {
-	const query = new URLSearchParams();
-
-	if (params.exchanges.length > 0) {
-		query.set("exchanges", params.exchanges.join(","));
-	}
-
-	if (params.symbol) {
-		query.set("symbol", params.symbol);
-	}
-
-	if (params.minPriceSpreadPercent !== undefined) {
-		query.set("minPriceSpreadPercent", String(params.minPriceSpreadPercent));
-	}
-
-	if (params.maxSnapshotAgeMs !== undefined) {
-		query.set("maxSnapshotAgeMs", String(params.maxSnapshotAgeMs));
-	}
-
-	if (params.positionSizeUsd !== undefined && params.positionSizeUsd > 0) {
-		query.set("positionSizeUsd", String(params.positionSizeUsd));
-	}
-
-	if (params.minOccurrences !== undefined && params.minOccurrences > 0) {
-		query.set("minOccurrences", String(Math.floor(params.minOccurrences)));
-	}
-
-	if (params.minLifetimeMs !== undefined && params.minLifetimeMs > 0) {
-		query.set("minLifetimeMs", String(params.minLifetimeMs));
-	}
-
-	if (params.holdingPeriodHours !== undefined && params.holdingPeriodHours > 0) {
-		query.set("holdingPeriodHours", String(params.holdingPeriodHours));
-	}
-
-	const response = await fetch(`/api/spreads?${query.toString()}`);
-
-	if (!response.ok) {
-		const body = await response.json().catch(() => undefined) as
-			| { error?: { message?: string } }
-			| undefined;
-
-		throw new Error(
-			body?.error?.message ?? `Spreads request failed: ${response.status}`,
-		);
-	}
-
-	return response.json() as Promise<SpreadsResponse>;
-};
-
 /**
  * Fetches the initial spread opportunities payload; live updates continue via
  * Socket.IO once the first REST response has hydrated the query cache.
@@ -104,40 +44,34 @@ const getSpreads = async (
 export const useSpreadsQuery = (params: UseSpreadsQueryParams) =>
 	useQuery({
 		queryKey: computed(() => [
-			...createSpreadsQueryKey({
-				exchanges: toValue(params.exchanges),
-				symbol: params.symbol ? toValue(params.symbol) : "",
-				minPriceSpreadPercent: toValue(params.minPriceSpreadPercent),
-				maxSnapshotAgeMs: toValue(params.maxSnapshotAgeMs),
-				positionSizeUsd: toValue(params.positionSizeUsd),
-				minOccurrences: toValue(params.minOccurrences),
-				minLifetimeMs: toValue(params.minLifetimeMs),
-				holdingPeriodHours: toValue(params.holdingPeriodHours),
-			}),
+			...createSpreadsQueryKey(resolveSpreadsRequestParams(params)),
 		]),
 		enabled: computed(() => toValue(params.exchanges).length > 1),
-		queryFn: () =>
-			getSpreads({
-				exchanges: toValue(params.exchanges),
-				symbol: params.symbol
-					? toValue(params.symbol).trim().toUpperCase() || undefined
-					: undefined,
-				minPriceSpreadPercent: toValue(params.minPriceSpreadPercent),
-				maxSnapshotAgeMs: toValue(params.maxSnapshotAgeMs),
-				positionSizeUsd: toValue(params.positionSizeUsd),
-				minOccurrences: toValue(params.minOccurrences),
-				minLifetimeMs: toValue(params.minLifetimeMs),
-				holdingPeriodHours: toValue(params.holdingPeriodHours),
-			}),
+		queryFn: () => getSpreads(resolveSpreadsRequestParams(params)),
 		staleTime: SPREADS_CACHE_TTL_MS,
 		gcTime: SPREADS_CACHE_TTL_MS,
 	});
 
+const resolveSpreadsRequestParams = (
+	params: UseSpreadsQueryParams,
+): SpreadsRequestParams => ({
+	exchanges: toValue(params.exchanges),
+	symbol: params.symbol
+		? toValue(params.symbol).trim().toUpperCase() || undefined
+		: undefined,
+	minPriceSpreadPercent: toValue(params.minPriceSpreadPercent),
+	maxSnapshotAgeMs: toValue(params.maxSnapshotAgeMs),
+	positionSizeUsd: toValue(params.positionSizeUsd),
+	minOccurrences: toValue(params.minOccurrences),
+	minLifetimeMs: toValue(params.minLifetimeMs),
+	holdingPeriodHours: toValue(params.holdingPeriodHours),
+});
+
 const normalizePositionSizeFilter = (value?: number): number | undefined =>
-	value !== undefined && value > 0 ? value : undefined;
+	value && value > 0 ? value : undefined;
 
 const normalizeIntegerFilter = (value?: number): number | undefined =>
-	value !== undefined && value > 0 ? Math.floor(value) : undefined;
+	value && value > 0 ? Math.floor(value) : undefined;
 
 const normalizePositiveNumberFilter = (value?: number): number | undefined =>
-	value !== undefined && value > 0 ? value : undefined;
+	value && value > 0 ? value : undefined;

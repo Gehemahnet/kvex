@@ -297,7 +297,6 @@ const formatConfidenceTooltipLine = (
 	component?: {
 		score: number;
 		weight: number;
-		weightedScore: number;
 		reason?: string;
 	},
 	options: {

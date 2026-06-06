@@ -45,8 +45,6 @@ describe("spreads service", () => {
 
 		expect(response.data).toHaveLength(1);
 		expect(response.data[0]?.stability).toMatchObject({
-			firstSeenAt: 1_000,
-			lastSeenAt: 2_500,
 			occurrences: 2,
 			lifetimeMs: 1_500,
 		});
@@ -96,6 +94,27 @@ describe("spreads service", () => {
 			"BTC",
 		]);
 		expect(response.data[0]?.estimatedNetSpreadPercent).toBeCloseTo(0.028);
+	});
+
+	it("returns compact table rows without internal market snapshot fields", async () => {
+		vi.setSystemTime(1_000);
+
+		const response = await getSpreads({
+			exchanges: ["hyperliquid", "okx"],
+		});
+
+		expect(response.data[0]?.long).toEqual({
+			exchange: "hyperliquid",
+			price: 100,
+			priceSource: "mark",
+			ageMs: 0,
+		});
+		expect(response.data[0]?.long).not.toHaveProperty("symbol");
+		expect(response.data[0]?.long).not.toHaveProperty("fundingRate");
+		expect(response.data[0]?.long).not.toHaveProperty("receivedAt");
+		expect(response.data[0]?.confidenceBreakdown.priceSource).not.toHaveProperty(
+			"weightedScore",
+		);
 	});
 });
 

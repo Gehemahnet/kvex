@@ -55,6 +55,38 @@ export type SpreadOpportunity = {
 	stability?: SpreadStability;
 };
 
+export type CompactSpreadSide = Pick<
+	SpreadSide,
+	| "exchange"
+	| "price"
+	| "priceSource"
+	| "quoteAsset"
+	| "settlementAsset"
+	| "feeSource"
+	| "ageMs"
+>;
+
+export type CompactSpreadOpportunity = Pick<
+	SpreadOpportunity,
+	| "symbol"
+	| "priceSpread"
+	| "priceSpreadPercent"
+	| "executionSlippagePercent"
+	| "confidence"
+	| "isStale"
+	| "maxExecutableNotionalUsd"
+	| "maxExecutableNotionalReason"
+	| "feeAdjustedPriceSpreadPercent"
+	| "fundingAprSpread"
+	| "fundingImpactPercent"
+	| "estimatedNetSpreadPercent"
+> & {
+	long: CompactSpreadSide;
+	short: CompactSpreadSide;
+	confidenceBreakdown: CompactSpreadConfidenceBreakdown;
+	stability?: CompactSpreadStability;
+};
+
 export type SpreadExecutableNotionalReason =
 	| "available"
 	| "missing-long-ask"
@@ -74,6 +106,14 @@ export type SpreadStability = {
 	averageEstimatedNetSpreadPercent?: number;
 };
 
+export type CompactSpreadStability = Pick<
+	SpreadStability,
+	| "occurrences"
+	| "lifetimeMs"
+	| "averagePriceSpreadPercent"
+	| "averageEstimatedNetSpreadPercent"
+>;
+
 export type SpreadConfidenceBreakdown = {
 	priceSource: SpreadConfidenceComponent;
 	freshness: SpreadConfidenceComponent;
@@ -89,6 +129,16 @@ export type SpreadConfidenceComponent = {
 	reason: string;
 };
 
+export type CompactSpreadConfidenceBreakdown = Record<
+	keyof SpreadConfidenceBreakdown,
+	CompactSpreadConfidenceComponent
+>;
+
+export type CompactSpreadConfidenceComponent = Pick<
+	SpreadConfidenceComponent,
+	"score" | "weight" | "reason"
+>;
+
 export type SpreadsQuery = {
 	exchanges: Exchange[];
 	symbol?: string;
@@ -101,7 +151,7 @@ export type SpreadsQuery = {
 };
 
 export type SpreadsResponse = SpreadsQuery & {
-	data: SpreadOpportunity[];
+	data: CompactSpreadOpportunity[];
 	errors: {
 		exchange: Exchange;
 		code: string;
