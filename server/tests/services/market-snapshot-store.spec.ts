@@ -1,4 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const redisMock = vi.hoisted(() => ({
+	client: undefined as
+		| {
+			mGet: ReturnType<typeof vi.fn>;
+			scanIterator: ReturnType<typeof vi.fn>;
+			set: ReturnType<typeof vi.fn>;
+		}
+		| undefined,
+	values: new Map<string, string>(),
+}));
+
+vi.mock("../../src/common/redis-client", () => ({
+	getRedisClient: vi.fn(async () => redisMock.client),
+}));
+
 import {
 	clearMarketSnapshotStore,
 	getStoredMarketSnapshots,
@@ -15,10 +31,12 @@ describe("market-snapshot-store", () => {
 
 	afterEach(() => {
 		vi.useRealTimers();
+		redisMock.client = undefined;
+		redisMock.values.clear();
 	});
 
-	it("stores and filters market snapshots by exchange and symbol", () => {
-		upsertMarketSnapshots([
+	it("stores and filters market snapshots by exchange and symbol", async () => {
+		await upsertMarketSnapshots([
 			{
 				exchange: "hyperliquid",
 				symbol: "BTC",
@@ -34,7 +52,7 @@ describe("market-snapshot-store", () => {
 		]);
 
 		expect(
-			getStoredMarketSnapshots({
+			await getStoredMarketSnapshots({
 				exchanges: ["hyperliquid", "pacifica"],
 				symbol: "BTC",
 			}),
@@ -53,14 +71,14 @@ describe("market-snapshot-store", () => {
 		]);
 	});
 
-	it("merges updates into existing snapshots", () => {
-		upsertMarketSnapshot({
+	it("merges updates into existing snapshots", async () => {
+		await upsertMarketSnapshot({
 			exchange: "ethereal",
 			symbol: "BTC",
 			sourceSymbol: "BTC",
 			fundingRate: 0.001,
 		});
-		upsertMarketSnapshot({
+		await upsertMarketSnapshot({
 			exchange: "ethereal",
 			symbol: "BTC",
 			sourceSymbol: "BTCUSD",
@@ -68,7 +86,7 @@ describe("market-snapshot-store", () => {
 		});
 
 		expect(
-			getStoredMarketSnapshots({
+			await getStoredMarketSnapshots({
 				exchanges: ["ethereal"],
 			}),
 		).toEqual([
@@ -90,8 +108,8 @@ describe("market-snapshot-store", () => {
 		]);
 	});
 
-	it("tracks field-level freshness separately", () => {
-		upsertMarketSnapshot({
+	it("tracks field-level freshness separately", async () => {
+		await upsertMarketSnapshot({
 			exchange: "ethereal",
 			symbol: "BTC",
 			sourceSymbol: "BTC",
@@ -100,7 +118,7 @@ describe("market-snapshot-store", () => {
 
 		vi.setSystemTime(new Date("2026-06-04T00:00:05.000Z"));
 
-		upsertMarketSnapshot({
+		await upsertMarketSnapshot({
 			exchange: "ethereal",
 			symbol: "BTC",
 			sourceSymbol: "BTCUSD",
@@ -108,13 +126,82 @@ describe("market-snapshot-store", () => {
 		});
 
 		expect(
-			getStoredMarketSnapshots({
+			(await getStoredMarketSnapshots({
 				exchanges: ["ethereal"],
-			})[0],
+			}))[0],
 		).toMatchObject({
 			receivedAt: 1_780_531_205_000,
 			priceReceivedAt: 1_780_531_205_000,
 			fundingReceivedAt: 1_780_531_200_000,
 		});
 	});
+
+	it("persists snapshots to Redis when a client is available", async () => {
+		redisMock.client = createRedisClientMock();
+
+		await upsertMarketSnapshot({
+			exchange: "okx",
+			symbol: "SOL",
+			sourceSymbol: "SOL-USDT-SWAP",
+			markPrice: 10,
+		});
+
+		expect(redisMock.client.set).toHaveBeenCalledWith(
+			"kvex:market-snapshot:okx:SOL",
+			expect.any(String),
+			{ EX: 120 },
+		);
+
+		clearMarketSnapshotStore();
+
+		expect(
+			await getStoredMarketSnapshots({
+				exchanges: ["okx"],
+				symbol: "SOL",
+			}),
+		).toEqual([
+			expect.objectContaining({
+				exchange: "okx",
+				symbol: "SOL",
+				sourceSymbol: "SOL-USDT-SWAP",
+				markPrice: 10,
+			}),
+		]);
+	});
+
+	it("ignores non-tradable service symbols", async () => {
+		redisMock.client = createRedisClientMock();
+
+		await upsertMarketSnapshot({
+			exchange: "hyperliquid",
+			symbol: "@171",
+			sourceSymbol: "@171",
+			midPrice: 100,
+		});
+
+		expect(
+			await getStoredMarketSnapshots({
+				exchanges: ["hyperliquid"],
+			}),
+		).toEqual([]);
+		expect(redisMock.client.set).not.toHaveBeenCalled();
+	});
+});
+
+const createRedisClientMock = () => ({
+	set: vi.fn(async (key: string, value: string) => {
+		redisMock.values.set(key, value);
+	}),
+	mGet: vi.fn(async (keys: string[]) =>
+		keys.map((key) => redisMock.values.get(key) ?? null),
+	),
+	scanIterator: vi.fn(async function* ({ MATCH }: { MATCH: string }) {
+		const prefix = MATCH.slice(0, -1);
+
+		for (const key of redisMock.values.keys()) {
+			if (key.startsWith(prefix)) {
+				yield key;
+			}
+		}
+	}),
 });

@@ -28,6 +28,20 @@ export class BadRequestError extends HttpError {
 	}
 }
 
+export class UnauthorizedError extends HttpError {
+	constructor(message: string = "Unauthorized", code: string = "UNAUTHORIZED") {
+		super({ message, statusCode: 401, code });
+		this.name = "UnauthorizedError";
+	}
+}
+
+export class ConflictError extends HttpError {
+	constructor(message: string, code: string = "CONFLICT") {
+		super({ message, statusCode: 409, code });
+		this.name = "ConflictError";
+	}
+}
+
 export class MethodNotAllowedError extends HttpError {
 	constructor(method: string | undefined, path: string) {
 		super({

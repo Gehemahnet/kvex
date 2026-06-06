@@ -13,6 +13,12 @@ export const writeJsonResponse = <TResponseBody extends JsonValue>(
 	statusCode: number,
 	body: TResponseBody,
 ) => {
-	response.writeHead(statusCode, { "Content-Type": "application/json" });
-	response.end(JSON.stringify(body));
+	const payload = JSON.stringify(body);
+	const payloadBytes = Buffer.byteLength(payload);
+
+	response.writeHead(statusCode, {
+		"Content-Length": String(payloadBytes),
+		"Content-Type": "application/json",
+	});
+	response.end(payload);
 };

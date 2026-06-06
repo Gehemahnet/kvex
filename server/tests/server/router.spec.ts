@@ -5,11 +5,19 @@ type MockResponse = {
 	statusCode?: number;
 	headers?: Record<string, string>;
 	body?: string;
+	getHeader: (name: string) => string | undefined;
+	on: (event: string, listener: () => void) => MockResponse;
 	writeHead: (statusCode: number, headers: Record<string, string>) => MockResponse;
 	end: (body: string) => string;
 };
 
 const createMockResponse = (): MockResponse => ({
+	getHeader(name) {
+		return this.headers?.[name];
+	},
+	on() {
+		return this;
+	},
 	writeHead(statusCode, headers) {
 		this.statusCode = statusCode;
 		this.headers = headers;

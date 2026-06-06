@@ -11,6 +11,7 @@ import {
 	MARKET_EQUITY_BASE_ASSETS,
 	MARKET_STABLE_QUOTES,
 	MARKET_SYNTHETIC_BASE_ASSETS,
+	MARKET_TRADABLE_SYMBOL_PATTERN,
 } from "./market-snapshots.constants";
 
 /**
@@ -121,7 +122,13 @@ const createMarketIdentity = (
 
 /** Returns true when a snapshot represents a market eligible for spread comparison. */
 export const isComparableMarketSnapshot = (snapshot: MarketSnapshot): boolean =>
-	snapshot.assetClass !== "equity" && snapshot.assetClass !== "synthetic";
+	isTradableMarketSymbol(snapshot.symbol) &&
+	snapshot.assetClass !== "equity" &&
+	snapshot.assetClass !== "synthetic";
+
+/** Returns true when a normalized market symbol can be exposed to trading views. */
+export const isTradableMarketSymbol = (symbol: string): boolean =>
+	MARKET_TRADABLE_SYMBOL_PATTERN.test(symbol);
 
 const getDelimitedQuoteAsset = (parts: string[]): string | undefined =>
 	parts

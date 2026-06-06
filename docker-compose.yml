@@ -9,8 +9,19 @@ services:
     ports:
       - "${POSTGRES_HOST_PORT}:${POSTGRES_CONTAINER_PORT}"
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
     restart: always
+  redis:
+    image: redis:7-alpine
+    container_name: ${REDIS_CONTAINER}
+    ports:
+      - "${REDIS_HOST_PORT}:${REDIS_CONTAINER_PORT}"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+  redis-data:
+

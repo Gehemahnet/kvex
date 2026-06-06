@@ -7,6 +7,7 @@
 		"dev": "tsx watch --clear-screen=false ./src/server/index.ts",
 		"dev:once": "tsx ./src/server/index.ts",
 		"build": "tsup src/server/index.ts --format esm --dts",
+		"migrate": "tsx ./src/storage/postgres/run-migrations.ts",
 		"start": "node dist/index.js",
 		"test": "vitest",
 		"lint": "oxlint src",
@@ -15,6 +16,7 @@
 	"dependencies": {
 		"dotenv": "^17.4.1",
 		"pg": "^8.20.0",
+		"redis": "^6.0.0",
 		"socket.io": "^4.8.3",
 		"ws": "^8.18.0"
 	},
