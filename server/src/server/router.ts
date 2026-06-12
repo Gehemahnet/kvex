@@ -6,6 +6,9 @@ import { fundingRoutes } from "./http/funding/funding.routes";
 import { writeJsonResponse } from "./http/http-response.utils";
 import { marketSnapshotRoutes } from "./http/markets/market-snapshots.routes";
 import { metricsRoutes } from "./http/metrics/metrics.routes";
+import { assetPriceRoutes } from "./http/portfolio/asset-prices.routes";
+import { walletBalanceRoutes } from "./http/portfolio/wallet-balances.routes";
+import { userWalletTokenRoutes } from "./http/portfolio/user-wallet-tokens.routes";
 import { spreadRoutes } from "./http/spreads/spreads.routes";
 import {
 	MethodNotAllowedError,
@@ -20,6 +23,9 @@ const routes: Route[] = [
 	...fundingRoutes,
 	...marketSnapshotRoutes,
 	...metricsRoutes,
+	...assetPriceRoutes,
+	...walletBalanceRoutes,
+	...userWalletTokenRoutes,
 	...spreadRoutes,
 ];
 

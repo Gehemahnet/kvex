@@ -1,0 +1,95 @@
+import { describe, expect, it } from "vitest";
+import type { HttpClient } from "../../src/common/http-client";
+import { getAssetPrices } from "../../src/services/portfolio/asset-prices.service";
+
+describe("getAssetPrices", () => {
+	it("returns stablecoin prices without upstream calls", async () => {
+		const httpClient: HttpClient = {
+			async get() {
+				throw new Error("Unexpected upstream call");
+			},
+			async post() {
+				throw new Error("Unexpected upstream call");
+			},
+		};
+
+		await expect(
+			getAssetPrices(
+				{ symbols: ["usdc"] },
+				{
+					httpClient,
+					now: () => new Date("2026-06-12T00:00:00.000Z"),
+				},
+			),
+		).resolves.toEqual({
+			symbols: ["USDC"],
+			prices: [
+				{
+					symbol: "USDC",
+					priceUsd: 1,
+					source: "stablecoin",
+					updatedAt: "2026-06-12T00:00:00.000Z",
+				},
+			],
+			errors: [],
+		});
+	});
+
+	it("fetches non-stable symbols from a USDT quote provider", async () => {
+		const requestedUrls: string[] = [];
+		const httpClient: HttpClient = {
+			async get<Response>(url: string): Promise<Response> {
+				requestedUrls.push(url);
+
+				return {
+					symbol: "SOLUSDT",
+					price: "150.25",
+				} as Response;
+			},
+			async post() {
+				throw new Error("Unexpected upstream call");
+			},
+		};
+
+		const result = await getAssetPrices(
+			{ symbols: ["SOL"] },
+			{
+				httpClient,
+				now: () => new Date("2026-06-12T00:00:00.000Z"),
+			},
+		);
+
+		expect(result.prices).toEqual([
+			{
+				symbol: "SOL",
+				priceUsd: 150.25,
+				source: "binance",
+				updatedAt: "2026-06-12T00:00:00.000Z",
+			},
+		]);
+		expect(result.errors).toEqual([]);
+		expect(requestedUrls[0]).toContain("symbol=SOLUSDT");
+	});
+
+	it("keeps partial price errors", async () => {
+		const httpClient: HttpClient = {
+			async get() {
+				throw new Error("Missing quote");
+			},
+			async post() {
+				throw new Error("Unexpected upstream call");
+			},
+		};
+
+		const result = await getAssetPrices({ symbols: ["ABC"] }, { httpClient });
+
+		expect(result.prices).toEqual([]);
+		expect(result.errors).toEqual([
+			{
+				symbol: "ABC",
+				code: "PRICE_FETCH_FAILED",
+				message: "Missing quote",
+			},
+		]);
+	});
+});
