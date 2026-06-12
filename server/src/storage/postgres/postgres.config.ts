@@ -7,29 +7,37 @@ export type PostgresConfig = {
 };
 
 const DEFAULT_POSTGRES_HOST = "localhost";
-const DEFAULT_POSTGRES_PORT = 5432;
 
-/** Builds Postgres connection config from non-secret environment variables. */
+/** Builds Postgres connection config from POSTGRES_* environment variables. */
 export const getPostgresConfig = (): PostgresConfig | undefined => {
-	const database = process.env.POSTGRES_DB;
-	const password = process.env.POSTGRES_PASSWORD;
-	const user = process.env.POSTGRES_USER;
+	const {
+		POSTGRES_DB,
+		POSTGRES_HOST,
+		POSTGRES_HOST_PORT,
+		POSTGRES_PASSWORD,
+		POSTGRES_USER,
+	} = process.env;
 
-	if (!database || !password || !user) {
+	if (
+		!POSTGRES_HOST_PORT ||
+		!POSTGRES_DB ||
+		!POSTGRES_PASSWORD ||
+		!POSTGRES_USER
+	) {
+		return undefined;
+	}
+
+	const port = Number(POSTGRES_HOST_PORT);
+
+	if (!Number.isInteger(port) || port <= 0) {
 		return undefined;
 	}
 
 	return {
-		database,
-		host: process.env.POSTGRES_HOST ?? DEFAULT_POSTGRES_HOST,
-		password,
-		port: parsePostgresPort(process.env.POSTGRES_HOST_PORT),
-		user,
+		database: POSTGRES_DB,
+		host: POSTGRES_HOST || DEFAULT_POSTGRES_HOST,
+		password: POSTGRES_PASSWORD,
+		port,
+		user: POSTGRES_USER,
 	};
-};
-
-const parsePostgresPort = (value: string | undefined): number => {
-	const port = Number(value);
-
-	return Number.isInteger(port) && port > 0 ? port : DEFAULT_POSTGRES_PORT;
 };

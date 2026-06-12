@@ -1,10 +1,6 @@
 const DEFAULT_AUTH_SESSION_DAYS = 7;
 const SECONDS_IN_DAY = 60 * 60 * 24;
 
-/** Returns the JWT signing secret from process environment. */
-export const getAuthJwtSecret = (): string | undefined =>
-	process.env.AUTH_JWT_SECRET?.trim() || undefined;
-
 /** Returns the configured auth session duration in seconds. */
 export const getAuthSessionTtlSeconds = (): number =>
 	parseAuthSessionDays(process.env.AUTH_SESSION_DAYS) * SECONDS_IN_DAY;

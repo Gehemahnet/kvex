@@ -16,7 +16,7 @@ let pool: pg.Pool | undefined;
 export const getPostgresPool = (): pg.Pool | undefined => {
 	const config = getPostgresConfig();
 
-	if (config === undefined) {
+	if (!config) {
 		return undefined;
 	}
 

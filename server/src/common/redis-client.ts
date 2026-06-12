@@ -58,7 +58,7 @@ const connectRedisClient = async (
 	try {
 		const client = createClient({ url: redisUrl });
 
-		client.on("error", (error) => {
+		client.on("error", (error: Error) => {
 			redisStatus = {
 				configured: true,
 				connected: false,
