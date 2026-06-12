@@ -42,13 +42,22 @@
 - backend route `GET /funding/overview` is implemented for the all-symbol table
 - backend route `GET /markets/snapshots` is implemented for normalized market snapshots
 - backend route `GET /spreads` is implemented for ranked spread opportunities
+- backend route `GET /portfolio/wallet-balances` is implemented for read-only EVM and Solana public wallet balances
+- backend route `GET /portfolio/prices` is implemented for best-effort portfolio USD prices
+- backend routes `GET/POST/DELETE /portfolio/tokens` are implemented for authenticated saved wallet token watchlists
 - funding query parsing validates required `symbol`, required `timeframe`, and optional `exchanges`
 - funding service aggregates per-exchange data from `hyperliquid`, `pacifica`, `ethereal`, `nado`, and `okx`
 - funding response includes normalized per-exchange series plus partial per-exchange errors
 - Funding frontend consumes `/funding/overview` and renders one row per normalized symbol
 - Spreads frontend consumes `/spreads`, subscribes to Socket.IO updates, and renders executable spread opportunities
 - Socket.IO is wired for market snapshots and spreads on `/market-data`
-- `pg` exists in dependencies but is not integrated yet
+- `pg` exists in dependencies and the first Postgres client/migration scaffold is
+  in place for users
+- portfolio wallet reads use GoldRush as the primary EVM multichain provider,
+  Alchemy as EVM/Solana fallback/provider, three-minute provider caches, and
+  partial per-chain errors
+- GoldRush spam-token metadata is preserved so the frontend can hide spam by
+  default while still allowing explicit display
 
 ## Current Funding Contract
 
@@ -103,10 +112,10 @@
 2. Keep Funding aligned with `/funding/overview` and `/funding` query contracts.
 3. Keep Spreads aligned with `/markets/snapshots`, `/spreads`, and Socket.IO contracts.
 4. Add frontend component/integration tests when Vue component test tooling is introduced.
-5. Add Redis for hot state and pubsub after spreads are accepted.
-6. Add Postgres/Timescale for market and opportunity history.
-7. Add portfolio ingestion and secrets model.
-8. Replace documented fee fallbacks with account-specific fee profiles.
+5. Keep Redis hot state focused on live market snapshots and opportunities.
+6. Add user auth, read-only exchange accounts, and secrets model.
+7. Replace documented fee fallbacks with account-specific fee profiles.
+8. Add Postgres/Timescale for market and opportunity history.
 9. Add paper trading and execution audit log.
 10. Add live trading only with strict risk controls.
 

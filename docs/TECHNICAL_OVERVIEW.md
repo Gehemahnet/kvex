@@ -2,10 +2,10 @@
 
 ## Product Shape
 
-KVEX is currently a server-first perp/funding and spread monitor. The backend
-collects public market data from centralized exchanges, normalizes it into a
-shared snapshot model, computes spread opportunities, and exposes both REST and
-Socket.IO contracts to the Vue frontend.
+KVEX is currently a server-first perp/funding, spread, and portfolio monitor.
+The backend collects public market data from centralized exchanges, normalizes
+it into a shared snapshot model, computes spread opportunities, reads public
+wallet balances, and exposes REST plus Socket.IO contracts to the Vue frontend.
 
 Current exchanges:
 
@@ -31,17 +31,22 @@ Important backend areas:
   snapshot store.
 - `server/src/services/spreads`: spread engine, confidence scoring, executable
   price/slippage, and in-memory signal stability.
+- `server/src/services/portfolio`: public wallet balance discovery, USD price
+  lookup, and authenticated saved token watchlists.
 - `server/src/server/realtime`: Socket.IO bridge for frontend live updates.
 
 ### Frontend
 
 The frontend is Vue 3 + Vue Router + TanStack Query + PrimeVue + Tailwind.
-The app currently exposes Funding and Spreads views in a Sakai-inspired shell.
+The app currently exposes Funding, Spreads, Auth, and Portfolio views in a
+Sakai-inspired shell.
 
 Important frontend areas:
 
 - `src/views/FundingOverview`: all-symbol funding monitor.
 - `src/views/SpreadsOverview`: spread table, filters, live Socket.IO cache updates.
+- `src/views/PortfolioOverview`: public wallet tracking, priced asset table, and
+  saved token watchlist controls.
 - `src/common/market-data-socket.ts`: singleton Socket.IO client.
 - `src/common/local-storage.utils.ts`: validated persisted UI state.
 
@@ -97,6 +102,67 @@ Spread ranking prefers:
 1. `estimatedNetSpreadPercent`
 2. `feeAdjustedPriceSpreadPercent`
 3. raw `priceSpreadPercent`
+
+## Portfolio Backend
+
+Portfolio backend work is intentionally read-only today. It supports public
+wallet address tracking and a user-owned token watchlist, but it does not store
+private keys and does not execute trades.
+
+### Wallet Balance Sources
+
+`GET /portfolio/wallet-balances` accepts EVM and Solana wallet addresses. The
+current frontend calls it per wallet source so one slow or failed wallet does
+not block the whole portfolio table.
+
+For EVM `tokens=all`, the service prefers GoldRush:
+
+- supported chain ids are configured in
+  `server/src/services/portfolio/wallet-balances.constants.ts`
+- the current set includes Ethereum, Optimism, Polygon, Base, Arbitrum, and
+  HyperEVM
+- each chain is requested independently and cached for three minutes
+- partial chain failures are returned as `errors` with `chainId`
+- when a failed chain also has an Alchemy RPC client, the service retries that
+  chain through Alchemy instead of retrying every chain
+- GoldRush spam metadata is preserved as `isSpam` so the frontend can hide spam
+  tokens by default while still allowing the user to show them
+
+For EVM without GoldRush, or as fallback for failed supported chains, Alchemy is
+used through JSON-RPC:
+
+- native balances use `eth_getBalance`
+- ERC-20 discovery uses `alchemy_getTokenBalances`
+- token metadata uses `alchemy_getTokenMetadata`
+- a failing chain returns a partial `CHAIN_BALANCE_FETCH_FAILED` error while
+  successful chains remain in the response
+
+For Solana:
+
+- native SOL uses `getBalance`
+- SPL tokens use `getTokenAccountsByOwner`
+- Solana token values are priced later through `/portfolio/prices` when a trusted
+  symbol is available
+
+### USD Pricing
+
+`GET /portfolio/prices` accepts a comma-separated symbol list and returns
+best-effort USD prices. Requests are parallelized and cached for three minutes.
+The frontend can keep showing balances while missing prices refresh in the
+background.
+
+### Saved Wallet Tokens
+
+Authenticated users can manage saved wallet token watchlists through:
+
+- `GET /portfolio/tokens`
+- `POST /portfolio/tokens`
+- `DELETE /portfolio/tokens?id=...`
+
+The storage table is created by
+`server/src/storage/postgres/migrations/006_create_user_wallet_tokens.sql`.
+Mutations require the authenticated session and CSRF token. Reads are scoped to
+the current user and network.
 
 ## Confidence Model
 
@@ -179,6 +245,49 @@ Optional:
 
 Returns ranked spread opportunities and partial exchange errors.
 
+### `GET /portfolio/wallet-balances`
+
+Optional legacy shape:
+
+- `network`
+- `address`
+- `addresses`
+
+Preferred multi-source shape:
+
+- `networks`: comma-separated list, currently `evm` and `solana`
+- `evmAddresses`: comma-separated EVM wallet addresses
+- `solanaAddresses`: comma-separated Solana wallet addresses
+- `tokens`: comma-separated token list, usually `all`
+
+Returns:
+
+- normalized wallet token balances
+- source metadata including network, chain id, chain key, and chain name when
+  available
+- optional `valueUsd`, `priceUsd`, `logoUrl`, and `isSpam`
+- partial per-chain or per-token errors
+
+### `GET /portfolio/prices`
+
+Required:
+
+- `symbols`
+
+Returns best-effort USD prices for trusted symbols plus partial symbol errors.
+
+### `GET /portfolio/tokens`
+
+Authenticated read endpoint for saved wallet token watchlist items.
+
+### `POST /portfolio/tokens`
+
+Authenticated CSRF-protected endpoint that stores one watchlist token.
+
+### `DELETE /portfolio/tokens?id=...`
+
+Authenticated CSRF-protected endpoint that deletes one owned watchlist token.
+
 ## Socket.IO Contract
 
 Socket path: `/market-data`
@@ -203,9 +312,12 @@ live updates stay aligned.
 ## Current Gaps
 
 - Account-specific taker/maker fees are not connected yet.
-- User portfolio and API-key storage do not exist yet.
+- User portfolio currently supports public wallet balances and saved token
+  watchlists, but not exchange API-key balance ingestion yet.
 - Redis hot cache is planned but not introduced.
 - Postgres/Timescale history is planned but not introduced.
+- Portfolio valuation is best-effort and depends on provider prices or trusted
+  symbol price lookup.
 - Collateral matching should be added when exchanges expose enough metadata.
 - Frontend component/integration tests need a Vue component test setup if we want
   PrimeVue table interaction coverage.

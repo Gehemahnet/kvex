@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-06-13
+
+- Added read-only portfolio backend endpoints for public wallet balances, USD
+  prices, and authenticated saved wallet tokens.
+- Added EVM/Solana wallet balance discovery with GoldRush, Alchemy fallback,
+  per-chain partial errors, three-minute provider caches, and spam-token
+  metadata.
+- Added Postgres migration and repository layer for user wallet token
+  watchlists.
+- Documented the current portfolio balance flow and provider fallback behavior.
+
+## 2026-06-06
+
+- Added Redis-backed hot cache support for normalized market snapshots.
+- Added structured runtime metrics and `/metrics` diagnostics endpoint.
+- Added Postgres user, exchange account, password reset, and session migrations.
+- Added server-side auth sessions with HttpOnly cookies, CSRF tokens, refresh,
+  logout, and anonymous `/auth/me` status responses.
+- Added Auth frontend pages and session bootstrap behavior.
+- Refactored backend and frontend spreads request pipelines.
+- Added bilingual onboarding documentation for junior developers.
+
 ## 2026-06-05
 
 - Added normalized market snapshot store with field-level freshness.
