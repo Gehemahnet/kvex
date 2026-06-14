@@ -1,12 +1,27 @@
 # Changelog
 
+## 2026-06-14
+
+- Added authenticated saved portfolio sources for EVM and Solana wallets.
+- Made `POST /portfolio/sources` batch-only with `{ sources: [...] }` and
+  removed the single-source create contract before release.
+- Wired the Portfolio add-wallet dialog to send one source creation request for
+  all submitted addresses.
+- Updated portfolio documentation around saved sources, authenticated
+  `/portfolio/wallet-balances/me`, GoldRush/Alchemy balance discovery, and
+  backend spam-token filtering.
+- Documented temporary local exchange-token credential storage as a pre-release
+  bridge and marked encrypted secret storage as mandatory before first release.
+- Updated theme documentation to point to the current `src/theme/primary.theme.ts`
+  Lara-based preset.
+
 ## 2026-06-13
 
 - Added read-only portfolio backend endpoints for public wallet balances, USD
   prices, and authenticated saved wallet tokens.
 - Added EVM/Solana wallet balance discovery with GoldRush, Alchemy fallback,
   per-chain partial errors, three-minute provider caches, and spam-token
-  metadata.
+  handling.
 - Added Postgres migration and repository layer for user wallet token
   watchlists.
 - Documented the current portfolio balance flow and provider fallback behavior.

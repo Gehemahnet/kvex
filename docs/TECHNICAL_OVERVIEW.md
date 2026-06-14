@@ -7,6 +7,11 @@ The backend collects public market data from centralized exchanges, normalizes
 it into a shared snapshot model, computes spread opportunities, reads public
 wallet balances, and exposes REST plus Socket.IO contracts to the Vue frontend.
 
+The product follows a public-first, token-enhanced model. Public market data and
+spread discovery stay available without user exchange tokens. Tokens refine the
+same public view with account-specific fees, balances, positions, and future
+terminal execution data.
+
 Current exchanges:
 
 - Hyperliquid
@@ -32,7 +37,7 @@ Important backend areas:
 - `server/src/services/spreads`: spread engine, confidence scoring, executable
   price/slippage, and in-memory signal stability.
 - `server/src/services/portfolio`: public wallet balance discovery, USD price
-  lookup, and authenticated saved token watchlists.
+  lookup, authenticated saved wallet sources, and saved token watchlists.
 - `server/src/server/realtime`: Socket.IO bridge for frontend live updates.
 
 ### Frontend
@@ -45,10 +50,11 @@ Important frontend areas:
 
 - `src/views/FundingOverview`: all-symbol funding monitor.
 - `src/views/SpreadsOverview`: spread table, filters, live Socket.IO cache updates.
-- `src/views/PortfolioOverview`: public wallet tracking, priced asset table, and
-  saved token watchlist controls.
+- `src/views/PortfolioOverview`: public wallet tracking, exchange access token
+  management, priced asset table, and saved wallet/exchange source controls.
 - `src/common/market-data-socket.ts`: singleton Socket.IO client.
-- `src/common/local-storage.utils.ts`: validated persisted UI state.
+- `src/common/local-storage.utils.ts`: localStorage-backed theme/session cleanup helpers.
+- `src/common/indexed-db-state.utils.ts`: IndexedDB-backed persisted table/filter state.
 
 ## Market Snapshot Flow
 
@@ -106,14 +112,15 @@ Spread ranking prefers:
 ## Portfolio Backend
 
 Portfolio backend work is intentionally read-only today. It supports public
-wallet address tracking and a user-owned token watchlist, but it does not store
-private keys and does not execute trades.
+wallet address tracking and a user-owned token watchlist foundation, but it does
+not store private keys and does not execute trades.
 
 ### Wallet Balance Sources
 
-`GET /portfolio/wallet-balances` accepts EVM and Solana wallet addresses. The
-current frontend calls it per wallet source so one slow or failed wallet does
-not block the whole portfolio table.
+`GET /portfolio/wallet-balances` accepts explicit EVM and Solana wallet
+addresses. `GET /portfolio/wallet-balances/me` is the authenticated application
+flow: it loads saved active user sources from Postgres and fetches their
+balances.
 
 For EVM `tokens=all`, the service prefers GoldRush:
 
@@ -125,8 +132,8 @@ For EVM `tokens=all`, the service prefers GoldRush:
 - partial chain failures are returned as `errors` with `chainId`
 - when a failed chain also has an Alchemy RPC client, the service retries that
   chain through Alchemy instead of retrying every chain
-- GoldRush spam metadata is preserved as `isSpam` so the frontend can hide spam
-  tokens by default while still allowing the user to show them
+- GoldRush spam metadata is used to drop known spam tokens on the backend before
+  they reach the frontend
 
 For EVM without GoldRush, or as fallback for failed supported chains, Alchemy is
 used through JSON-RPC:
@@ -151,6 +158,35 @@ best-effort USD prices. Requests are parallelized and cached for three minutes.
 The frontend can keep showing balances while missing prices refresh in the
 background.
 
+### Saved Wallet Sources
+
+Authenticated users manage tracked wallet sources through:
+
+- `GET /portfolio/sources`
+- `POST /portfolio/sources`
+- `PATCH /portfolio/sources?id=...`
+- `DELETE /portfolio/sources?id=...`
+
+`POST /portfolio/sources` accepts only a batch body:
+
+```json
+{
+  "sources": [
+    { "network": "evm", "address": "0x..." },
+    { "network": "solana", "address": "..." }
+  ]
+}
+```
+
+It returns `{ "sources": [...] }`. There is no single-source create contract
+because the app has not shipped yet and the frontend should avoid one request per
+address.
+
+The storage table is created by
+`server/src/storage/postgres/migrations/007_create_user_portfolio_sources.sql`.
+Mutations require the authenticated session and CSRF token. Reads are scoped to
+the current user.
+
 ### Saved Wallet Tokens
 
 Authenticated users can manage saved wallet token watchlists through:
@@ -163,6 +199,90 @@ The storage table is created by
 `server/src/storage/postgres/migrations/006_create_user_wallet_tokens.sql`.
 Mutations require the authenticated session and CSRF token. Reads are scoped to
 the current user and network.
+
+### Exchange Access Tokens
+
+Authenticated users can manage saved exchange access tokens through:
+
+- `GET /portfolio/exchange-tokens`
+- `POST /portfolio/exchange-tokens`
+- `DELETE /portfolio/exchange-tokens?id=...`
+
+`POST /portfolio/exchange-tokens` accepts only a batch body:
+
+```json
+{
+  "tokens": [
+    {
+      "exchange": "okx",
+      "label": "Read-only main account",
+      "apiKey": "...",
+      "apiSecret": "...",
+      "passphrase": "...",
+      "permissions": ["balances"],
+      "expiresAt": "2026-12-31T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+Supported declared permissions are `balances`, `trades`, and `orders`. The
+default frontend flow submits `balances`, which is enough for portfolio balances
+now. Broader account-data permissions can be selected later when those workflows
+are enabled.
+
+The Portfolio Sources frontend keeps wallet sources and exchange tokens as
+separate controls. The token table displays declared permissions, last-check
+freshness, and the user-provided expiration window.
+
+Exchange token read responses are sanitized: credential fields such as API key,
+secret, and passphrase are not returned to the browser after creation.
+
+### Exchange Account Balances
+
+Authenticated users can read balances for saved exchange accounts through:
+
+- `GET /portfolio/exchange-balances/me`
+
+The endpoint reads active `user_exchange_accounts`, normalizes successful
+balances, and returns partial per-account errors.
+Expired exchange tokens are rejected before any exchange request is made and
+reported as partial account errors.
+
+Current connector behavior:
+
+- Hyperliquid: reads public account state through the `info` endpoint using the
+  saved account address.
+- OKX: reads `/api/v5/account/balance` with signed read-only API credentials.
+  The same refresh also attempts to read OKX SWAP trade fees and stores them as
+  account-specific `feeProfiles`.
+- Pacifica: reserved in the normalized contract, but currently returns an
+  explicit unsupported error until the official account balance endpoint and
+  signing payload are confirmed.
+
+Secrets storage is still not final. During pre-release local development,
+exchange credential-shaped fields may stay in the current local JSONB bridge and
+are sanitized from read responses. Moving them to a dedicated encrypted secrets
+store is mandatory before the first release and before broader UI exposure, fee
+refresh automation, or live trading.
+
+The Portfolio Assets frontend merges wallet asset rows and exchange balance rows
+into the same table and total-value summary. Exchange rows use `Exchange` as the
+data source and the exchange name as the network/group label.
+
+### Account-Specific Spread Fees
+
+`GET /spreads` remains public. When the request includes a valid browser session,
+the handler loads saved user exchange accounts and applies non-expired
+`feeProfiles` to matching market snapshots before spread calculation. Invalid,
+expired, or missing auth simply falls back to public/documented fee data.
+
+This lets the spread engine prefer user/account-specific API fee rates over
+documentation fallbacks. The current concrete fee refresh path is OKX SWAP fees
+collected during `/portfolio/exchange-balances/me`.
+
+Exchange tokens never gate public opportunity visibility. They improve precision
+and prepare account-aware portfolio/trading workflows.
 
 ## Confidence Model
 
@@ -192,7 +312,8 @@ symbol/exchange-pair signal with:
 - rolling funding APR spread average
 - rolling estimated net spread average
 
-This intentionally stays in memory until the planned Redis hot-cache work.
+Redis is already available as a hot-cache layer for market snapshots, while
+signal stability itself still stays in process memory.
 
 ## REST Contracts
 
@@ -244,6 +365,10 @@ Optional:
 - `holdingPeriodHours`
 
 Returns ranked spread opportunities and partial exchange errors.
+If the caller is authenticated and has saved exchange fee profiles, spread fee
+adjustment and fee confidence use those profiles when they match the exchange
+and market. Without valid user data, the endpoint uses public snapshots and
+documented/default fee data.
 
 ### `GET /portfolio/wallet-balances`
 
@@ -265,8 +390,22 @@ Returns:
 - normalized wallet token balances
 - source metadata including network, chain id, chain key, and chain name when
   available
-- optional `valueUsd`, `priceUsd`, `logoUrl`, and `isSpam`
+- optional `valueUsd`, `priceUsd`, and `logoUrl`
 - partial per-chain or per-token errors
+
+### `GET /portfolio/wallet-balances/me`
+
+Authenticated endpoint that fetches balances for saved active portfolio sources.
+
+Required:
+
+- `tokens`, usually `all`
+
+Returns the same normalized wallet balance shape as `GET /portfolio/wallet-balances`.
+The response also includes `sourceResults`, a per-wallet summary with
+`success`, `partial`, or `failed` status so the frontend can show progress and
+retry failed portfolio reads without treating partial chain errors as a full
+portfolio failure.
 
 ### `GET /portfolio/prices`
 
@@ -275,6 +414,77 @@ Required:
 - `symbols`
 
 Returns best-effort USD prices for trusted symbols plus partial symbol errors.
+
+### `GET /portfolio/sources`
+
+Authenticated read endpoint for saved EVM/Solana wallet sources.
+
+Optional:
+
+- `network`
+
+### `POST /portfolio/sources`
+
+Authenticated CSRF-protected endpoint that stores one or more wallet sources.
+
+Required body:
+
+- `sources`: non-empty array of `{ network, address, label? }`
+
+Returns:
+
+- `sources`: created or updated sources
+
+Single-source create bodies are not supported.
+
+### `PATCH /portfolio/sources?id=...`
+
+Authenticated CSRF-protected endpoint that updates one owned source label or
+status.
+
+### `DELETE /portfolio/sources?id=...`
+
+Authenticated CSRF-protected endpoint that deletes one owned source.
+
+### `GET /portfolio/exchange-balances/me`
+
+Authenticated endpoint that fetches balances from active saved exchange accounts.
+
+Returns:
+
+- `balances`: normalized per-exchange account balances
+- `errors`: partial per-account errors
+
+Current error codes include:
+
+- `EXCHANGE_BALANCE_CREDENTIALS_REQUIRED`
+- `EXCHANGE_BALANCE_UNSUPPORTED`
+- `EXCHANGE_TOKEN_EXPIRED`
+- `EXCHANGE_TOKEN_EXPIRY_INVALID`
+- `EXCHANGE_BALANCE_FETCH_FAILED`
+
+### `GET /portfolio/exchange-tokens`
+
+Authenticated read endpoint for saved exchange access tokens.
+
+### `POST /portfolio/exchange-tokens`
+
+Authenticated CSRF-protected endpoint that stores one or more exchange access
+tokens.
+
+Required body:
+
+- `tokens`: non-empty array of `{ exchange, label?, apiKey?, apiSecret?,
+  passphrase?, address?, accountAddress?, permissions, expiresAt? }`
+
+The default frontend flow submits `balances` permissions for read-only portfolio
+balances. Extra account-data permissions can be selected later when those
+workflows are enabled.
+
+### `DELETE /portfolio/exchange-tokens?id=...`
+
+Authenticated CSRF-protected endpoint that deletes one owned exchange access
+token.
 
 ### `GET /portfolio/tokens`
 
@@ -311,10 +521,14 @@ live updates stay aligned.
 
 ## Current Gaps
 
-- Account-specific taker/maker fees are not connected yet.
-- User portfolio currently supports public wallet balances and saved token
-  watchlists, but not exchange API-key balance ingestion yet.
-- Redis hot cache is planned but not introduced.
+- Account-specific OKX SWAP taker/maker fees can be refreshed through portfolio
+  exchange balances and applied to authenticated spread reads.
+- User portfolio currently supports public wallet balances, saved wallet
+  sources, exchange access tokens, and basic exchange API-key balance ingestion.
+- Exchange token secrets are allowed to stay in the local development bridge for
+  now, but encrypted storage is a first-release blocker.
+- Redis hot cache exists for market snapshots; broader Redis usage is still
+  intentionally limited.
 - Postgres/Timescale history is planned but not introduced.
 - Portfolio valuation is best-effort and depends on provider prices or trusted
   symbol price lookup.
