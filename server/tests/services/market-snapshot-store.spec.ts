@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_CURRENCY } from "../../src/common/constants";
 
 const redisMock = vi.hoisted(() => ({
 	client: undefined as
@@ -95,8 +96,8 @@ describe("market-snapshot-store", () => {
 				symbol: "BTC",
 				sourceSymbol: "BTCUSD",
 				baseAsset: "BTC",
-				quoteAsset: "USD",
-				settlementAsset: "USD",
+				quoteAsset: DEFAULT_CURRENCY,
+				settlementAsset: DEFAULT_CURRENCY,
 				contractType: "unknown",
 				assetClass: "unknown",
 				fundingRate: 0.001,

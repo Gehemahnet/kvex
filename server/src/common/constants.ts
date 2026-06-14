@@ -17,3 +17,5 @@ export const PERIOD_POINTS: Record<Period, number> = {
 };
 
 export const ALL_PERIODS: Period[] = ["DAY", "WEEK", "MONTH", "YEAR"];
+
+export const DEFAULT_CURRENCY = "USD";

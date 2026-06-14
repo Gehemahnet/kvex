@@ -31,6 +31,7 @@ import {
 	NATIVE_WALLET_TOKEN,
 	SOLANA_TOKEN_PROGRAM_ID,
 } from "./wallet-balances.constants";
+import { SUPPORTED_ASSET_PRICE_SYMBOLS } from "./asset-prices.constants";
 import type {
 	AlchemyTokenBalancesResponse,
 	AlchemyTokenMetadataResponse,
@@ -38,11 +39,13 @@ import type {
 	GoldRushTokenBalanceItem,
 	SolanaTokenAccountsByOwnerResponse,
 	WalletBalanceError,
+	WalletBalanceSourceResult,
 	WalletBalancesQuery,
 	WalletBalancesResponse,
 	WalletBalanceTokenInput,
 	WalletTokenBalance,
 } from "./wallet-balances.types";
+import { DEFAULT_CURRENCY } from "../../common/constants";
 
 const NATIVE_EVM_DECIMALS = 18;
 const ERC20_DECIMALS_SELECTOR = "0x313ce567";
@@ -94,8 +97,6 @@ export const getWalletBalances = async (
 					: dependencies.solanaRpcUrl,
 			)
 		: undefined;
-	const balances: WalletTokenBalance[] = [];
-	const errors: WalletBalanceError[] = [];
 	const results = await Promise.all(
 		networks.flatMap((network) =>
 			(addressesByNetwork[network] ?? []).map((address) =>
@@ -109,13 +110,38 @@ export const getWalletBalances = async (
 					shouldReadAllTokens,
 					solanaRpcClient,
 					tokens: query.tokens,
-				}),
+				}).then((result) => ({
+					address,
+					network,
+					result,
+				})),
 			),
 		),
 	);
+	const sourceResults = results.map(({ address, network, result }) => {
+		const balances = shouldReadAllTokens
+			? filterSupportedWalletBalances(result.balances)
+			: result.balances;
 
-	balances.push(...results.flatMap((result) => result.balances));
-	errors.push(...results.flatMap((result) => result.errors));
+		return {
+			address,
+			network,
+			balances,
+			errors: result.errors,
+		};
+	});
+	const balances = sourceResults.flatMap((result) => result.balances);
+	const errors = sourceResults.flatMap((result) => result.errors);
+
+	const sourceResultSummaries = sourceResults.map(
+		(result): WalletBalanceSourceResult => ({
+			address: result.address,
+			network: result.network,
+			balancesCount: result.balances.length,
+			errorsCount: result.errors.length,
+			status: getWalletBalanceSourceStatus(result),
+		}),
+	);
 
 	log("info", "wallet_balances_completed", {
 		addressesCount: query.addresses.length,
@@ -130,6 +156,7 @@ export const getWalletBalances = async (
 		...query,
 		balances,
 		errors,
+		sourceResults: sourceResultSummaries,
 	};
 };
 
@@ -148,6 +175,30 @@ type WalletAddressBalanceParams = {
 	shouldReadAllTokens: boolean;
 	solanaRpcClient?: SolanaJsonRpcClient;
 	tokens: WalletBalanceTokenInput[];
+};
+
+const filterSupportedWalletBalances = (
+	balances: WalletTokenBalance[],
+): WalletTokenBalance[] =>
+	balances.filter((balance) =>
+		(balance.valueUsd !== undefined && balance.valueUsd > 0) ||
+		isSupportedWalletBalanceSymbol(balance.symbol)
+	);
+
+const isSupportedWalletBalanceSymbol = (symbol: string | undefined): boolean =>
+	symbol !== undefined && SUPPORTED_ASSET_PRICE_SYMBOLS.has(symbol.trim().toUpperCase());
+
+const getWalletBalanceSourceStatus = (
+	result: {
+		balances: WalletTokenBalance[];
+		errors: WalletBalanceError[];
+	},
+): WalletBalanceSourceResult["status"] => {
+	if (result.errors.length === 0) {
+		return "success";
+	}
+
+	return result.balances.length > 0 ? "partial" : "failed";
 };
 
 const readWalletBalancesForAddress = async ({
@@ -462,7 +513,7 @@ const getGoldRushEvmTokenBalances = async (
 	);
 };
 
-/** Reads priced, anti-spam-filtered multichain EVM balances from GoldRush. */
+/** Reads priced multichain EVM balances from GoldRush and drops spam assets at source. */
 const fetchGoldRushEvmTokenBalances = async ({
 	address,
 	apiKey,
@@ -558,7 +609,7 @@ const createGoldRushBalancesUrl = (address: string, chainId: number): string => 
 	);
 
 	url.searchParams.set("chains", String(chainId));
-	url.searchParams.set("quote-currency", "USD");
+	url.searchParams.set("quote-currency", DEFAULT_CURRENCY);
 
 	return url.toString();
 };
@@ -572,21 +623,38 @@ const mapGoldRushTokenBalance = (
 	address: string,
 	item: GoldRushTokenBalanceItem,
 ): WalletTokenBalance[] => {
-	if (!item.quote || item.quote <= 0 || !item.quote_rate || item.quote_rate <= 0) {
+	if (
+		item.is_spam ||
+		!item.balance ||
+		!item.quote ||
+		item.quote <= 0 ||
+		!item.quote_rate ||
+		item.quote_rate <= 0
+	) {
 		return [];
 	}
 
 	const decimals = item.contract_decimals ?? 18;
-	const token = item.is_native_token ? NATIVE_WALLET_TOKEN : item.contract_address.toLowerCase();
+	const tokenAddress = item.contract_address?.trim().toLowerCase();
+
+	if (!item.is_native_token && !tokenAddress) {
+		return [];
+	}
+
+	const token = item.is_native_token ? NATIVE_WALLET_TOKEN : tokenAddress;
+
+	if (!token) {
+		return [];
+	}
+
 	const symbol = item.contract_ticker_symbol?.trim();
 
 	return [{
 		token,
-		...(item.is_native_token ? {} : { tokenAddress: item.contract_address.toLowerCase() }),
+		...(item.is_native_token ? {} : { tokenAddress }),
 		rawBalance: item.balance,
 		formattedBalance: formatTokenUnits(item.balance, decimals),
 		decimals,
-		...(item.is_spam ? { isSpam: true } : {}),
 		...(item.logo_urls?.token_logo_url ? { logoUrl: item.logo_urls.token_logo_url } : {}),
 		source: {
 			type: "wallet",

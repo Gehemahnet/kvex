@@ -2,6 +2,7 @@ import type { Queryable } from "../../storage/postgres/postgres.client";
 import type {
 	CreateUserExchangeAccountInput,
 	UserExchangeAccount,
+	UserExchangeData,
 	UserExchangeAccountRow,
 } from "./user-exchange-accounts.types";
 import {
@@ -107,6 +108,89 @@ export const findUserExchangeAccountById = async (
 			LIMIT 1
 		`,
 		[userId, accountId],
+	);
+	const row = result.rows[0];
+
+	return row === undefined ? undefined : mapUserExchangeAccountRow(row);
+};
+
+/** Deletes one exchange account profile owned by a user. */
+export const deleteUserExchangeAccount = async (
+	db: Queryable,
+	params: {
+		id: string;
+		userId: string;
+	},
+): Promise<boolean> => {
+	const result = await db.query<{ id: string }>(
+		`
+			DELETE FROM user_exchange_accounts
+			WHERE user_id = $1 AND id = $2
+			RETURNING id
+		`,
+		[params.userId, params.id],
+	);
+
+	return result.rows.length > 0;
+};
+
+/** Marks one exchange account as successfully checked. */
+export const updateUserExchangeAccountLastCheckedAt = async (
+	db: Queryable,
+	params: {
+		checkedAt: Date;
+		id: string;
+		userId: string;
+	},
+): Promise<boolean> => {
+	const result = await db.query<{ id: string }>(
+		`
+			UPDATE user_exchange_accounts
+			SET
+				last_checked_at = $3,
+				updated_at = now()
+			WHERE user_id = $1 AND id = $2
+			RETURNING id
+		`,
+		[params.userId, params.id, params.checkedAt],
+	);
+
+	return result.rows.length > 0;
+};
+
+/** Updates exchange-specific data for one account owned by a user. */
+export const updateUserExchangeAccountPublicData = async (
+	db: Queryable,
+	params: {
+		id: string;
+		publicData: UserExchangeData;
+		userId: string;
+	},
+): Promise<UserExchangeAccount | undefined> => {
+	const result = await db.query<UserExchangeAccountRow>(
+		`
+			UPDATE user_exchange_accounts
+			SET
+				public_data = $3::jsonb,
+				updated_at = now()
+			WHERE user_id = $1 AND id = $2
+			RETURNING
+				id,
+				user_id,
+				exchange,
+				label,
+				status,
+				public_data,
+				capabilities,
+				last_checked_at,
+				created_at,
+				updated_at
+		`,
+		[
+			params.userId,
+			params.id,
+			JSON.stringify(params.publicData),
+		],
 	);
 	const row = result.rows[0];
 

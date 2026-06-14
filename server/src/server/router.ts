@@ -7,7 +7,10 @@ import { writeJsonResponse } from "./http/http-response.utils";
 import { marketSnapshotRoutes } from "./http/markets/market-snapshots.routes";
 import { metricsRoutes } from "./http/metrics/metrics.routes";
 import { assetPriceRoutes } from "./http/portfolio/asset-prices.routes";
+import { exchangeBalanceRoutes } from "./http/portfolio/exchange-balances.routes";
 import { walletBalanceRoutes } from "./http/portfolio/wallet-balances.routes";
+import { userExchangeTokenRoutes } from "./http/portfolio/user-exchange-tokens.routes";
+import { userPortfolioSourceRoutes } from "./http/portfolio/user-portfolio-sources.routes";
 import { userWalletTokenRoutes } from "./http/portfolio/user-wallet-tokens.routes";
 import { spreadRoutes } from "./http/spreads/spreads.routes";
 import {
@@ -24,7 +27,10 @@ const routes: Route[] = [
 	...marketSnapshotRoutes,
 	...metricsRoutes,
 	...assetPriceRoutes,
+	...exchangeBalanceRoutes,
 	...walletBalanceRoutes,
+	...userExchangeTokenRoutes,
+	...userPortfolioSourceRoutes,
 	...userWalletTokenRoutes,
 	...spreadRoutes,
 ];

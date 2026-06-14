@@ -10,7 +10,11 @@ import {
 	GetPerpMetadataResponse,
 	HistoricalFunding,
 	HistoricalFundingRequestBody,
+	HyperliquidClearinghouseState,
+	HyperliquidClearinghouseStateRequestBody,
 	HyperliquidInfoRequestType,
+	HyperliquidSpotClearinghouseState,
+	HyperliquidSpotClearinghouseStateRequestBody,
 } from "./hyperliquid.types";
 
 class HyperliquidDexClient extends DexRestClient {
@@ -79,6 +83,28 @@ class HyperliquidDexClient extends DexRestClient {
 		}
 
 		return allData;
+	}
+
+	async getClearinghouseState(user: string): Promise<HyperliquidClearinghouseState> {
+		return this.httpClient.post<
+			HyperliquidClearinghouseState,
+			HyperliquidClearinghouseStateRequestBody
+		>(this.getInfoUrl().href, {
+			type: HyperliquidInfoRequestType.ClearinghouseState,
+			user,
+		});
+	}
+
+	async getSpotClearinghouseState(
+		user: string,
+	): Promise<HyperliquidSpotClearinghouseState> {
+		return this.httpClient.post<
+			HyperliquidSpotClearinghouseState,
+			HyperliquidSpotClearinghouseStateRequestBody
+		>(this.getInfoUrl().href, {
+			type: HyperliquidInfoRequestType.SpotClearinghouseState,
+			user,
+		});
 	}
 }
 

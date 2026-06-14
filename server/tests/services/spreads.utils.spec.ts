@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_CURRENCY } from "../../src/common/constants";
 import { createSpreadOpportunity } from "../../src/services/spreads/spreads.utils";
 
 describe("spread utils", () => {
@@ -455,8 +456,8 @@ describe("spread utils", () => {
 					symbol: "SOL",
 					sourceSymbol: "SOL",
 					baseAsset: "SOL",
-					quoteAsset: "USD",
-					settlementAsset: "USD",
+					quoteAsset: DEFAULT_CURRENCY,
+					settlementAsset: DEFAULT_CURRENCY,
 					markPrice: 100,
 				},
 				{

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { parseWalletBalancesQuery } from "../../src/server/http/portfolio/wallet-balances-query";
+import {
+	parseWalletBalancesQuery,
+	parseWalletBalanceTokensQuery,
+} from "../../src/server/http/portfolio/wallet-balances-query";
 
 const ADDRESS = "0x1111111111111111111111111111111111111111";
 const SOLANA_ADDRESS = "11111111111111111111111111111111";
@@ -136,5 +139,22 @@ describe("parseWalletBalancesQuery", () => {
 				`/portfolio/wallet-balances?network=solana&address=${SOLANA_ADDRESS}&tokens=USDC`,
 			),
 		).toThrow("Query param `tokens` must contain only `native` or `all` for Solana");
+	});
+
+	it("parses custom default tokens for saved-source balance reads", () => {
+		expect(
+			parseWalletBalanceTokensQuery(
+				"/portfolio/wallet-balances/me",
+				["evm", "solana"],
+				"all",
+			),
+		).toEqual(["all"]);
+		expect(
+			parseWalletBalanceTokensQuery(
+				"/portfolio/wallet-balances/me?tokens=native",
+				["evm"],
+				"all",
+			),
+		).toEqual(["native"]);
 	});
 });

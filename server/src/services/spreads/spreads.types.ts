@@ -1,4 +1,5 @@
 import type { Exchange } from "../../common/types";
+import type { UserExchangeFeeProfile } from "../users/user-exchange-accounts.types";
 
 export type SpreadPriceSource = "depth" | "bbo" | "mark" | "mid" | "index";
 
@@ -157,4 +158,8 @@ export type SpreadsResponse = SpreadsQuery & {
 		code: string;
 		message: string;
 	}[];
+};
+
+export type SpreadFeeProfile = UserExchangeFeeProfile & {
+	exchange: Exchange;
 };

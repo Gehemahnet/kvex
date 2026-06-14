@@ -13,6 +13,7 @@ import type {
 	EtherealTickerMessage,
 	EtherealWsSubscriptionMessage,
 } from "./ethereal.ws.types";
+import {DEFAULT_CURRENCY} from "../../common/constants";
 
 /** Builds an Ethereal ticker subscription for one source symbol. */
 export const createEtherealTickerSubscriptionMessage = (
@@ -129,8 +130,8 @@ export const mapEtherealL2BookToMarketSnapshot = (
 const normalizeEtherealTickerSymbol = (symbol: string): string => {
 	const normalizedSymbol = normalizeOverviewSymbol(symbol);
 
-	return normalizedSymbol.endsWith("USD")
-		? normalizedSymbol.slice(0, -"USD".length)
+	return normalizedSymbol.endsWith(DEFAULT_CURRENCY)
+		? normalizedSymbol.slice(0, -DEFAULT_CURRENCY.length)
 		: normalizedSymbol;
 };
 

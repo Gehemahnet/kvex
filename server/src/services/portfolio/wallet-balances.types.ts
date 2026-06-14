@@ -26,7 +26,6 @@ export type WalletTokenBalance = {
 	rawBalance: string;
 	formattedBalance: string;
 	decimals?: number;
-	isSpam?: boolean;
 	logoUrl?: string;
 	priceUsd?: number;
 	source: WalletBalanceSource;
@@ -43,9 +42,18 @@ export type WalletBalanceError = {
 	message: string;
 };
 
+export type WalletBalanceSourceResult = {
+	address: string;
+	network: WalletBalanceNetwork;
+	balancesCount: number;
+	errorsCount: number;
+	status: "success" | "partial" | "failed";
+};
+
 export type WalletBalancesResponse = WalletBalancesQuery & {
 	balances: WalletTokenBalance[];
 	errors: WalletBalanceError[];
+	sourceResults: WalletBalanceSourceResult[];
 };
 
 export type EvmJsonRpcRequest = {
@@ -111,12 +119,12 @@ export type SolanaTokenAccountsByOwnerResponse = {
 };
 
 export type GoldRushTokenBalanceItem = {
-	balance: string;
+	balance?: string;
 	chain_display_name?: string;
 	chain_id: number;
 	chain_name?: string;
-	contract_address: string;
-	contract_decimals: number;
+	contract_address?: string | null;
+	contract_decimals?: number | null;
 	contract_display_name?: string;
 	contract_name?: string;
 	contract_ticker_symbol?: string;

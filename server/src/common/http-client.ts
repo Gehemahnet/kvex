@@ -1,5 +1,5 @@
 export interface HttpClient {
-	get<Response>(url: string): Promise<Response>;
+	get<Response>(url: string, init?: RequestInit): Promise<Response>;
 	post<Response, Body, Params = {}>(
 		url: string,
 		body: Body,
@@ -41,8 +41,8 @@ export class FetchHttpClient implements HttpClient {
 				}));
 	}
 
-	async get<Response>(url: string): Promise<Response> {
-		const response = await this.fetchWithRetry(url);
+	async get<Response>(url: string, init?: RequestInit): Promise<Response> {
+		const response = await this.fetchWithRetry(url, init);
 		return response.json();
 	}
 

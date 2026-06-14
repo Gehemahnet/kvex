@@ -2,7 +2,17 @@ import type { Exchange } from "../../common/types";
 
 export type UserExchangeAccountStatus = "active" | "disabled" | "error";
 
-export type UserExchangeCapability = "balances" | "fees" | "positions";
+export type UserExchangeCapability =
+	| "balances"
+	| "fees"
+	| "orders"
+	| "positions"
+	| "trades";
+
+export type UserExchangePermission =
+	| "balances"
+	| "orders"
+	| "trades";
 
 export type UserExchangeCapabilities = Partial<
 	Record<UserExchangeCapability, boolean>
@@ -24,29 +34,50 @@ export type UserExchangeFeeProfile = {
 export type HyperliquidUserExchangeData = {
 	exchange: "hyperliquid";
 	address?: string;
+	apiKey?: string;
+	apiSecret?: string;
+	expiresAt?: string;
 	feeProfiles?: UserExchangeFeeProfile[];
+	permissions?: UserExchangePermission[];
 };
 
 export type PacificaUserExchangeData = {
 	exchange: "pacifica";
 	accountAddress?: string;
+	apiKey?: string;
+	apiSecret?: string;
+	expiresAt?: string;
 	feeProfiles?: UserExchangeFeeProfile[];
+	permissions?: UserExchangePermission[];
 };
 
 export type OkxUserExchangeData = {
 	exchange: "okx";
 	accountLevel?: string;
+	apiKey?: string;
+	apiSecret?: string;
+	expiresAt?: string;
+	passphrase?: string;
 	feeProfiles?: UserExchangeFeeProfile[];
+	permissions?: UserExchangePermission[];
 };
 
 export type NadoUserExchangeData = {
 	exchange: "nado";
+	apiKey?: string;
+	apiSecret?: string;
+	expiresAt?: string;
 	feeProfiles?: UserExchangeFeeProfile[];
+	permissions?: UserExchangePermission[];
 };
 
 export type EtherealUserExchangeData = {
 	exchange: "ethereal";
+	apiKey?: string;
+	apiSecret?: string;
+	expiresAt?: string;
 	feeProfiles?: UserExchangeFeeProfile[];
+	permissions?: UserExchangePermission[];
 };
 
 export type UserExchangeData =

@@ -4,6 +4,8 @@ export enum HyperliquidInfoRequestType {
 	Meta = "meta",
 	MetaAndAssetCtxs = "metaAndAssetCtxs",
 	FundingHistory = "fundingHistory",
+	ClearinghouseState = "clearinghouseState",
+	SpotClearinghouseState = "spotClearinghouseState",
 }
 
 // Doesn't need to use it in params if you don't need data directly from HIP-3 dex.
@@ -111,3 +113,34 @@ export interface HistoricalFunding {
 	/** Funding record timestamp (ms since epoch). */
 	time: number;
 }
+
+export type HyperliquidClearinghouseStateRequestBody = {
+	type: HyperliquidInfoRequestType.ClearinghouseState;
+	user: string;
+};
+
+export type HyperliquidSpotClearinghouseStateRequestBody = {
+	type: HyperliquidInfoRequestType.SpotClearinghouseState;
+	user: string;
+};
+
+export type HyperliquidClearinghouseState = {
+	marginSummary?: {
+		accountValue?: string;
+		totalRawUsd?: string;
+		totalMarginUsed?: string;
+		totalNtlPos?: string;
+	};
+	withdrawable?: string;
+	time?: number;
+};
+
+export type HyperliquidSpotClearinghouseState = {
+	balances?: {
+		coin: string;
+		total: string;
+		hold?: string;
+		entryNtl?: string;
+		token?: number;
+	}[];
+};

@@ -16,6 +16,7 @@ import type { AlchemyEvmChainConfig } from "../../src/services/portfolio/wallet-
 const ADDRESS = "0x1111111111111111111111111111111111111111";
 const SECOND_ADDRESS = "0x3333333333333333333333333333333333333333";
 const THIRD_ADDRESS = "0x4444444444444444444444444444444444444444";
+const FOURTH_ADDRESS = "0x5555555555555555555555555555555555555555";
 const SOLANA_ADDRESS = "11111111111111111111111111111111";
 const TOKEN = "0x2222222222222222222222222222222222222222";
 
@@ -120,6 +121,15 @@ describe("getWalletBalances", () => {
 				},
 			],
 			errors: [],
+			sourceResults: [
+				{
+					address: ADDRESS,
+					balancesCount: 2,
+					errorsCount: 0,
+					network: "evm",
+					status: "success",
+				},
+			],
 		});
 		expect(calls).toHaveLength(4);
 	});
@@ -347,7 +357,7 @@ describe("getWalletBalances", () => {
 		]);
 	});
 
-	it("preserves GoldRush spam metadata for frontend filtering", async () => {
+	it("drops GoldRush spam tokens at source", async () => {
 		const fetcher = async (url: string): Promise<Response> => {
 			const chainId = Number(new URL(url).searchParams.get("chains"));
 
@@ -373,6 +383,41 @@ describe("getWalletBalances", () => {
 
 		const result = await getWalletBalances(
 			{
+				address: FOURTH_ADDRESS,
+				addresses: [FOURTH_ADDRESS],
+				network: "evm",
+				tokens: ["all"],
+			},
+			{
+				fetch: fetcher,
+				goldRushApiKey: "test-key",
+			},
+		);
+
+		expect(result.balances).toEqual([]);
+		expect(result.errors).toEqual([]);
+	});
+
+	it("skips malformed GoldRush priced items instead of failing the whole chain", async () => {
+		const fetcher = async (): Promise<Response> =>
+			new Response(JSON.stringify({
+				items: [
+					{
+						balance: "1000000",
+						chain_display_name: "Ethereum",
+						chain_id: 1,
+						chain_name: "eth-mainnet",
+						contract_decimals: 6,
+						contract_ticker_symbol: "BROKEN",
+						is_native_token: false,
+						quote: 1,
+						quote_rate: 1,
+					},
+				],
+			}));
+
+		const result = await getWalletBalances(
+			{
 				address: SECOND_ADDRESS,
 				addresses: [SECOND_ADDRESS],
 				network: "evm",
@@ -384,13 +429,7 @@ describe("getWalletBalances", () => {
 			},
 		);
 
-		expect(result.balances).toEqual([
-			expect.objectContaining({
-				isSpam: true,
-				symbol: "DROP",
-				valueUsd: 1,
-			}),
-		]);
+		expect(result.balances).toEqual([]);
 		expect(result.errors).toEqual([]);
 	});
 
@@ -591,18 +630,6 @@ describe("getWalletBalances", () => {
 					address: SOLANA_ADDRESS,
 				},
 				symbol: "SOL",
-			},
-			{
-				token: mint,
-				tokenAddress: mint,
-				rawBalance: "1234500",
-				formattedBalance: "1.2345",
-				decimals: 6,
-				source: {
-					type: "wallet",
-					network: "solana",
-					address: SOLANA_ADDRESS,
-				},
 			},
 		]);
 	});

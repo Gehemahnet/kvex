@@ -1,5 +1,5 @@
-const EVM_ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
 const BALANCE_OF_SELECTOR = "70a08231";
+const EVM_ADDRESS_PATTERN = /^0x[\da-f]{40}$/iu;
 
 /** Returns true when a value is a hex-encoded EVM address. */
 export const isEvmAddress = (value: string): boolean =>

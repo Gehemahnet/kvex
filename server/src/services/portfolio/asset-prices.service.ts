@@ -5,6 +5,7 @@ import {
 	ASSET_PRICE_CACHE_TTL_MS,
 	BINANCE_TICKER_PRICE_URL,
 	PRICE_SYMBOL_ALIASES,
+	SUPPORTED_ASSET_PRICE_SYMBOLS,
 	USD_STABLECOIN_SYMBOLS,
 } from "./asset-prices.constants";
 import type {
@@ -30,7 +31,10 @@ export const getAssetPrices = async (
 	const startedAt = performance.now();
 	const httpClient = dependencies.httpClient ?? new FetchHttpClient();
 	const now = dependencies.now ?? (() => new Date());
-	const symbols = [...new Set(query.symbols.map(normalizeAssetPriceSymbol))];
+	const requestedSymbols = [...new Set(query.symbols.map(normalizeAssetPriceSymbol))];
+	const symbols = requestedSymbols.filter((symbol) =>
+		SUPPORTED_ASSET_PRICE_SYMBOLS.has(symbol),
+	);
 	const results = await Promise.all(
 		symbols.map((symbol) => getAssetPriceResult(symbol, httpClient, now)),
 	);
@@ -40,6 +44,7 @@ export const getAssetPrices = async (
 	log("info", "asset_prices_completed", {
 		durationMs: roundDurationMs(performance.now() - startedAt),
 		errorsCount: errors.length,
+		skippedSymbolsCount: requestedSymbols.length - symbols.length,
 		pricesCount: prices.length,
 		symbolsCount: symbols.length,
 	});

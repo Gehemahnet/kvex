@@ -52,6 +52,17 @@ export const parseWalletBalancesQuery = (
 	};
 };
 
+/** Parses only the token selector for authenticated saved-source balance reads. */
+export const parseWalletBalanceTokensQuery = (
+	urlString: string | undefined,
+	networks: WalletBalanceNetwork[],
+	defaultToken: WalletBalanceTokenInput = NATIVE_WALLET_TOKEN,
+): WalletBalanceTokenInput[] => {
+	const url = new URL(urlString ?? "/", "http://localhost");
+
+	return parseWalletBalanceTokens(url, networks, defaultToken);
+};
+
 const parseWalletBalanceNetworks = (url: URL): WalletBalanceNetwork[] => {
 	const rawValue = url.searchParams.get("networks") ?? url.searchParams.get("network");
 	const value = rawValue?.trim().toLowerCase();
@@ -141,11 +152,12 @@ const parseWalletAddresses = (
 const parseWalletBalanceTokens = (
 	url: URL,
 	networks: WalletBalanceNetwork[],
+	defaultToken: WalletBalanceTokenInput = NATIVE_WALLET_TOKEN,
 ): WalletBalanceTokenInput[] => {
 	const value = url.searchParams.get("tokens")?.trim();
 
 	if (!value) {
-		return [NATIVE_WALLET_TOKEN];
+		return [defaultToken];
 	}
 
 	const tokens = value
@@ -154,7 +166,7 @@ const parseWalletBalanceTokens = (
 		.filter(Boolean)
 		.map((token) => parseWalletBalanceToken(token, networks));
 
-	return [...new Set(tokens.length ? tokens : [NATIVE_WALLET_TOKEN])];
+	return [...new Set(tokens.length ? tokens : [defaultToken])];
 };
 
 const parseWalletBalanceToken = (

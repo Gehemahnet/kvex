@@ -3,10 +3,12 @@ import { getMarketSnapshots } from "../markets/market-snapshots.service";
 import type { MarketSnapshot } from "../markets/market-snapshots.types";
 import type {
 	SpreadOpportunity,
+	SpreadFeeProfile,
 	SpreadsQuery,
 	SpreadsResponse,
 } from "./spreads.types";
 import { enrichSpreadStability } from "./spread-stability.store";
+import { applySpreadFeeProfiles } from "./spreads-fees.utils";
 import { compactSpreadOpportunity } from "./spreads-response.utils";
 import { createSpreadOpportunity } from "./spreads.utils";
 
@@ -14,6 +16,10 @@ type SpreadBuildOptions = {
 	maxSnapshotAgeMs?: number;
 	positionSizeUsd?: number;
 	holdingPeriodHours?: number;
+};
+
+type GetSpreadsOptions = {
+	feeProfiles?: SpreadFeeProfile[];
 };
 
 type SpreadsRunTimings = {
@@ -30,15 +36,20 @@ type SpreadsRunTimings = {
  */
 export const getSpreads = async (
 	query: SpreadsQuery,
+	options: GetSpreadsOptions = {},
 ): Promise<SpreadsResponse> => {
 	const startedAt = performance.now();
 	const snapshotLoadStartedAt = performance.now();
 	const snapshots = await getMarketSnapshots(query);
+	const snapshotsWithUserFees = applySpreadFeeProfiles(
+		snapshots.data,
+		options.feeProfiles,
+	);
 	const snapshotLoadMs = performance.now() - snapshotLoadStartedAt;
 
 	const pairingStartedAt = performance.now();
 	const rawOpportunities = createSpreadOpportunities(
-		snapshots.data,
+		snapshotsWithUserFees,
 		createSpreadBuildOptions(query),
 	);
 	const pairingMs = performance.now() - pairingStartedAt;
@@ -71,7 +82,7 @@ export const getSpreads = async (
 		errorCount: snapshots.errors.length,
 		filteredOpportunityCount: opportunities.length,
 		rawOpportunityCount: rawOpportunities.length,
-		snapshotCount: snapshots.data.length,
+		snapshotCount: snapshotsWithUserFees.length,
 	});
 
 	return response;
