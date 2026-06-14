@@ -11,6 +11,8 @@
   - filters: required `symbol`, required `timeframe`, optional `exchanges`
   - response: aggregated per-exchange funding series with partial per-exchange errors
 - Code organization rule:
+  - do not use barrel files (`index.ts` re-export aggregators); import concrete modules directly
+  - frontend shared imports should use configured aliases where practical, e.g. `@api`, `@components`, `@utils`, `@views`, `@router`, `@theme`, `@types`
   - if constants are used outside one file, move them to a separate constants file at the nearest shared level
   - if more than one file uses the same value, lift it one level higher than the consumers
   - avoid keeping reusable constants inline inside feature clients
@@ -29,6 +31,9 @@
   - Codex must not read, open, print, quote, edit, delete, stage, commit, or otherwise interact with `.env` files
   - this includes `.env`, `.env.*`, `server/.env`, and any other environment/secrets file
   - if environment values are needed, Codex should ask the user for non-secret configuration or use safe documented defaults in code
+  - never write, stage, or commit real exchange API tokens, API secrets, passphrases, private keys, wallet mnemonics, or session tokens in code, tests, docs, fixtures, screenshots, or examples
+  - examples must use placeholders such as `...`, `test-key`, or obviously fake deterministic values
+  - before committing token-related work, inspect staged diffs for credential-shaped strings without reading `.env` files
 - Known state:
   - frontend is not source of truth and may be cleaned or rebuilt to match backend
   - frontend currently exposes only Funding
