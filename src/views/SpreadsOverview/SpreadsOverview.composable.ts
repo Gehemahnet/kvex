@@ -1,5 +1,6 @@
 import { computed, ref } from "vue";
-import { useValidatedLocalStorage } from "../../common/local-storage.utils";
+import type { FilterPanelConfig } from "@components/FilterPanel/FilterPanel.types";
+import { useIndexedDbState } from "@utils/indexed-db-state.utils";
 import {
 	DEFAULT_SPREADS_EXCHANGES,
 	DEFAULT_SPREADS_HOLDING_PERIOD_HOURS,
@@ -12,217 +13,88 @@ import {
 	DEFAULT_SPREADS_ONLY_FEE_ADJUSTED,
 	DEFAULT_SPREADS_POSITION_SIZE_USD,
 	DEFAULT_SPREADS_ROWS_PER_PAGE,
-	SPREADS_ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY,
-	SPREADS_HOLDING_PERIOD_LOCAL_STORAGE_KEY,
-	SPREADS_HIDE_STALE_LOCAL_STORAGE_KEY,
-	SPREADS_MAX_SNAPSHOT_AGE_LOCAL_STORAGE_KEY,
-	SPREADS_MIN_CONFIDENCE_LOCAL_STORAGE_KEY,
-	SPREADS_MIN_LIFETIME_LOCAL_STORAGE_KEY,
-	SPREADS_MIN_OCCURRENCES_LOCAL_STORAGE_KEY,
-	SPREADS_MIN_PRICE_SPREAD_LOCAL_STORAGE_KEY,
-	SPREADS_ONLY_FEE_ADJUSTED_LOCAL_STORAGE_KEY,
-	SPREADS_POSITION_SIZE_LOCAL_STORAGE_KEY,
-	SPREADS_ROWS_PER_PAGE_LOCAL_STORAGE_KEY,
-	SPREADS_SYMBOL_SEARCH_LOCAL_STORAGE_KEY,
+	SPREADS_FILTERS_INDEXED_DB_KEY,
+	SPREADS_ROWS_PER_PAGE_INDEXED_DB_KEY,
+	SPREADS_SYMBOL_SEARCH_INDEXED_DB_KEY,
 } from "./SpreadsOverview.constants";
 import { useSpreadsQuery } from "./SpreadsOverview.query";
 import { useSpreadsSocketUpdates } from "./SpreadsOverview.socket";
-import type { FundingExchange } from "../FundingOverview/FundingOverview.types";
+import type { FundingExchange } from "@api/funding";
 import {
 	filterSpreadOpportunities,
 	getSpreadsSelectionStatus,
 	hasEnoughSpreadsExchanges,
-	isBoolean,
-	isSpreadsExchangeList,
-	normalizeSpreadsExchanges,
-	normalizeSpreadsNumber,
 } from "./SpreadsOverview.utils";
 
-const isString = (value: unknown): value is string => typeof value === "string";
+type SpreadsDraftFilters = {
+	hideStale: boolean;
+	holdingPeriodHours: number | null;
+	maxSnapshotAgeMs: number | null;
+	minConfidenceInput: number | null;
+	minLifetimeMs: number | null;
+	minOccurrences: number | null;
+	minPriceSpreadPercentInput: number | null;
+	onlyFeeAdjusted: boolean;
+	positionSizeUsd: number | null;
+	selectedExchanges: FundingExchange[];
+};
 
-const isNonNegativeNumber = (value: unknown): value is number =>
-	typeof value === "number" && !Number.isNaN(value) && value >= 0;
-
-const isPositiveNumber = (value: unknown): value is number =>
-	typeof value === "number" && !Number.isNaN(value) && value > 0;
+const createDefaultSpreadsFilters = (): SpreadsDraftFilters => ({
+	hideStale: DEFAULT_SPREADS_HIDE_STALE,
+	holdingPeriodHours: DEFAULT_SPREADS_HOLDING_PERIOD_HOURS,
+	maxSnapshotAgeMs: DEFAULT_SPREADS_MAX_SNAPSHOT_AGE_MS,
+	minConfidenceInput: DEFAULT_SPREADS_MIN_CONFIDENCE * 100,
+	minLifetimeMs: DEFAULT_SPREADS_MIN_LIFETIME_MS,
+	minOccurrences: DEFAULT_SPREADS_MIN_OCCURRENCES,
+	minPriceSpreadPercentInput: DEFAULT_SPREADS_MIN_PRICE_SPREAD_PERCENT * 100,
+	onlyFeeAdjusted: DEFAULT_SPREADS_ONLY_FEE_ADJUSTED,
+	positionSizeUsd: DEFAULT_SPREADS_POSITION_SIZE_USD,
+	selectedExchanges: [...DEFAULT_SPREADS_EXCHANGES],
+});
 
 /**
  * Owns persisted Spreads page state, REST query state, live socket updates, and
  * final client-side filters consumed by the view.
  */
 export const useSpreadsOverview = () => {
-	const storedExchanges = useValidatedLocalStorage(
-		SPREADS_ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY,
-		[...DEFAULT_SPREADS_EXCHANGES],
-		isSpreadsExchangeList,
+	const appliedFilters = useIndexedDbState(
+		SPREADS_FILTERS_INDEXED_DB_KEY,
+		createDefaultSpreadsFilters(),
 	);
-	const symbolSearch = useValidatedLocalStorage(
-		SPREADS_SYMBOL_SEARCH_LOCAL_STORAGE_KEY,
+	const symbolSearch = useIndexedDbState(
+		SPREADS_SYMBOL_SEARCH_INDEXED_DB_KEY,
 		"",
-		isString,
 	);
-	const storedMinPriceSpreadPercent = useValidatedLocalStorage(
-		SPREADS_MIN_PRICE_SPREAD_LOCAL_STORAGE_KEY,
-		DEFAULT_SPREADS_MIN_PRICE_SPREAD_PERCENT,
-		isNonNegativeNumber,
-	);
-	const storedMaxSnapshotAgeMs = useValidatedLocalStorage(
-		SPREADS_MAX_SNAPSHOT_AGE_LOCAL_STORAGE_KEY,
-		DEFAULT_SPREADS_MAX_SNAPSHOT_AGE_MS,
-		isNonNegativeNumber,
-	);
-	const minConfidence = useValidatedLocalStorage(
-		SPREADS_MIN_CONFIDENCE_LOCAL_STORAGE_KEY,
-		DEFAULT_SPREADS_MIN_CONFIDENCE,
-		isNonNegativeNumber,
-	);
-	const storedPositionSizeUsd = useValidatedLocalStorage(
-		SPREADS_POSITION_SIZE_LOCAL_STORAGE_KEY,
-		DEFAULT_SPREADS_POSITION_SIZE_USD,
-		isNonNegativeNumber,
-	);
-	const storedMinOccurrences = useValidatedLocalStorage(
-		SPREADS_MIN_OCCURRENCES_LOCAL_STORAGE_KEY,
-		DEFAULT_SPREADS_MIN_OCCURRENCES,
-		isNonNegativeNumber,
-	);
-	const storedMinLifetimeMs = useValidatedLocalStorage(
-		SPREADS_MIN_LIFETIME_LOCAL_STORAGE_KEY,
-		DEFAULT_SPREADS_MIN_LIFETIME_MS,
-		isNonNegativeNumber,
-	);
-	const storedHoldingPeriodHours = useValidatedLocalStorage(
-		SPREADS_HOLDING_PERIOD_LOCAL_STORAGE_KEY,
-		DEFAULT_SPREADS_HOLDING_PERIOD_HOURS,
-		isNonNegativeNumber,
-	);
-	const hideStale = useValidatedLocalStorage(
-		SPREADS_HIDE_STALE_LOCAL_STORAGE_KEY,
-		DEFAULT_SPREADS_HIDE_STALE,
-		isBoolean,
-	);
-	const onlyFeeAdjusted = useValidatedLocalStorage(
-		SPREADS_ONLY_FEE_ADJUSTED_LOCAL_STORAGE_KEY,
-		DEFAULT_SPREADS_ONLY_FEE_ADJUSTED,
-		isBoolean,
-	);
-	const tableRowsPerPage = useValidatedLocalStorage(
-		SPREADS_ROWS_PER_PAGE_LOCAL_STORAGE_KEY,
+	const tableRowsPerPage = useIndexedDbState(
+		SPREADS_ROWS_PER_PAGE_INDEXED_DB_KEY,
 		DEFAULT_SPREADS_ROWS_PER_PAGE,
-		isPositiveNumber,
 	);
 
-	const selectedExchanges = computed({
-		get: () => normalizeSpreadsExchanges(storedExchanges.value),
-		set: (exchanges) => {
-			storedExchanges.value = normalizeSpreadsExchanges(exchanges);
-		},
-	});
-	const draftSelectedExchanges = ref<FundingExchange[]>([
-		...selectedExchanges.value,
-	]);
-	const minPriceSpreadPercent = computed({
-		get: () =>
-			normalizeSpreadsNumber(
-				storedMinPriceSpreadPercent.value,
-				DEFAULT_SPREADS_MIN_PRICE_SPREAD_PERCENT,
-			),
-		set: (value) => {
-			storedMinPriceSpreadPercent.value = normalizeSpreadsNumber(
-				value,
-				DEFAULT_SPREADS_MIN_PRICE_SPREAD_PERCENT,
-			);
-		},
-	});
-	const maxSnapshotAgeMs = computed({
-		get: () =>
-			normalizeSpreadsNumber(
-				storedMaxSnapshotAgeMs.value,
-				DEFAULT_SPREADS_MAX_SNAPSHOT_AGE_MS,
-			),
-		set: (value) => {
-			storedMaxSnapshotAgeMs.value = normalizeSpreadsNumber(
-				value,
-				DEFAULT_SPREADS_MAX_SNAPSHOT_AGE_MS,
-			);
-		},
-	});
-	const minPriceSpreadPercentInput = computed({
-		get: () => minPriceSpreadPercent.value * 100,
-		set: (value) => {
-			minPriceSpreadPercent.value = normalizeSpreadsNumber(value, 0) / 100;
-		},
-	});
-	const draftMinPriceSpreadPercentInput = ref(
-		minPriceSpreadPercent.value * 100,
+	const selectedExchanges = computed(() => appliedFilters.value.selectedExchanges);
+	const minPriceSpreadPercent = computed(() =>
+		(appliedFilters.value.minPriceSpreadPercentInput ?? 0) / 100,
 	);
-	const minConfidenceInput = computed({
-		get: () => minConfidence.value * 100,
-		set: (value) => {
-			minConfidence.value = Math.min(1, normalizeSpreadsNumber(value, 0) / 100);
-		},
-	});
-	const draftMinConfidenceInput = ref(minConfidence.value * 100);
-	const positionSizeUsd = computed({
-		get: () =>
-			normalizeSpreadsNumber(
-				storedPositionSizeUsd.value,
-				DEFAULT_SPREADS_POSITION_SIZE_USD,
-			),
-		set: (value) => {
-			storedPositionSizeUsd.value = normalizeSpreadsNumber(
-				value,
-				DEFAULT_SPREADS_POSITION_SIZE_USD,
-			);
-		},
-	});
-	const minOccurrences = computed({
-		get: () =>
-			Math.floor(
-				normalizeSpreadsNumber(
-					storedMinOccurrences.value,
-					DEFAULT_SPREADS_MIN_OCCURRENCES,
-				),
-			),
-		set: (value) => {
-			storedMinOccurrences.value = Math.floor(
-				normalizeSpreadsNumber(value, DEFAULT_SPREADS_MIN_OCCURRENCES),
-			);
-		},
-	});
-	const minLifetimeMs = computed({
-		get: () =>
-			normalizeSpreadsNumber(
-				storedMinLifetimeMs.value,
-				DEFAULT_SPREADS_MIN_LIFETIME_MS,
-			),
-		set: (value) => {
-			storedMinLifetimeMs.value = normalizeSpreadsNumber(
-				value,
-				DEFAULT_SPREADS_MIN_LIFETIME_MS,
-			);
-		},
-	});
-	const holdingPeriodHours = computed({
-		get: () =>
-			normalizeSpreadsNumber(
-				storedHoldingPeriodHours.value,
-				DEFAULT_SPREADS_HOLDING_PERIOD_HOURS,
-			),
-		set: (value) => {
-			storedHoldingPeriodHours.value = normalizeSpreadsNumber(
-				value,
-				DEFAULT_SPREADS_HOLDING_PERIOD_HOURS,
-			);
-		},
-	});
-	const draftMaxSnapshotAgeMs = ref(maxSnapshotAgeMs.value);
-	const draftPositionSizeUsd = ref(positionSizeUsd.value);
-	const draftMinOccurrences = ref(minOccurrences.value);
-	const draftMinLifetimeMs = ref(minLifetimeMs.value);
-	const draftHoldingPeriodHours = ref(holdingPeriodHours.value);
-	const draftHideStale = ref(hideStale.value);
-	const draftOnlyFeeAdjusted = ref(onlyFeeAdjusted.value);
+	const maxSnapshotAgeMs = computed(() =>
+		appliedFilters.value.maxSnapshotAgeMs ?? DEFAULT_SPREADS_MAX_SNAPSHOT_AGE_MS,
+	);
+	const minConfidence = computed(() =>
+		(appliedFilters.value.minConfidenceInput ?? 0) / 100,
+	);
+	const positionSizeUsd = computed(() =>
+		appliedFilters.value.positionSizeUsd ?? DEFAULT_SPREADS_POSITION_SIZE_USD,
+	);
+	const minOccurrences = computed(() =>
+		appliedFilters.value.minOccurrences ?? DEFAULT_SPREADS_MIN_OCCURRENCES,
+	);
+	const minLifetimeMs = computed(() =>
+		appliedFilters.value.minLifetimeMs ?? DEFAULT_SPREADS_MIN_LIFETIME_MS,
+	);
+	const holdingPeriodHours = computed(() =>
+		appliedFilters.value.holdingPeriodHours ?? DEFAULT_SPREADS_HOLDING_PERIOD_HOURS,
+	);
+	const hideStale = computed(() => appliedFilters.value.hideStale);
+	const onlyFeeAdjusted = computed(() => appliedFilters.value.onlyFeeAdjusted);
+	const draftFilters = ref<SpreadsDraftFilters>({ ...appliedFilters.value });
 
 	const spreadsQuery = useSpreadsQuery({
 		exchanges: selectedExchanges,
@@ -291,62 +163,33 @@ export const useSpreadsOverview = () => {
 
 	/** Copies committed filters into the popover draft state before editing. */
 	const syncDraftFilters = () => {
-		draftSelectedExchanges.value = [...selectedExchanges.value];
-		draftMinPriceSpreadPercentInput.value = minPriceSpreadPercent.value * 100;
-		draftMaxSnapshotAgeMs.value = maxSnapshotAgeMs.value;
-		draftMinConfidenceInput.value = minConfidence.value * 100;
-		draftPositionSizeUsd.value = positionSizeUsd.value;
-		draftMinOccurrences.value = minOccurrences.value;
-		draftMinLifetimeMs.value = minLifetimeMs.value;
-		draftHoldingPeriodHours.value = holdingPeriodHours.value;
-		draftHideStale.value = hideStale.value;
-		draftOnlyFeeAdjusted.value = onlyFeeAdjusted.value;
+		draftFilters.value = { ...appliedFilters.value };
 	};
 
 	/** Commits popover draft filters to persisted state and refreshes query keys. */
 	const applyDraftFilters = () => {
-		selectedExchanges.value = draftSelectedExchanges.value;
-		minPriceSpreadPercentInput.value = draftMinPriceSpreadPercentInput.value;
-		maxSnapshotAgeMs.value = draftMaxSnapshotAgeMs.value;
-		minConfidenceInput.value = draftMinConfidenceInput.value;
-		positionSizeUsd.value = draftPositionSizeUsd.value;
-		minOccurrences.value = draftMinOccurrences.value;
-		minLifetimeMs.value = draftMinLifetimeMs.value;
-		holdingPeriodHours.value = draftHoldingPeriodHours.value;
-		hideStale.value = draftHideStale.value;
-		onlyFeeAdjusted.value = draftOnlyFeeAdjusted.value;
+		appliedFilters.value = { ...draftFilters.value };
 	};
 
 	/** Restores default spread filters and applies them immediately. */
 	const resetDraftFilters = () => {
-		draftSelectedExchanges.value = [...DEFAULT_SPREADS_EXCHANGES];
-		draftMinPriceSpreadPercentInput.value =
-			DEFAULT_SPREADS_MIN_PRICE_SPREAD_PERCENT * 100;
-		draftMaxSnapshotAgeMs.value = DEFAULT_SPREADS_MAX_SNAPSHOT_AGE_MS;
-		draftMinConfidenceInput.value = DEFAULT_SPREADS_MIN_CONFIDENCE * 100;
-		draftPositionSizeUsd.value = DEFAULT_SPREADS_POSITION_SIZE_USD;
-		draftMinOccurrences.value = DEFAULT_SPREADS_MIN_OCCURRENCES;
-		draftMinLifetimeMs.value = DEFAULT_SPREADS_MIN_LIFETIME_MS;
-		draftHoldingPeriodHours.value = DEFAULT_SPREADS_HOLDING_PERIOD_HOURS;
-		draftHideStale.value = DEFAULT_SPREADS_HIDE_STALE;
-		draftOnlyFeeAdjusted.value = DEFAULT_SPREADS_ONLY_FEE_ADJUSTED;
+		draftFilters.value = createDefaultSpreadsFilters();
 		applyDraftFilters();
 	};
+	const filterPanelConfig = computed<FilterPanelConfig>(() => ({
+		activeFilterCount: activeFilterCount.value,
+		buttonClass: "max-[760px]:w-full",
+		onApply: applyDraftFilters,
+		onBeforeOpen: syncDraftFilters,
+		onReset: resetDraftFilters,
+		panelClass: "w-[min(42rem,calc(100vw-2rem))]",
+		title: "Spread Filters",
+	}));
 
 	return {
-		activeFilterCount,
-		applyDraftFilters,
-		draftHideStale,
-		draftHoldingPeriodHours,
-		draftMaxSnapshotAgeMs,
-		draftMinConfidenceInput,
-		draftMinLifetimeMs,
-		draftMinOccurrences,
-		draftMinPriceSpreadPercentInput,
-		draftOnlyFeeAdjusted,
-		draftPositionSizeUsd,
-		draftSelectedExchanges,
+		draftFilters,
 		exchangeErrors,
+		filterPanelConfig,
 		filteredOpportunities,
 		hasSelectedExchanges,
 		selectionStatus,
@@ -354,7 +197,5 @@ export const useSpreadsOverview = () => {
 		spreadsStatus,
 		symbolSearch,
 		tableRowsPerPage,
-		resetDraftFilters,
-		syncDraftFilters,
 	};
 };

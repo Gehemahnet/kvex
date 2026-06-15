@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createSpreadsUrl } from "./SpreadsOverview.api";
+import { spreadsApi } from "@api/spreads";
 import { createSpreadsQueryKey } from "./SpreadsOverview.query";
 
 describe("SpreadsOverview query", () => {
@@ -79,7 +79,7 @@ describe("SpreadsOverview query", () => {
 
 	it("creates public spreads API urls from active request filters", () => {
 		expect(
-			createSpreadsUrl({
+			spreadsApi.createUrl({
 				exchanges: ["hyperliquid", "okx"],
 				symbol: " BTC ",
 				minPriceSpreadPercent: 0,
@@ -96,7 +96,7 @@ describe("SpreadsOverview query", () => {
 
 	it("omits disabled optional spreads API filters", () => {
 		expect(
-			createSpreadsUrl({
+			spreadsApi.createUrl({
 				exchanges: [],
 				symbol: " ",
 				positionSizeUsd: 0,

@@ -1,12 +1,7 @@
-import { computed } from "vue";
-import { useValidatedLocalStorage } from "../../common/local-storage.utils";
-import type { AuthResponse, AuthUser } from "./Auth.types";
-import {
-	getCurrentAuthSession,
-	refreshAuthSession as requestAuthSessionRefresh,
-} from "./Auth.api";
+import { computed, ref } from "vue";
+import { authApi, type AuthResponse, type AuthUser } from "@api/auth";
 
-const AUTH_STORAGE_KEY = "kvex-auth";
+const LEGACY_AUTH_STORAGE_KEY = "kvex-auth";
 
 type AuthState = {
 	csrfToken: string;
@@ -14,35 +9,14 @@ type AuthState = {
 	user: AuthUser;
 } | null;
 
-/** Runtime guard for persisted auth state. */
-export const isAuthState = (value: unknown): value is AuthState => {
-	if (value === null) {
-		return true;
-	}
+type AuthStatus = "loading" | "anonymous" | "authenticated";
 
-	if (typeof value !== "object") {
-		return false;
-	}
+const authState = ref<AuthState>(null);
+const authStatus = ref<AuthStatus>("loading");
+let restoreSessionPromise: Promise<boolean> | undefined;
 
-	const candidate = value as Partial<AuthResponse>;
-
-	return typeof candidate.csrfToken === "string" &&
-		typeof candidate.expiresAt === "string" &&
-		Number.isFinite(Date.parse(candidate.expiresAt)) &&
-		Date.parse(candidate.expiresAt) > Date.now() &&
-		typeof candidate.user?.id === "string" &&
-		typeof candidate.user.login === "string" &&
-		(candidate.user.status === "active" || candidate.user.status === "disabled");
-};
-
-/** Stores the current auth token and user in validated localStorage. */
+/** Stores the current browser auth state in memory while cookies remain source of truth. */
 export const useAuthSession = () => {
-	const authState = useValidatedLocalStorage<AuthState>(
-		AUTH_STORAGE_KEY,
-		null,
-		isAuthState,
-	);
-
 	const isAuthenticated = computed(() => authState.value !== null);
 
 	const setAuthSession = (response: AuthResponse) => {
@@ -51,30 +25,35 @@ export const useAuthSession = () => {
 			expiresAt: response.expiresAt,
 			user: response.user,
 		};
+		authStatus.value = "authenticated";
+		clearLegacyAuthStorage();
 	};
 
 	const clearAuthSession = () => {
 		authState.value = null;
+		authStatus.value = "anonymous";
+		clearLegacyAuthStorage();
 	};
 
-const restoreAuthSession = async (): Promise<boolean> => {
-	try {
-		const session = await getCurrentAuthSession();
+	const restoreAuthSession = async (): Promise<boolean> => {
+		restoreSessionPromise ??= restoreAuthSessionOnce(setAuthSession, clearAuthSession)
+			.finally(() => {
+				restoreSessionPromise = undefined;
+			});
 
-		if ("needsLogin" in session) {
-			clearAuthSession();
+		return restoreSessionPromise;
+	};
 
+	const ensureAuthSession = async (): Promise<boolean> => {
+		if (authStatus.value === "authenticated") {
+			return true;
+		}
+
+		if (authStatus.value === "anonymous") {
 			return false;
 		}
 
-		setAuthSession(session);
-
-		return true;
-	} catch {
-			clearAuthSession();
-
-			return false;
-		}
+		return restoreAuthSession();
 	};
 
 	const refreshAuthSession = async (): Promise<boolean> => {
@@ -82,8 +61,8 @@ const restoreAuthSession = async (): Promise<boolean> => {
 			return false;
 		}
 
-		try {
-			setAuthSession(await requestAuthSessionRefresh(authState.value.csrfToken));
+	try {
+			setAuthSession(await authApi.refreshSession(authState.value.csrfToken));
 
 			return true;
 		} catch {
@@ -95,10 +74,43 @@ const restoreAuthSession = async (): Promise<boolean> => {
 
 	return {
 		authState,
+		authStatus,
 		clearAuthSession,
+		ensureAuthSession,
 		isAuthenticated,
 		refreshAuthSession,
 		restoreAuthSession,
 		setAuthSession,
 	};
+};
+
+const restoreAuthSessionOnce = async (
+	setAuthSession: (response: AuthResponse) => void,
+	clearAuthSession: () => void,
+): Promise<boolean> => {
+	authStatus.value = "loading";
+
+	try {
+		const session = await authApi.getCurrentSession();
+
+		if ("needsLogin" in session) {
+			clearAuthSession();
+
+			return false;
+		}
+
+		setAuthSession(session);
+
+		return true;
+	} catch {
+		clearAuthSession();
+
+		return false;
+	}
+};
+
+const clearLegacyAuthStorage = (): void => {
+	if (typeof window !== "undefined") {
+		window.localStorage.removeItem(LEGACY_AUTH_STORAGE_KEY);
+	}
 };

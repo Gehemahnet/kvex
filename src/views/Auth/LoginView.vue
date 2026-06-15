@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import Password from "primevue/password";
-import { ROUTES } from "../../router";
-import { useThemeMode } from "../../theme/theme.composable";
-import { loginAuthUser } from "./Auth.api";
+import { authApi } from "@api/auth";
+import { ROUTES } from "@router";
+import { useThemeMode } from "@theme/theme.composable";
 import { useAuthSession } from "./Auth.composable";
 
 const router = useRouter();
+const route = useRoute();
 const { themeMode } = useThemeMode();
 const { setAuthSession } = useAuthSession();
 const login = ref("");
@@ -29,15 +30,16 @@ const toggleThemeMode = () => {
 const submitLogin = async () => {
 	errorMessage.value = "";
 	isSubmitting.value = true;
+	const redirectTarget = getLoginRedirectTarget();
 
 	try {
-		const authResponse = await loginAuthUser({
+		const authResponse = await authApi.login({
 			login: login.value,
 			password: password.value,
 		});
 
 		setAuthSession(authResponse);
-		await router.push({ name: ROUTES.SPREADS_OVERVIEW });
+		await router.replace(redirectTarget);
 	} catch (error) {
 		errorMessage.value = error instanceof Error
 			? error.message
@@ -45,6 +47,14 @@ const submitLogin = async () => {
 	} finally {
 		isSubmitting.value = false;
 	}
+};
+
+const getLoginRedirectTarget = () => {
+	const redirect = route.query.redirect;
+
+	return typeof redirect === "string" && redirect.startsWith("/")
+		? redirect
+		: { name: ROUTES.SPREADS_OVERVIEW };
 };
 </script>
 

@@ -1,5 +1,6 @@
-import type { FundingExchange } from "../FundingOverview/FundingOverview.types";
-import type { SpreadsResponse } from "./SpreadsOverview.types";
+import { apiGet } from "../api-client";
+import type { FundingExchange } from "../funding/funding.types";
+import type { SpreadsResponse } from "./spreads.types";
 
 export type SpreadsRequestParams = {
 	exchanges: FundingExchange[];
@@ -12,25 +13,18 @@ export type SpreadsRequestParams = {
 	holdingPeriodHours?: number;
 };
 
-/** Fetches spread opportunities from the public REST endpoint. */
-export const getSpreads = async (
-	params: SpreadsRequestParams,
-): Promise<SpreadsResponse> => {
-	const response = await fetch(createSpreadsUrl(params));
+export const spreadsApi = {
+	/** Builds a stable REST URL for a spreads request. */
+	createUrl: (params: SpreadsRequestParams): string => {
+		const query = createSpreadsSearchParams(params);
+		const queryString = query.toString();
 
-	if (!response.ok) {
-		throw new Error(await getSpreadsErrorMessage(response));
-	}
+		return queryString ? `/api/spreads?${queryString}` : "/api/spreads";
+	},
 
-	return response.json() as Promise<SpreadsResponse>;
-};
-
-/** Builds a stable REST URL for a spreads request. */
-export const createSpreadsUrl = (params: SpreadsRequestParams): string => {
-	const query = createSpreadsSearchParams(params);
-	const queryString = query.toString();
-
-	return queryString ? `/api/spreads?${queryString}` : "/api/spreads";
+	/** Fetches spread opportunities from the public REST endpoint. */
+	getSpreads: (params: SpreadsRequestParams): Promise<SpreadsResponse> =>
+		apiGet<SpreadsResponse>(spreadsApi.createUrl(params)),
 };
 
 const createSpreadsSearchParams = (
@@ -100,12 +94,4 @@ const setPositiveIntegerParam = (
 	if (value !== undefined && value > 0) {
 		query.set(key, String(Math.floor(value)));
 	}
-};
-
-const getSpreadsErrorMessage = async (response: Response): Promise<string> => {
-	const body = await response.json().catch(() => undefined) as
-		| { error?: { message?: string } }
-		| undefined;
-
-	return body?.error?.message ?? `Spreads request failed: ${response.status}`;
 };

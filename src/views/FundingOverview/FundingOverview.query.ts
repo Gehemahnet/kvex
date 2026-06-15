@@ -1,16 +1,11 @@
 import { useQuery } from "@tanstack/vue-query";
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
+import { fundingApi } from "@api/funding";
 import type {
 	FundingExchange,
-	FundingOverviewResponse,
 	FundingTimeframe,
-} from "./FundingOverview.types";
+} from "@api/funding";
 import { FUNDING_OVERVIEW_CACHE_TTL_MS } from "./FundingOverview.constants";
-
-type FundingOverviewRequestParams = {
-	timeframe: FundingTimeframe;
-	exchanges: FundingExchange[];
-};
 
 type UseFundingOverviewQueryParams = {
 	timeframe: MaybeRefOrGetter<FundingTimeframe>;
@@ -18,33 +13,6 @@ type UseFundingOverviewQueryParams = {
 };
 
 export const FUNDING_OVERVIEW_QUERY_KEY = "funding-overview";
-
-/** Requests the funding overview endpoint with timeframe and exchange filters. */
-const getFundingOverview = async (
-	params: FundingOverviewRequestParams,
-): Promise<FundingOverviewResponse> => {
-	const query = new URLSearchParams({
-		timeframe: params.timeframe,
-	});
-
-	if (params.exchanges.length > 0) {
-		query.set("exchanges", params.exchanges.join(","));
-	}
-
-	const response = await fetch(`/api/funding/overview?${query.toString()}`);
-
-	if (!response.ok) {
-		const body = await response.json().catch(() => undefined) as
-			| { error?: { message?: string } }
-			| undefined;
-
-		throw new Error(
-			body?.error?.message ?? `Funding request failed: ${response.status}`,
-		);
-	}
-
-	return response.json() as Promise<FundingOverviewResponse>;
-};
 
 /** Creates a cached TanStack Query resource for the funding overview table. */
 export const useFundingOverviewQuery = (
@@ -58,7 +26,7 @@ export const useFundingOverviewQuery = (
 		]),
 		enabled: computed(() => toValue(params.exchanges).length > 0),
 		queryFn: () =>
-			getFundingOverview({
+			fundingApi.getOverview({
 				timeframe: toValue(params.timeframe),
 				exchanges: toValue(params.exchanges),
 			}),

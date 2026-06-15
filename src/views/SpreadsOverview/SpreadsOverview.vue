@@ -9,6 +9,7 @@ import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import MultiSelect from "primevue/multiselect";
 import Popover from "primevue/popover";
+import FilterPanel from "@components/FilterPanel/FilterPanel.vue";
 import { FUNDING_EXCHANGE_OPTIONS } from "../FundingOverview/FundingOverview.constants";
 import { SPREADS_ROWS_PER_PAGE_OPTIONS } from "./SpreadsOverview.constants";
 import { useSpreadsOverview } from "./SpreadsOverview.composable";
@@ -35,55 +36,24 @@ import {
 } from "./SpreadsOverview.utils";
 
 const {
-	activeFilterCount,
-	applyDraftFilters,
-	draftHideStale,
-	draftHoldingPeriodHours,
-	draftMaxSnapshotAgeMs,
-	draftMinConfidenceInput,
-	draftMinLifetimeMs,
-	draftMinOccurrences,
-	draftMinPriceSpreadPercentInput,
-	draftOnlyFeeAdjusted,
-	draftPositionSizeUsd,
-	draftSelectedExchanges,
+	draftFilters,
 	exchangeErrors,
+	filterPanelConfig,
 	filteredOpportunities,
 	hasSelectedExchanges,
-	resetDraftFilters,
 	selectionStatus,
 	spreadsQuery,
 	spreadsStatus,
 	symbolSearch,
-	syncDraftFilters,
 	tableRowsPerPage,
 } = useSpreadsOverview();
 
-const filtersPopover = ref<{
-	hide: () => void;
-	toggle: (event: Event) => void;
-} | null>(null);
 const guidePopover = ref<{
 	toggle: (event: Event) => void;
 } | null>(null);
 
-const toggleFilters = (event: Event) => {
-	syncDraftFilters();
-	filtersPopover.value?.toggle(event);
-};
-
 const toggleGuide = (event: Event) => {
 	guidePopover.value?.toggle(event);
-};
-
-const applyFilters = () => {
-	applyDraftFilters();
-	filtersPopover.value?.hide();
-};
-
-const resetFilters = () => {
-	resetDraftFilters();
-	filtersPopover.value?.hide();
 };
 
 const handleTablePage = (event: { rows: number }) => {
@@ -156,13 +126,166 @@ const handleTablePage = (event: { rows: number }) => {
 					/>
 				</div>
 
-				<Button
-					class="max-[760px]:w-full"
-					icon="pi pi-filter"
-					:label="activeFilterCount ? `Filters (${activeFilterCount})` : 'Filters'"
-					severity="secondary"
-					@click="toggleFilters"
-				/>
+				<FilterPanel
+					:config="filterPanelConfig"
+				>
+					<div class="grid grid-cols-2 gap-4 max-[640px]:grid-cols-1">
+						<div class="col-span-2 flex flex-col gap-1.5 max-[640px]:col-span-1">
+							<label
+								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
+								for="spreads-exchanges"
+							>
+								Exchanges
+							</label>
+							<MultiSelect
+								id="spreads-exchanges"
+								v-model="draftFilters.selectedExchanges"
+								:options="FUNDING_EXCHANGE_OPTIONS"
+								option-label="label"
+								option-value="value"
+								:max-selected-labels="3"
+								placeholder="Select Exchanges"
+								show-clear
+							/>
+						</div>
+
+						<div class="flex flex-col gap-1.5">
+							<label
+								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
+								for="spreads-min-price"
+							>
+								Min spread
+							</label>
+							<InputNumber
+								id="spreads-min-price"
+								v-model="draftFilters.minPriceSpreadPercentInput"
+								:min="0"
+								:max-fraction-digits="4"
+								placeholder="0"
+								suffix="%"
+							/>
+						</div>
+
+						<div class="flex flex-col gap-1.5">
+							<label
+								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
+								for="spreads-max-age"
+							>
+								Max age
+							</label>
+							<InputNumber
+								id="spreads-max-age"
+								v-model="draftFilters.maxSnapshotAgeMs"
+								:min="0"
+								:max-fraction-digits="0"
+								placeholder="30000"
+								suffix=" ms"
+							/>
+						</div>
+
+						<div class="flex flex-col gap-1.5">
+							<label
+								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
+								for="spreads-min-confidence"
+							>
+								Min confidence
+							</label>
+							<InputNumber
+								id="spreads-min-confidence"
+								v-model="draftFilters.minConfidenceInput"
+								:min="0"
+								:max="100"
+								:max-fraction-digits="1"
+								placeholder="0"
+								suffix="%"
+							/>
+						</div>
+
+						<div class="flex flex-col gap-1.5">
+							<label
+								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
+								for="spreads-position-size"
+							>
+								Position size
+							</label>
+							<InputNumber
+								id="spreads-position-size"
+								v-model="draftFilters.positionSizeUsd"
+								:min="0"
+								:max-fraction-digits="0"
+								placeholder="0"
+								prefix="$"
+							/>
+						</div>
+
+						<div class="flex flex-col gap-1.5">
+							<label
+								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
+								for="spreads-min-seen"
+							>
+								Min seen
+							</label>
+							<InputNumber
+								id="spreads-min-seen"
+								v-model="draftFilters.minOccurrences"
+								:min="0"
+								:max-fraction-digits="0"
+								placeholder="0"
+							/>
+						</div>
+
+						<div class="flex flex-col gap-1.5">
+							<label
+								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
+								for="spreads-min-life"
+							>
+								Min life
+							</label>
+							<InputNumber
+								id="spreads-min-life"
+								v-model="draftFilters.minLifetimeMs"
+								:min="0"
+								:max-fraction-digits="0"
+								placeholder="0"
+								suffix=" ms"
+							/>
+						</div>
+
+						<div class="flex flex-col gap-1.5">
+							<label
+								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
+								for="spreads-holding-period"
+							>
+								Hold
+							</label>
+							<InputNumber
+								id="spreads-holding-period"
+								v-model="draftFilters.holdingPeriodHours"
+								:min="0"
+								:max-fraction-digits="2"
+								placeholder="8"
+								suffix=" h"
+							/>
+						</div>
+					</div>
+
+					<div class="flex flex-wrap gap-4">
+						<label class="inline-flex items-center gap-2 font-bold text-[var(--kvex-text-muted-color)]">
+							<Checkbox
+								v-model="draftFilters.hideStale"
+								binary
+							/>
+							<span>Hide stale</span>
+						</label>
+						<label class="inline-flex items-center gap-2 font-bold text-[var(--kvex-text-muted-color)]">
+							<Checkbox
+								v-model="draftFilters.onlyFeeAdjusted"
+								binary
+							/>
+							<span>Only fee-adjusted</span>
+						</label>
+					</div>
+				</FilterPanel>
 
 				<Button
 					class="max-[760px]:w-full"
@@ -182,192 +305,6 @@ const handleTablePage = (event: { rows: number }) => {
 					</span>
 				</div>
 			</div>
-
-			<Popover
-				ref="filtersPopover"
-				class="kvex-filters-popover"
-			>
-				<div class="flex w-[min(42rem,calc(100vw-2rem))] flex-col gap-4">
-					<div>
-						<span class="block text-sm font-semibold text-[var(--p-text-color)]">
-							Spread Filters
-						</span>
-						<span class="mt-1 block text-xs text-[var(--kvex-text-muted-color)]">
-							Changes apply after confirmation.
-						</span>
-					</div>
-
-					<div class="grid grid-cols-2 gap-4 max-[640px]:grid-cols-1">
-						<div class="col-span-2 flex flex-col gap-1.5 max-[640px]:col-span-1">
-							<label
-								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
-								for="spreads-exchanges"
-							>
-								Exchanges
-							</label>
-							<MultiSelect
-								id="spreads-exchanges"
-								v-model="draftSelectedExchanges"
-								:options="FUNDING_EXCHANGE_OPTIONS"
-								option-label="label"
-								option-value="value"
-								:max-selected-labels="3"
-								placeholder="Select Exchanges"
-								show-clear
-							/>
-						</div>
-
-						<div class="flex flex-col gap-1.5">
-							<label
-								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
-								for="spreads-min-price"
-							>
-								Min spread
-							</label>
-							<InputNumber
-								id="spreads-min-price"
-								v-model="draftMinPriceSpreadPercentInput"
-								:min="0"
-								:max-fraction-digits="4"
-								placeholder="0"
-								suffix="%"
-							/>
-						</div>
-
-						<div class="flex flex-col gap-1.5">
-							<label
-								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
-								for="spreads-max-age"
-							>
-								Max age
-							</label>
-							<InputNumber
-								id="spreads-max-age"
-								v-model="draftMaxSnapshotAgeMs"
-								:min="0"
-								:max-fraction-digits="0"
-								placeholder="30000"
-								suffix=" ms"
-							/>
-						</div>
-
-						<div class="flex flex-col gap-1.5">
-							<label
-								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
-								for="spreads-min-confidence"
-							>
-								Min confidence
-							</label>
-							<InputNumber
-								id="spreads-min-confidence"
-								v-model="draftMinConfidenceInput"
-								:min="0"
-								:max="100"
-								:max-fraction-digits="1"
-								placeholder="0"
-								suffix="%"
-							/>
-						</div>
-
-						<div class="flex flex-col gap-1.5">
-							<label
-								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
-								for="spreads-position-size"
-							>
-								Position size
-							</label>
-							<InputNumber
-								id="spreads-position-size"
-								v-model="draftPositionSizeUsd"
-								:min="0"
-								:max-fraction-digits="0"
-								placeholder="0"
-								prefix="$"
-							/>
-						</div>
-
-						<div class="flex flex-col gap-1.5">
-							<label
-								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
-								for="spreads-min-seen"
-							>
-								Min seen
-							</label>
-							<InputNumber
-								id="spreads-min-seen"
-								v-model="draftMinOccurrences"
-								:min="0"
-								:max-fraction-digits="0"
-								placeholder="0"
-							/>
-						</div>
-
-						<div class="flex flex-col gap-1.5">
-							<label
-								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
-								for="spreads-min-life"
-							>
-								Min life
-							</label>
-							<InputNumber
-								id="spreads-min-life"
-								v-model="draftMinLifetimeMs"
-								:min="0"
-								:max-fraction-digits="0"
-								placeholder="0"
-								suffix=" ms"
-							/>
-						</div>
-
-						<div class="flex flex-col gap-1.5">
-							<label
-								class="text-[0.846rem] font-bold text-[var(--kvex-text-muted-color)]"
-								for="spreads-holding-period"
-							>
-								Hold
-							</label>
-							<InputNumber
-								id="spreads-holding-period"
-								v-model="draftHoldingPeriodHours"
-								:min="0"
-								:max-fraction-digits="2"
-								placeholder="8"
-								suffix=" h"
-							/>
-						</div>
-					</div>
-
-					<div class="flex flex-wrap gap-4">
-						<label class="inline-flex items-center gap-2 font-bold text-[var(--kvex-text-muted-color)]">
-							<Checkbox
-								v-model="draftHideStale"
-								binary
-							/>
-							<span>Hide stale</span>
-						</label>
-						<label class="inline-flex items-center gap-2 font-bold text-[var(--kvex-text-muted-color)]">
-							<Checkbox
-								v-model="draftOnlyFeeAdjusted"
-								binary
-							/>
-							<span>Only fee-adjusted</span>
-						</label>
-					</div>
-
-					<div class="flex justify-end gap-2">
-						<Button
-							label="Reset"
-							severity="secondary"
-							variant="outlined"
-							@click="resetFilters"
-						/>
-						<Button
-							label="Apply"
-							@click="applyFilters"
-						/>
-					</div>
-				</div>
-			</Popover>
 
 			<Message
 				v-if="spreadsQuery.error.value"

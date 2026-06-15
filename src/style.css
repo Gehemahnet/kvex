@@ -99,12 +99,131 @@
 	--kvex-panel-border: #27272a;
 	--kvex-panel-hover-background: #27272a;
 	--kvex-panel-shadow: none;
+
+	--p-content-background: var(--kvex-app-background);
+	--p-content-color: var(--kvex-text-color);
+	--p-surface-0: var(--kvex-panel-background);
+	--p-surface-50: var(--kvex-panel-muted-background);
+	--p-surface-100: var(--kvex-panel-muted-background);
+	--p-surface-200: var(--kvex-panel-border);
+	--p-surface-700: var(--kvex-panel-border);
+	--p-surface-800: var(--kvex-panel-background);
+	--p-surface-900: var(--kvex-app-background);
 }
 
 body {
 	margin: 0;
 	background-color: var(--kvex-app-background);
 	color: var(--p-text-color);
+}
+
+.p-card,
+.p-panel,
+.p-tabs,
+.p-tabpanels,
+.p-tabpanel,
+.p-tablist,
+.p-tablist-content,
+.p-tablist-tab-list {
+	background: var(--kvex-panel-background);
+	color: var(--kvex-text-color);
+}
+
+.p-card {
+	border: 1px solid var(--kvex-panel-border);
+	box-shadow: var(--kvex-panel-shadow);
+}
+
+.p-card-body,
+.p-card-content,
+.p-panel-header,
+.p-panel-content,
+.p-panel-content-container,
+.p-panel-content-wrapper,
+.p-panel-footer {
+	background: var(--kvex-panel-background);
+	color: var(--kvex-text-color);
+}
+
+.p-panel-header {
+	border-color: var(--kvex-panel-border);
+}
+
+.p-panel-toggle-button {
+	background: transparent;
+	border-color: var(--kvex-panel-border);
+	color: var(--kvex-text-muted-color);
+}
+
+.p-panel-toggle-button:not(:disabled):hover {
+	background: var(--kvex-panel-hover-background);
+	color: var(--kvex-text-color);
+}
+
+.p-panel-content {
+	border-color: var(--kvex-panel-border);
+}
+
+.p-tab {
+	background: transparent;
+	color: var(--kvex-text-muted-color);
+}
+
+.p-tab:not(.p-disabled):focus-visible {
+	box-shadow: var(--kvex-focus-shadow);
+}
+
+.p-tab.p-tab-active,
+.p-tab[data-p-active="true"] {
+	background: var(--kvex-panel-hover-background);
+	color: var(--kvex-accent-color);
+}
+
+.p-tablist-active-bar {
+	background: var(--kvex-accent-color);
+}
+
+.kvex-dark .p-card,
+.kvex-dark .p-card-body,
+.kvex-dark .p-card-content,
+.kvex-dark .p-panel,
+.kvex-dark .p-panel-header,
+.kvex-dark .p-panel-content,
+.kvex-dark .p-panel-content-container,
+.kvex-dark .p-panel-content-wrapper,
+.kvex-dark .p-panel-footer,
+.kvex-dark .p-tabs,
+.kvex-dark .p-tabpanels,
+.kvex-dark .p-tabpanel,
+.kvex-dark .p-tablist,
+.kvex-dark .p-tablist-content,
+.kvex-dark .p-tablist-tab-list,
+.kvex-dark .p-dialog {
+	background: var(--kvex-panel-background) !important;
+	color: var(--kvex-text-color) !important;
+	border-color: var(--kvex-panel-border);
+}
+
+.kvex-dark .p-tab {
+	background: transparent !important;
+	color: var(--kvex-text-muted-color) !important;
+}
+
+.kvex-dark .p-tab.p-tab-active,
+.kvex-dark .p-tab[data-p-active="true"] {
+	background: var(--kvex-panel-hover-background) !important;
+	color: var(--kvex-accent-color) !important;
+}
+
+.kvex-dark .p-panel-toggle-button {
+	background: transparent !important;
+	border-color: var(--kvex-panel-border) !important;
+	color: var(--kvex-text-muted-color) !important;
+}
+
+.kvex-dark .p-panel-toggle-button:not(:disabled):hover {
+	background: var(--kvex-panel-hover-background) !important;
+	color: var(--kvex-text-color) !important;
 }
 
 #app {
@@ -284,7 +403,7 @@ a:hover {
 .p-multiselect-option .p-checkbox-icon {
 	color: #ffffff;
 }
-
+.kvex-dar .p-select,
 .kvex-dark .p-select-overlay,
 .kvex-dark .p-multiselect-overlay,
 .kvex-dark .p-select-list,
@@ -518,6 +637,16 @@ a:hover {
 	background: var(--kvex-panel-hover-background);
 }
 
+.kvex-data-surface .p-datatable-mask,
+.kvex-data-surface .p-overlay-mask {
+	background: color-mix(in srgb, var(--kvex-panel-background) 78%, transparent);
+	color: var(--kvex-accent-color);
+}
+
+.kvex-data-surface .p-datatable-loading-icon {
+	color: var(--kvex-accent-color);
+}
+
 .kvex-data-surface .p-paginator {
 	background: var(--kvex-paginator-background);
 	border-color: var(--kvex-panel-border);
@@ -596,6 +725,12 @@ a:hover {
 .kvex-dark .kvex-data-surface .p-datatable-empty-message > td {
 	background: var(--kvex-panel-background);
 	color: var(--kvex-text-muted-color);
+}
+
+.kvex-dark .kvex-data-surface .p-datatable-mask,
+.kvex-dark .kvex-data-surface .p-overlay-mask {
+	background: color-mix(in srgb, var(--kvex-panel-background) 82%, transparent);
+	color: var(--kvex-accent-color);
 }
 
 .kvex-dark .kvex-data-surface .p-paginator,

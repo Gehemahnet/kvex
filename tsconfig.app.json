@@ -2,6 +2,20 @@
 	"extends": "@vue/tsconfig/tsconfig.dom.json",
 	"compilerOptions": {
 		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+		"baseUrl": ".",
+		"paths": {
+			"@api/*": ["src/api/*"],
+			"@assets/*": ["src/assets/*"],
+			"@components/*": ["src/components/*"],
+			"@hooks/*": ["src/hooks/*"],
+			"@router": ["src/router/index.ts"],
+			"@static/*": ["src/static/*"],
+			"@shared/*": ["src/shared/*"],
+			"@theme/*": ["src/theme/*"],
+			"@types/*": ["src/types/*"],
+			"@utils/*": ["src/common/*"],
+			"@views/*": ["src/views/*"]
+		},
 		"types": ["vite/client", "node"],
 		"noImplicitAny": true,
 		"moduleResolution": "bundler",

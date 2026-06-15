@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { SpreadOpportunity } from "./SpreadsOverview.types";
 import {
 	filterSpreadOpportunities,
 	formatAverageSpread,
@@ -10,6 +9,8 @@ import {
 	hasFeeAdjustedSpread,
 	shouldWarnAboutFeeAdjustedSpread,
 } from "./SpreadsOverview.utils";
+import {DEFAULT_CURRENCY, TOKENS} from "../../shared/constants/currencies";
+import {SpreadOpportunity} from "../../api/spreads";
 
 describe("SpreadsOverview utils", () => {
 	it("formats spread and funding impact percentages", () => {
@@ -98,8 +99,8 @@ describe("SpreadsOverview utils", () => {
 				symbol: "BTC-USDT-SWAP",
 				price: 100,
 				priceSource: "mark",
-				quoteAsset: "USDT",
-				settlementAsset: "USDT",
+				quoteAsset: TOKENS.usdt,
+				settlementAsset: TOKENS.usdt,
 			}),
 		).toBe(" · USDT");
 		expect(
@@ -108,8 +109,8 @@ describe("SpreadsOverview utils", () => {
 				symbol: "BTC-USDT-SWAP",
 				price: 100,
 				priceSource: "mark",
-				quoteAsset: "USD",
-				settlementAsset: "USDT",
+				quoteAsset: DEFAULT_CURRENCY,
+				settlementAsset: TOKENS.usdt,
 			}),
 		).toBe(" · USD/USDT");
 	});

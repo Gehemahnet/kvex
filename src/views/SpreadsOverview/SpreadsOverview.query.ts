@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/vue-query";
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
-import type { FundingExchange } from "../FundingOverview/FundingOverview.types";
-import { SPREADS_CACHE_TTL_MS } from "./SpreadsOverview.constants";
 import {
-	getSpreads,
+	spreadsApi,
 	type SpreadsRequestParams,
-} from "./SpreadsOverview.api";
+} from "@api/spreads";
+import type { FundingExchange } from "@api/funding";
+import { SPREADS_CACHE_TTL_MS } from "./SpreadsOverview.constants";
 
 type UseSpreadsQueryParams = {
 	exchanges: MaybeRefOrGetter<FundingExchange[]>;
@@ -47,7 +47,7 @@ export const useSpreadsQuery = (params: UseSpreadsQueryParams) =>
 			...createSpreadsQueryKey(resolveSpreadsRequestParams(params)),
 		]),
 		enabled: computed(() => toValue(params.exchanges).length > 1),
-		queryFn: () => getSpreads(resolveSpreadsRequestParams(params)),
+		queryFn: () => spreadsApi.getSpreads(resolveSpreadsRequestParams(params)),
 		staleTime: SPREADS_CACHE_TTL_MS,
 		gcTime: SPREADS_CACHE_TTL_MS,
 	});

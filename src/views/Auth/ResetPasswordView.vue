@@ -4,8 +4,8 @@ import { useRoute, useRouter } from "vue-router";
 import Button from "primevue/button";
 import Message from "primevue/message";
 import Password from "primevue/password";
-import { ROUTES } from "../../router";
-import { confirmPasswordReset } from "./Auth.api";
+import { authApi } from "@api/auth";
+import { ROUTES } from "@router";
 
 const route = useRoute();
 const router = useRouter();
@@ -20,7 +20,7 @@ const submitPasswordReset = async () => {
 	isSubmitting.value = true;
 
 	try {
-		await confirmPasswordReset({
+		await authApi.confirmPasswordReset({
 			token: token.value,
 			password: password.value,
 		});

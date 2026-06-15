@@ -2,11 +2,11 @@ import { useQueryClient } from "@tanstack/vue-query";
 import { onScopeDispose, watch, type MaybeRefOrGetter, toValue } from "vue";
 import {
 	MARKET_DATA_SOCKET_EVENTS,
-} from "../../common/market-data-socket.constants";
-import { getMarketDataSocket } from "../../common/market-data-socket";
-import type { FundingExchange } from "../FundingOverview/FundingOverview.types";
+} from "@utils/market-data-socket.constants";
+import { getMarketDataSocket } from "@utils/market-data-socket";
+import type { FundingExchange } from "@api/funding";
 import { createSpreadsQueryKey } from "./SpreadsOverview.query";
-import type { SpreadsResponse } from "./SpreadsOverview.types";
+import type { SpreadsResponse } from "@api/spreads";
 
 type UseSpreadsSocketUpdatesParams = {
 	enabled: MaybeRefOrGetter<boolean>;

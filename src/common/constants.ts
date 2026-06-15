@@ -6,4 +6,5 @@ export const EXCHANGES: LowercaseExchange[] = [
 	"ethereal",
 	"hyperliquid",
 	"nado",
+	"variational",
 ];

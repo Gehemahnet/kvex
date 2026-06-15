@@ -1,4 +1,4 @@
-import type { FundingExchange } from "../FundingOverview/FundingOverview.types";
+import type { FundingExchange } from "../funding/funding.types";
 
 export type SpreadPriceSource = "depth" | "bbo" | "mark" | "mid" | "index";
 

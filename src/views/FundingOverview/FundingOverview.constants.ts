@@ -1,7 +1,7 @@
 import type {
 	FundingExchange,
 	FundingTimeframe,
-} from "./FundingOverview.types";
+} from "@api/funding";
 
 export const DEFAULT_FUNDING_TIMEFRAME: FundingTimeframe = "DAY";
 
@@ -11,15 +11,16 @@ export const DEFAULT_FUNDING_EXCHANGES: FundingExchange[] = [
 	"ethereal",
 	"nado",
 	"okx",
+	"variational",
 ];
 
-export const FUNDING_OVERVIEW_ACTIVE_TIMEFRAME_LOCAL_STORAGE_KEY =
+export const FUNDING_OVERVIEW_ACTIVE_TIMEFRAME_INDEXED_DB_KEY =
 	"funding-overview-active-timeframe";
 
-export const FUNDING_OVERVIEW_ACTIVE_EXCHANGES_LOCAL_STORAGE_KEY =
+export const FUNDING_OVERVIEW_ACTIVE_EXCHANGES_INDEXED_DB_KEY =
 	"funding-overview-active-exchanges";
 
-export const FUNDING_OVERVIEW_PINNED_SYMBOLS_LOCAL_STORAGE_KEY =
+export const FUNDING_OVERVIEW_PINNED_SYMBOLS_INDEXED_DB_KEY =
 	"funding-overview-pinned-symbols";
 
 export const FUNDING_OVERVIEW_INITIAL_VISIBLE_ROWS = 50;
@@ -36,6 +37,7 @@ export const FUNDING_EXCHANGE_OPTIONS = [
 	{ label: "Ethereal", value: "ethereal" },
 	{ label: "Nado", value: "nado" },
 	{ label: "OKX", value: "okx" },
+	{ label: "Variational", value: "variational" },
 ];
 
 export const FUNDING_TIMEFRAME_OPTIONS = [

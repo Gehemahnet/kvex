@@ -2,74 +2,7 @@ import type {
 	FundingExchange,
 	FundingOverviewExchangeCell,
 	FundingOverviewRow,
-	FundingTimeframe,
-} from "./FundingOverview.types";
-import {
-	DEFAULT_FUNDING_EXCHANGES,
-	DEFAULT_FUNDING_TIMEFRAME,
-	FUNDING_EXCHANGE_OPTIONS,
-	FUNDING_TIMEFRAME_OPTIONS,
-} from "./FundingOverview.constants";
-
-/** Checks whether an unknown persisted value is a supported funding timeframe. */
-export const isFundingTimeframe = (
-	value: unknown,
-): value is FundingTimeframe =>
-	typeof value === "string" &&
-	FUNDING_TIMEFRAME_OPTIONS.some((option) => option.value === value);
-
-/** Checks whether an unknown persisted value is one of the enabled exchanges. */
-export const isFundingExchange = (value: unknown): value is FundingExchange =>
-	typeof value === "string" &&
-	FUNDING_EXCHANGE_OPTIONS.some((option) => option.value === value);
-
-/** Falls back to the default timeframe when localStorage contains stale data. */
-export const normalizeFundingTimeframe = (
-	timeframe: unknown,
-): FundingTimeframe =>
-	isFundingTimeframe(timeframe) ? timeframe : DEFAULT_FUNDING_TIMEFRAME;
-
-/**
- * Keeps only unique supported exchanges and restores defaults only when the
- * saved value is incompatible with the current exchange list.
- */
-export const normalizeFundingExchanges = (
-	exchanges: unknown,
-): FundingExchange[] => {
-	if (!Array.isArray(exchanges)) {
-		return [...DEFAULT_FUNDING_EXCHANGES];
-	}
-
-	const uniqueExchanges = [...new Set(exchanges)].filter(isFundingExchange);
-
-	return uniqueExchanges;
-};
-
-/** Checks whether a persisted value is a valid list of funding exchanges. */
-export const isFundingExchangeList = (
-	value: unknown,
-): value is FundingExchange[] =>
-	Array.isArray(value) && value.every(isFundingExchange);
-
-/** Checks whether a persisted value is a plain list of strings. */
-export const isStringList = (value: unknown): value is string[] =>
-	Array.isArray(value) && value.every((item) => typeof item === "string");
-
-/** Normalizes pinned symbols from localStorage and removes duplicates. */
-export const normalizePinnedSymbols = (symbols: unknown): string[] => {
-	if (!Array.isArray(symbols)) {
-		return [];
-	}
-
-	return [
-		...new Set(
-			symbols
-				.filter((symbol): symbol is string => typeof symbol === "string")
-				.map((symbol) => symbol.trim().toUpperCase())
-				.filter(Boolean),
-		),
-	];
-};
+} from "@api/funding";
 
 /** Hides empty funding values so the table only highlights actionable rates. */
 export const shouldShowFunding = (rate?: number | null): rate is number =>

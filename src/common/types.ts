@@ -3,7 +3,8 @@ export type Exchange =
 	| "PACIFICA"
 	| "ETHEREAL"
 	| "HYPERLIQUID"
-	| "NADO";
+	| "NADO"
+	| "VARIATIONAL";
 export type LowercaseExchange = Lowercase<Exchange>;
 export type Side = "BUY" | "SELL";
 

@@ -5,8 +5,8 @@ import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import Password from "primevue/password";
-import { ROUTES } from "../../router";
-import { registerAuthUser } from "./Auth.api";
+import { authApi } from "@api/auth";
+import { ROUTES } from "@router";
 import { useAuthSession } from "./Auth.composable";
 
 const router = useRouter();
@@ -22,7 +22,7 @@ const submitRegistration = async () => {
 	isSubmitting.value = true;
 
 	try {
-		const authResponse = await registerAuthUser({
+		const authResponse = await authApi.register({
 			email: email.value,
 			login: login.value,
 			password: password.value,

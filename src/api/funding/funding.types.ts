@@ -3,7 +3,8 @@ export type FundingExchange =
 	| "pacifica"
 	| "ethereal"
 	| "nado"
-	| "okx";
+	| "okx"
+	| "variational";
 
 export type FundingTimeframe = "DAY" | "WEEK" | "MONTH" | "YEAR";
 

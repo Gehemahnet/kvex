@@ -3,8 +3,8 @@ import { ref } from "vue";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
-import { ROUTES } from "../../router";
-import { requestPasswordReset } from "./Auth.api";
+import { authApi } from "@api/auth";
+import { ROUTES } from "@router";
 
 const login = ref("");
 const errorMessage = ref("");
@@ -16,7 +16,7 @@ const submitResetRequest = async () => {
 	isSubmitting.value = true;
 
 	try {
-		await requestPasswordReset(login.value);
+		await authApi.requestPasswordReset(login.value);
 		isSubmitted.value = true;
 	} catch (error) {
 		errorMessage.value = error instanceof Error

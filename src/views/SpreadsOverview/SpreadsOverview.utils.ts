@@ -1,53 +1,25 @@
 import {
 	FUNDING_EXCHANGE_OPTIONS,
 } from "../FundingOverview/FundingOverview.constants";
-import type { FundingExchange } from "../FundingOverview/FundingOverview.types";
-import {
-	isFundingExchange,
-	normalizeFundingExchanges,
-	shouldShowFunding,
-} from "../FundingOverview/FundingOverview.utils";
+import type { FundingExchange } from "@api/funding";
+import { shouldShowFunding } from "../FundingOverview/FundingOverview.utils";
 import type {
 	SpreadConfidenceBreakdown,
 	SpreadExecutableNotionalReason,
 	SpreadOpportunity,
 	SpreadSide,
-} from "./SpreadsOverview.types";
-
-/** Returns true when a persisted value is a valid exchange list. */
-export const isSpreadsExchangeList = (
-	value: unknown,
-): value is FundingExchange[] =>
-	Array.isArray(value) && value.every(isFundingExchange);
+} from "@api/spreads";
+import {DEFAULT_CURRENCY} from "../../shared/constants/currencies";
 
 /** Checks whether enough exchanges are selected to compute pairwise spreads. */
 export const hasEnoughSpreadsExchanges = (
 	exchanges: FundingExchange[],
 ): boolean => exchanges.length > 1;
 
-/** Normalizes unknown persisted exchange data into supported exchange ids. */
-export const normalizeSpreadsExchanges = (
-	exchanges: unknown,
-): FundingExchange[] => normalizeFundingExchanges(exchanges);
-
 /** Resolves a human-readable exchange label for spread table cells. */
 export const getSpreadExchangeLabel = (exchange: FundingExchange): string =>
 	FUNDING_EXCHANGE_OPTIONS.find((option) => option.value === exchange)?.label ??
 	exchange;
-
-/** Coerces a user-entered numeric filter and falls back for invalid values. */
-export const normalizeSpreadsNumber = (
-	value: unknown,
-	fallback: number,
-): number => {
-	const numberValue = Number(value);
-
-	return Number.isNaN(numberValue) || numberValue < 0 ? fallback : numberValue;
-};
-
-/** Runtime guard for persisted boolean preferences. */
-export const isBoolean = (value: unknown): value is boolean =>
-	typeof value === "boolean";
 
 /** Formats decimal ratio values as three-decimal percentage strings. */
 export const formatSpreadPercent = (value?: number): string => {
@@ -78,7 +50,7 @@ export const formatUsdNotional = (value?: number): string => {
 
 	return new Intl.NumberFormat("en", {
 		style: "currency",
-		currency: "USD",
+		currency: DEFAULT_CURRENCY,
 		maximumFractionDigits: 0,
 	}).format(value);
 };
