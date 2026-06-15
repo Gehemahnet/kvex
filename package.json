@@ -2,26 +2,29 @@
 	"name": "kvex",
 	"private": true,
 	"version": "0.0.0",
-	"packageManager": "pnpm@10.18.3",
+	"packageManager": "pnpm@11.7.0",
 	"type": "module",
 	"scripts": {
-		"start": "pnpm dev && pnpm dev:bff:v2",
+		"start": "pnpm dev:all",
 		"dev": "vite --host 0.0.0.0",
+		"dev:all": "node ./scripts/dev-all.mjs",
+		"dev:reset": "node ./scripts/dev-all.mjs --reset",
 		"dev:bff": "pnpm --dir server dev",
-		"dev:bff:v2": "pnpm --dir server dev:v2",
+		"docker:up": "docker compose up -d",
+		"docker:down": "docker compose down",
 		"build": "vue-tsc -b && vite build",
 		"build:bff": "pnpm --dir server build",
-		"build:bff:v2": "pnpm --dir server build:v2",
 		"lint": "oxlint src server/src",
 		"lint:fix": "oxlint --fix src server/src",
 		"preview": "vite preview",
 		"start:bff": "pnpm --dir server start",
-		"start:bff:v2": "pnpm --dir server start:v2",
 		"test:frontend": "vitest run --config vitest.config.ts"
 	},
 	"dependencies": {
 		"@primeuix/themes": "^2.0.2",
 		"@tanstack/vue-query": "^5.92.1",
+		"@vuelidate/core": "^2.0.3",
+		"@vuelidate/validators": "^2.0.4",
 		"@vueuse/core": "^14.1.0",
 		"primeicons": "^7.0.0",
 		"primevue": "^4.5.4",
@@ -41,10 +44,5 @@
 		"vite-plugin-vue-devtools": "^8.0.5",
 		"vitest": "^4.1.4",
 		"vue-tsc": "^3.1.4"
-	},
-	"pnpm": {
-		"overrides": {
-			"vite": "npm:rolldown-vite@7.2.5"
-		}
 	}
 }
