@@ -12,11 +12,7 @@
 					:aria-expanded="isSidebarOpen"
 					@click="toggleSidebar"
 				>
-					<span class="flex flex-col items-center justify-center gap-1">
-						<span class="block h-0.5 w-4 rounded-full bg-current" />
-						<span class="block h-0.5 w-4 rounded-full bg-current" />
-						<span class="block h-0.5 w-4 rounded-full bg-current" />
-					</span>
+					<i class="pi pi-bars text-base" />
 				</button>
 				<router-link
 					class="inline-flex items-center gap-3 text-xl font-bold text-[var(--kvex-symbol-color)] no-underline"
@@ -52,11 +48,17 @@
 					<i class="pi pi-user text-lg" />
 				</button>
 				<Button
-					v-else
+					v-else-if="authStatus !== 'loading'"
 					icon="pi pi-sign-in"
 					label="Login"
-					severity="secondary"
 					@click="goToLogin"
+				/>
+				<Button
+					v-else
+					icon="pi pi-user"
+					label="Checking"
+					loading
+					disabled
 				/>
 			</div>
 
@@ -77,6 +79,15 @@
 							{{ authState.user.email }}
 						</span>
 					</div>
+
+					<Button
+						class="w-full justify-start"
+						icon="pi pi-wallet"
+						label="Portfolio"
+						severity="secondary"
+						text
+						@click="goToPortfolio"
+					/>
 
 					<Button
 						class="w-full justify-start"
@@ -133,8 +144,8 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "primevue/button";
 import Popover from "primevue/popover";
+import { authApi } from "@api/auth";
 import { ROUTES } from "./router";
-import { logoutAuthUser } from "./views/Auth/Auth.api";
 import { useAuthSession } from "./views/Auth/Auth.composable";
 import { useThemeMode } from "./theme/theme.composable";
 
@@ -143,6 +154,7 @@ const router = useRouter();
 const { themeMode } = useThemeMode();
 const {
 	authState,
+	authStatus,
 	clearAuthSession,
 	refreshAuthSession,
 	restoreAuthSession,
@@ -182,7 +194,7 @@ const logout = async () => {
 	const csrfToken = authState.value?.csrfToken;
 
 	if (csrfToken !== undefined) {
-		await logoutAuthUser(csrfToken).catch(() => undefined);
+		await authApi.logout(csrfToken).catch(() => undefined);
 	}
 
 	clearSessionRefreshTimeout();
@@ -194,6 +206,11 @@ const logout = async () => {
 const goToLogin = async () => {
 	userMenuPopover.value?.hide();
 	await router.push({ name: ROUTES.AUTH_LOGIN });
+};
+
+const goToPortfolio = async () => {
+	userMenuPopover.value?.hide();
+	await router.push({ name: ROUTES.PORTFOLIO_OVERVIEW });
 };
 
 const handleDesktopViewportChange = (event: MediaQueryListEvent) => {

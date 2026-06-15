@@ -3,16 +3,19 @@ import {
 	createWebHistory,
 	type RouteRecordRaw,
 } from "vue-router";
+import { useAuthSession } from "@views/Auth/Auth.composable";
 
 const FundingOverviewView = () =>
-	import("../views/FundingOverview/FundingOverview.vue");
+	import("@views/FundingOverview/FundingOverview.vue");
+const PortfolioOverviewView = () =>
+	import("@views/PortfolioOverview/PortfolioOverview.vue");
 const SpreadsOverviewView = () =>
-	import("../views/SpreadsOverview/SpreadsOverview.vue");
-const LoginView = () => import("../views/Auth/LoginView.vue");
-const RegisterView = () => import("../views/Auth/RegisterView.vue");
-const ErrorView = () => import("../views/Auth/ErrorView.vue");
-const ForgotPasswordView = () => import("../views/Auth/ForgotPasswordView.vue");
-const ResetPasswordView = () => import("../views/Auth/ResetPasswordView.vue");
+	import("@views/SpreadsOverview/SpreadsOverview.vue");
+const LoginView = () => import("@views/Auth/LoginView.vue");
+const RegisterView = () => import("@views/Auth/RegisterView.vue");
+const ErrorView = () => import("@views/Auth/ErrorView.vue");
+const ForgotPasswordView = () => import("@views/Auth/ForgotPasswordView.vue");
+const ResetPasswordView = () => import("@views/Auth/ResetPasswordView.vue");
 
 export enum ROUTES {
 	AUTH_ERROR = "AuthError",
@@ -21,6 +24,7 @@ export enum ROUTES {
 	AUTH_REGISTER = "AuthRegister",
 	AUTH_RESET_PASSWORD = "AuthResetPassword",
 	FUNDING_OVERVIEW = "FundingOverview",
+	PORTFOLIO_OVERVIEW = "PortfolioOverview",
 	SPREADS_OVERVIEW = "SpreadsOverview",
 }
 
@@ -34,6 +38,12 @@ const routes: RouteRecordRaw[] = [
 		name: ROUTES.SPREADS_OVERVIEW,
 		path: "/spreads",
 		component: SpreadsOverviewView,
+	},
+	{
+		name: ROUTES.PORTFOLIO_OVERVIEW,
+		path: "/portfolio",
+		component: PortfolioOverviewView,
+		meta: { requiresAuth: true },
 	},
 	{
 		name: ROUTES.AUTH_LOGIN,
@@ -76,3 +86,15 @@ const routes: RouteRecordRaw[] = [
 ];
 
 export const router = createRouter({ history: createWebHistory(), routes });
+const { ensureAuthSession } = useAuthSession();
+
+router.beforeEach(async (to) => {
+	if (to.meta.requiresAuth === true && !(await ensureAuthSession())) {
+		return {
+			name: ROUTES.AUTH_LOGIN,
+			query: {
+				redirect: to.fullPath,
+			},
+		};
+	}
+});
