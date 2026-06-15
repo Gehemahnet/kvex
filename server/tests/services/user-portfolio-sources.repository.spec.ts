@@ -5,7 +5,7 @@ import {
 	deleteUserPortfolioSource,
 	listUserPortfolioSources,
 	updateUserPortfolioSource,
-} from "../../src/services/portfolio/user-portfolio-sources.repository";
+} from "#services/portfolio/user-portfolio-sources/user-portfolio-sources.repository";
 import type { UserPortfolioSourceRow } from "../../src/services/portfolio/user-portfolio-sources.types";
 
 describe("user portfolio sources repository", () => {

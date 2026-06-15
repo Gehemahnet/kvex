@@ -21,7 +21,7 @@ import {
 	getStoredMarketSnapshots,
 	upsertMarketSnapshot,
 	upsertMarketSnapshots,
-} from "../../src/services/markets/market-snapshot-store";
+} from "#services/markets/market-snapshots/market-snapshot-store";
 
 describe("market-snapshot-store", () => {
 	beforeEach(() => {

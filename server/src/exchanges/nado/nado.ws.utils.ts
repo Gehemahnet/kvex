@@ -1,14 +1,14 @@
-import { normalizeOptionalNumber } from "../../common/number.utils";
-import { FUNDING_INTERVAL_HOURS } from "../../services/funding/funding.constants";
+import { normalizeOptionalNumber } from "#common/number.utils";
+import { FUNDING_INTERVAL_HOURS } from "#services/funding/funding-core/funding.constants";
 import {
 	annualizeFundingRate,
 	normalizeOverviewSymbol,
 	normalizeFundingRateToHourly,
-} from "../../services/funding/funding-overview.utils";
+} from "#services/funding/funding-overview/funding-overview.utils";
 import type {
 	MarketOrderBookLevel,
 	MarketSnapshot,
-} from "../../services/markets/market-snapshots.types";
+} from "#services/markets/market-snapshots/market-snapshots.types";
 import type {
 	NadoMarketLiquidity,
 	NadoMarketLiquidityLevel,

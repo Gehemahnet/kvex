@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { HttpClient } from "../../src/common/http-client";
-import { getAssetPrices } from "../../src/services/portfolio/asset-prices.service";
+import { getAssetPrices } from "#services/portfolio/asset-prices/asset-prices.service";
 
 describe("getAssetPrices", () => {
 	it("returns stablecoin prices without upstream calls", async () => {

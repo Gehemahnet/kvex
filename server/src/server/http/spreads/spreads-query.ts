@@ -1,4 +1,4 @@
-import type { SpreadsQuery } from "../../../services/spreads/spreads.types";
+import type { SpreadsQuery } from "#services/spreads/spreads-core/spreads.types";
 import {
 	parseFundingExchanges,
 	parseOptionalFundingSymbol,

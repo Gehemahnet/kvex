@@ -4,7 +4,7 @@ import {
 	mapUserPortfolioSourceRow,
 	normalizePortfolioSourceAddress,
 	normalizePortfolioSourceLabel,
-} from "../../src/services/portfolio/user-portfolio-sources.utils";
+} from "#services/portfolio/user-portfolio-sources/user-portfolio-sources.utils";
 import type { UserPortfolioSourceRow } from "../../src/services/portfolio/user-portfolio-sources.types";
 
 describe("user portfolio source utils", () => {

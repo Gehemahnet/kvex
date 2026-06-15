@@ -4,7 +4,7 @@ import { parseSpreadsQuery } from "../../src/server/http/spreads/spreads-query";
 describe("parseSpreadsQuery", () => {
 	it("uses all supported exchanges by default", () => {
 		expect(parseSpreadsQuery("/spreads")).toEqual({
-			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx"],
+			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx", "variational"],
 		});
 	});
 
@@ -23,28 +23,28 @@ describe("parseSpreadsQuery", () => {
 
 	it("normalizes optional position size filters", () => {
 		expect(parseSpreadsQuery("/spreads?positionSizeUsd=1000")).toEqual({
-			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx"],
+			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx", "variational"],
 			positionSizeUsd: 1000,
 		});
 	});
 
 	it("normalizes optional minimum occurrence filters", () => {
 		expect(parseSpreadsQuery("/spreads?minOccurrences=3")).toEqual({
-			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx"],
+			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx", "variational"],
 			minOccurrences: 3,
 		});
 	});
 
 	it("normalizes optional minimum lifetime filters", () => {
 		expect(parseSpreadsQuery("/spreads?minLifetimeMs=5000")).toEqual({
-			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx"],
+			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx", "variational"],
 			minLifetimeMs: 5000,
 		});
 	});
 
 	it("normalizes optional holding period filters", () => {
 		expect(parseSpreadsQuery("/spreads?holdingPeriodHours=8")).toEqual({
-			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx"],
+			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx", "variational"],
 			holdingPeriodHours: 8,
 		});
 	});

@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { upsertMarketSnapshot } from "../../services/markets/market-snapshot-store";
+import { upsertMarketSnapshot } from "#services/markets/market-snapshots/market-snapshot-store";
 import { okxClient } from "./okx";
 import type { OkxInstrument } from "./okx.types";
 import {

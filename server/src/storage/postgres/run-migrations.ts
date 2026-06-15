@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadServerEnvironment } from "../../common/env";
+import { loadServerEnvironment } from "#common/env";
 import { closePostgresPool, getPostgresPool } from "./postgres.client";
 
 const migrationsDirectory = join(dirname(fileURLToPath(import.meta.url)), "migrations");

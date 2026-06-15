@@ -9,7 +9,14 @@ describe("parseFundingQuery", () => {
 		expect(parseFundingQuery("/funding?symbol=btc&timeframe=day")).toEqual({
 			symbol: "BTC",
 			timeframe: "DAY",
-			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx"],
+			exchanges: [
+				"hyperliquid",
+				"pacifica",
+				"ethereal",
+				"nado",
+				"okx",
+				"variational",
+			],
 		});
 	});
 

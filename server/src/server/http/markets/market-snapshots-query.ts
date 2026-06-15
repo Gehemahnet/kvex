@@ -1,4 +1,4 @@
-import type { MarketSnapshotsQuery } from "../../../services/markets/market-snapshots.types";
+import type { MarketSnapshotsQuery } from "#services/markets/market-snapshots/market-snapshots.types";
 import {
 	parseFundingExchanges,
 	parseOptionalFundingSymbol,

@@ -1,12 +1,12 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { getAuthenticatedUser } from "../../../services/auth/auth.service";
-import { getSpreads } from "../../../services/spreads/spreads.service";
+import { getAuthenticatedUser } from "#services/auth/auth-service/auth.service";
+import { getSpreads } from "#services/spreads/spreads-core/spreads.service";
 import type {
 	SpreadFeeProfile,
 	SpreadsResponse,
-} from "../../../services/spreads/spreads.types";
-import { listUserExchangeAccounts } from "../../../services/users/user-exchange-accounts.repository";
-import { getPostgresPool } from "../../../storage/postgres/postgres.client";
+} from "#services/spreads/spreads-core/spreads.types";
+import { listUserExchangeAccounts } from "#services/users/user-exchange-accounts/user-exchange-accounts.repository";
+import { getPostgresPool } from "#storage/postgres/postgres.client";
 import { getOptionalAuthRequestToken } from "../auth/auth.utils";
 import { writeJsonResponse } from "../http-response.utils";
 import { parseSpreadsQuery } from "./spreads-query";

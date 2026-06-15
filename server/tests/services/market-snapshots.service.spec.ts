@@ -4,13 +4,13 @@ vi.mock("../../src/common/redis-client", () => ({
 	getRedisClient: vi.fn(async () => undefined),
 }));
 
-vi.mock("../../src/services/funding/funding-overview.service", () => ({
+vi.mock("#services/funding/funding-overview/funding-overview.service", () => ({
 	getFundingOverviewExchangeCells: vi.fn(),
 }));
 
-import { getFundingOverviewExchangeCells } from "../../src/services/funding/funding-overview.service";
-import { getMarketSnapshots } from "../../src/services/markets/market-snapshots.service";
-import { clearMarketSnapshotStore } from "../../src/services/markets/market-snapshot-store";
+import { getFundingOverviewExchangeCells } from "#services/funding/funding-overview/funding-overview.service";
+import { getMarketSnapshots } from "#services/markets/market-snapshots/market-snapshots.service";
+import { clearMarketSnapshotStore } from "#services/markets/market-snapshots/market-snapshot-store";
 
 describe("market snapshots service", () => {
 	beforeEach(() => {

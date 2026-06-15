@@ -1,7 +1,7 @@
 import type {
 	UserPortfolioSourceStatus,
-} from "../../../services/portfolio/user-portfolio-sources.types";
-import type { WalletBalanceNetwork } from "../../../services/portfolio/wallet-balances.types";
+} from "#services/portfolio/user-portfolio-sources/user-portfolio-sources.types";
+import type { WalletBalanceNetwork } from "#services/portfolio/wallet-balances/wallet-balances.types";
 
 export type CreateUserPortfolioSourceBody = {
 	address?: unknown;

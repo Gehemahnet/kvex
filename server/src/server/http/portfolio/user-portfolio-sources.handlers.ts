@@ -23,6 +23,8 @@ import {
 	parseUpdateUserPortfolioSourceBody,
 	removeUserPortfolioSource,
 	saveUserPortfolioSources,
+	serializeUserPortfolioSourceForResponse,
+	serializeUserPortfolioSourcesForResponse,
 } from "./user-portfolio-sources.utils";
 
 /** Handles `GET /portfolio/sources` and returns saved user portfolio sources. */
@@ -42,7 +44,9 @@ export const listUserPortfolioSourcesHandler = async (
 		parsePortfolioSourceNetwork(url),
 	);
 
-	writeJsonResponse(response, 200, { sources });
+	writeJsonResponse(response, 200, {
+		sources: serializeUserPortfolioSourcesForResponse(sources),
+	});
 };
 
 /** Handles `POST /portfolio/sources` and stores one or more user portfolio sources. */
@@ -59,7 +63,9 @@ export const createUserPortfolioSourceHandler = async (
 	const input = parseCreateUserPortfolioSourcesBody(body);
 	const sources = await saveUserPortfolioSources(dependencies.db, user.id, input);
 
-	writeJsonResponse(response, 201, { sources });
+	writeJsonResponse(response, 201, {
+		sources: serializeUserPortfolioSourcesForResponse(sources),
+	});
 };
 
 /** Handles `PATCH /portfolio/sources?id=...` and updates one user source. */
@@ -81,7 +87,9 @@ export const updateUserPortfolioSourceHandler = async (
 		parseUpdateUserPortfolioSourceBody(body),
 	);
 
-	writeJsonResponse(response, 200, { source });
+	writeJsonResponse(response, 200, {
+		source: serializeUserPortfolioSourceForResponse(source),
+	});
 };
 
 /** Handles `DELETE /portfolio/sources?id=...` and removes one user source. */

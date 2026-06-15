@@ -2,20 +2,20 @@ import type {
 	WalletBalanceNetwork,
 	WalletBalancesQuery,
 	WalletBalanceTokenInput,
-} from "../../../services/portfolio/wallet-balances.types";
+} from "#services/portfolio/wallet-balances/wallet-balances.types";
 import {
 	isEvmAddress,
 	normalizeEvmAddress,
-} from "../../../services/portfolio/evm-wallet-balances.utils";
+} from "#services/portfolio/wallet-balances/evm-wallet-balances.utils";
 import {
 	isSolanaAddress,
 	normalizeSolanaAddress,
-} from "../../../services/portfolio/solana-wallet-balances.utils";
+} from "#services/portfolio/wallet-balances/solana-wallet-balances.utils";
 import {
 	ALL_WALLET_TOKENS,
 	DEFAULT_WALLET_BALANCE_NETWORK,
 	NATIVE_WALLET_TOKEN,
-} from "../../../services/portfolio/wallet-balances.constants";
+} from "#services/portfolio/wallet-balances/wallet-balances.constants";
 import { BadRequestError } from "../http-errors";
 
 /** Parses and validates `/portfolio/wallet-balances` query parameters. */

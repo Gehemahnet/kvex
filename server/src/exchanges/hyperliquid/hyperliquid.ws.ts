@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { upsertMarketSnapshots } from "../../services/markets/market-snapshot-store";
+import { upsertMarketSnapshots } from "#services/markets/market-snapshots/market-snapshot-store";
 import { hyperliquidRestClient } from "./hyperliquid";
 import type { AdapterPerpFullMetadata } from "./hyperliquid.types";
 import {

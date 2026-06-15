@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { getMarketSnapshots } from "../../../services/markets/market-snapshots.service";
-import type { MarketSnapshotsResponse } from "../../../services/markets/market-snapshots.types";
+import { getMarketSnapshots } from "#services/markets/market-snapshots/market-snapshots.service";
+import type { MarketSnapshotsResponse } from "#services/markets/market-snapshots/market-snapshots.types";
 import { writeJsonResponse } from "../http-response.utils";
 import { parseMarketSnapshotsQuery } from "./market-snapshots-query";
 

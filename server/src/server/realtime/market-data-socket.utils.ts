@@ -1,7 +1,7 @@
-import type { Exchange } from "../../common/types";
-import { SUPPORTED_FUNDING_EXCHANGES } from "../../services/funding/funding.constants";
-import type { MarketSnapshotsQuery } from "../../services/markets/market-snapshots.types";
-import type { SpreadsQuery } from "../../services/spreads/spreads.types";
+import type { Exchange } from "#common/types";
+import { SUPPORTED_FUNDING_EXCHANGES } from "#services/funding/funding-core/funding.constants";
+import type { MarketSnapshotsQuery } from "#services/markets/market-snapshots/market-snapshots.types";
+import type { SpreadsQuery } from "#services/spreads/spreads-core/spreads.types";
 import type {
 	MarketSnapshotsSubscribePayload,
 	SpreadsSubscribePayload,

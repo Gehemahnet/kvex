@@ -6,7 +6,7 @@ import {
 	signAuthToken,
 	verifyAuthToken,
 	verifyPassword,
-} from "../../src/services/auth/auth.crypto";
+} from "#services/auth/auth-service/auth.crypto";
 
 describe("auth crypto", () => {
 	it("hashes and verifies passwords", async () => {

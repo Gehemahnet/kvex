@@ -1,7 +1,7 @@
 import type { Server as HttpServer } from "node:http";
 import { Server } from "socket.io";
-import { getMarketSnapshots } from "../../services/markets/market-snapshots.service";
-import { getSpreads } from "../../services/spreads/spreads.service";
+import { getMarketSnapshots } from "#services/markets/market-snapshots/market-snapshots.service";
+import { getSpreads } from "#services/spreads/spreads-core/spreads.service";
 import {
 	MARKET_DATA_SOCKET_EVENTS,
 	MARKET_DATA_SOCKET_PATH,

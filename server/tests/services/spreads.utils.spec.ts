@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_CURRENCY } from "../../src/common/constants";
-import { createSpreadOpportunity } from "../../src/services/spreads/spreads.utils";
+import { createSpreadOpportunity } from "#services/spreads/spreads-core/spreads.utils";
 
 describe("spread utils", () => {
 	it("creates a price spread opportunity from two snapshots", () => {

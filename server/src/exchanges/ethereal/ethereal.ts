@@ -1,5 +1,5 @@
-import { FetchHttpClient } from "../../common/http-client";
-import { DexRestClient } from "../../common/rest-client";
+import { FetchHttpClient } from "#common/http-client";
+import { DexRestClient } from "#common/rest-client";
 
 import {
 	FundingData,

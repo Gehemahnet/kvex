@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	normalizeUserEmail,
 	normalizeUserLogin,
-} from "../../src/services/users/users.utils";
+} from "#services/users/users-core/users.utils";
 
 describe("users utils", () => {
 	it("normalizes user login", () => {

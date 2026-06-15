@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	createUserExchangeData,
 	normalizeUserExchangeAccountLabel,
-} from "../../src/services/users/user-exchange-accounts.utils";
+} from "#services/users/user-exchange-accounts/user-exchange-accounts.utils";
 
 describe("user exchange accounts utils", () => {
 	it("normalizes labels and preserves exchange discriminator", () => {

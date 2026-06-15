@@ -4,7 +4,7 @@ import { parseMarketSnapshotsQuery } from "../../src/server/http/markets/market-
 describe("parseMarketSnapshotsQuery", () => {
 	it("uses all supported exchanges by default", () => {
 		expect(parseMarketSnapshotsQuery("/markets/snapshots")).toEqual({
-			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx"],
+			exchanges: ["hyperliquid", "pacifica", "ethereal", "nado", "okx", "variational"],
 		});
 	});
 

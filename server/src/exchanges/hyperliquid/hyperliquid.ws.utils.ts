@@ -1,12 +1,12 @@
-import { normalizeOptionalNumber } from "../../common/number.utils";
+import { normalizeOptionalNumber } from "#common/number.utils";
 import {
 	FUNDING_INTERVAL_HOURS,
-} from "../../services/funding/funding.constants";
+} from "#services/funding/funding-core/funding.constants";
 import {
 	annualizeHourlyFundingRate,
 	normalizeOverviewSymbol,
-} from "../../services/funding/funding-overview.utils";
-import type { MarketSnapshot } from "../../services/markets/market-snapshots.types";
+} from "#services/funding/funding-overview/funding-overview.utils";
+import type { MarketSnapshot } from "#services/markets/market-snapshots/market-snapshots.types";
 import type {
 	HyperliquidActiveAssetCtxMessage,
 	HyperliquidAllMidsMessage,

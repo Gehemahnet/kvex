@@ -1,4 +1,4 @@
-import type { FundingOverviewQuery } from "../../services/funding/funding-overview.types";
+import type { FundingOverviewQuery } from "#services/funding/funding-overview/funding-overview.types";
 import { BadRequestError } from "./http-errors";
 import {
 	parseFundingExchanges,

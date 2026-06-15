@@ -1,4 +1,4 @@
-import { FetchHttpClient, type HttpClient } from "../../common/http-client";
+import { FetchHttpClient, type HttpClient } from "#common/http-client";
 import type {
 	NadoFundingRate,
 	NadoFundingRatesResponse,

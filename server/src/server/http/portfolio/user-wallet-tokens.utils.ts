@@ -1,28 +1,36 @@
 import {
 	getAuthenticatedSession,
 	getAuthenticatedUser,
-} from "../../../services/auth/auth.service";
-import type { AuthUser } from "../../../services/auth/auth.types";
+} from "#services/auth/auth-service/auth.service";
+import type { AuthUser } from "#services/auth/auth-service/auth.types";
 import {
 	createUserWalletToken,
 	deleteUserWalletToken,
 	listUserWalletTokens,
-} from "../../../services/portfolio/user-wallet-tokens.repository";
+} from "#services/portfolio/user-wallet-tokens/user-wallet-tokens.repository";
 import {
 	normalizeWalletToken,
 	normalizeWalletTokenLabel,
-} from "../../../services/portfolio/user-wallet-tokens.utils";
-import type { UserWalletToken } from "../../../services/portfolio/user-wallet-tokens.types";
-import { DEFAULT_WALLET_BALANCE_NETWORK } from "../../../services/portfolio/wallet-balances.constants";
-import type { WalletBalanceNetwork } from "../../../services/portfolio/wallet-balances.types";
-import { getPostgresPool } from "../../../storage/postgres/postgres.client";
-import type { Queryable } from "../../../storage/postgres/postgres.client";
+} from "#services/portfolio/user-wallet-tokens/user-wallet-tokens.utils";
+import type { UserWalletToken } from "#services/portfolio/user-wallet-tokens/user-wallet-tokens.types";
+import { DEFAULT_WALLET_BALANCE_NETWORK } from "#services/portfolio/wallet-balances/wallet-balances.constants";
+import type { WalletBalanceNetwork } from "#services/portfolio/wallet-balances/wallet-balances.types";
+import { getPostgresPool } from "#storage/postgres/postgres.client";
+import type { Queryable } from "#storage/postgres/postgres.client";
 import {
 	BadRequestError,
 	InternalServerError,
 	NotFoundError,
 } from "../http-errors";
 import type { CreateUserWalletTokenBody } from "./user-wallet-tokens.types";
+
+export type UserWalletTokenResponse = Omit<
+	UserWalletToken,
+	"createdAt" | "updatedAt"
+> & {
+	createdAt: string;
+	updatedAt: string;
+};
 
 export type PortfolioDependencies = {
 	db: Queryable;
@@ -146,6 +154,21 @@ export const getUserWalletTokens = (
 	userId: string,
 	network: WalletBalanceNetwork,
 ): Promise<UserWalletToken[]> => listUserWalletTokens(db, userId, network);
+
+/** Serializes one wallet token for HTTP JSON responses. */
+export const serializeUserWalletTokenForResponse = (
+	token: UserWalletToken,
+): UserWalletTokenResponse => ({
+	...token,
+	createdAt: token.createdAt.toISOString(),
+	updatedAt: token.updatedAt.toISOString(),
+});
+
+/** Serializes wallet tokens for HTTP JSON responses. */
+export const serializeUserWalletTokensForResponse = (
+	tokens: UserWalletToken[],
+): UserWalletTokenResponse[] =>
+	tokens.map(serializeUserWalletTokenForResponse);
 
 /** Deletes one wallet token or throws when it is not owned by the user. */
 export const removeUserWalletToken = async (

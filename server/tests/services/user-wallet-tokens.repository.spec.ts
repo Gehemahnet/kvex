@@ -4,7 +4,7 @@ import {
 	createUserWalletToken,
 	deleteUserWalletToken,
 	listUserWalletTokens,
-} from "../../src/services/portfolio/user-wallet-tokens.repository";
+} from "#services/portfolio/user-wallet-tokens/user-wallet-tokens.repository";
 import type { UserWalletTokenRow } from "../../src/services/portfolio/user-wallet-tokens.types";
 
 describe("user wallet tokens repository", () => {

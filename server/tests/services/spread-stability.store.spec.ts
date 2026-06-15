@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
 	enrichSpreadStability,
 	resetSpreadStability,
-} from "../../src/services/spreads/spread-stability.store";
-import { SPREAD_STABILITY_RECORD_TTL_MS } from "../../src/services/spreads/spreads.constants";
-import type { SpreadOpportunity } from "../../src/services/spreads/spreads.types";
+} from "#services/spreads/spread-stability/spread-stability.store";
+import { SPREAD_STABILITY_RECORD_TTL_MS } from "#services/spreads/spreads-core/spreads.constants";
+import type { SpreadOpportunity } from "#services/spreads/spreads-core/spreads.types";
 
 describe("spread stability store", () => {
 	beforeEach(() => {

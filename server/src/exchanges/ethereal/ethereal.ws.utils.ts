@@ -1,11 +1,11 @@
-import type { MarketSnapshot } from "../../services/markets/market-snapshots.types";
-import { normalizeOptionalNumber } from "../../common/number.utils";
+import type { MarketSnapshot } from "#services/markets/market-snapshots/market-snapshots.types";
+import { normalizeOptionalNumber } from "#common/number.utils";
 import {
 	annualizeHourlyFundingRate,
 	normalizeOverviewSymbol,
 	normalizeOptionalTimestamp,
-} from "../../services/funding/funding-overview.utils";
-import { FUNDING_INTERVAL_HOURS } from "../../services/funding/funding.constants";
+} from "#services/funding/funding-overview/funding-overview.utils";
+import { FUNDING_INTERVAL_HOURS } from "#services/funding/funding-core/funding.constants";
 import type {
 	EtherealL2BookData,
 	EtherealL2BookMessage,
@@ -13,7 +13,7 @@ import type {
 	EtherealTickerMessage,
 	EtherealWsSubscriptionMessage,
 } from "./ethereal.ws.types";
-import {DEFAULT_CURRENCY} from "../../common/constants";
+import {DEFAULT_CURRENCY} from "#common/constants";
 
 /** Builds an Ethereal ticker subscription for one source symbol. */
 export const createEtherealTickerSubscriptionMessage = (

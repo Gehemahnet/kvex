@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
-import { loadServerEnvironment } from "../common/env";
-import { startMarketDataStreams } from "../services/markets/market-data-streams";
+import { loadServerEnvironment } from "#common/env";
+import { startMarketDataStreams } from "#services/markets/market-data-streams/market-data-streams";
 import { attachMarketDataSocket } from "./realtime/market-data-socket";
 import { router } from "./router";
 

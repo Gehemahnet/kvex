@@ -1,8 +1,8 @@
-import { ALL_PERIODS } from "../../common/constants";
-import { Exchange, Period } from "../../common/types";
+import { ALL_PERIODS } from "#common/constants";
+import { Exchange, Period } from "#common/types";
 import {
 	SUPPORTED_FUNDING_EXCHANGES,
-} from "../../services/funding/funding.constants";
+} from "#services/funding/funding-core/funding.constants";
 import { BadRequestError } from "./http-errors";
 
 /** Check whether a string matches one of the supported funding exchanges. */

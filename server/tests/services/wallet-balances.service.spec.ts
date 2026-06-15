@@ -3,15 +3,15 @@ import {
 	getWalletBalances,
 	resolveEvmRpcUrl,
 	resolveSolanaRpcUrl,
-} from "../../src/services/portfolio/wallet-balances.service";
+} from "#services/portfolio/wallet-balances/wallet-balances.service";
 import {
 	DEV_EVM_RPC_URL,
 	DEV_SOLANA_RPC_URL,
 	GOLDRUSH_PORTFOLIO_CHAIN_IDS,
-} from "../../src/services/portfolio/wallet-balances.constants";
-import type { EvmJsonRpcClient } from "../../src/services/portfolio/evm-json-rpc.client";
-import type { SolanaJsonRpcClient } from "../../src/services/portfolio/solana-json-rpc.client";
-import type { AlchemyEvmChainConfig } from "../../src/services/portfolio/wallet-balances.constants";
+} from "#services/portfolio/wallet-balances/wallet-balances.constants";
+import type { EvmJsonRpcClient } from "#services/portfolio/wallet-balances/evm-json-rpc.client";
+import type { SolanaJsonRpcClient } from "#services/portfolio/wallet-balances/solana-json-rpc.client";
+import type { AlchemyEvmChainConfig } from "#services/portfolio/wallet-balances/wallet-balances.constants";
 
 const ADDRESS = "0x1111111111111111111111111111111111111111";
 const SECOND_ADDRESS = "0x3333333333333333333333333333333333333333";
@@ -338,7 +338,7 @@ describe("getWalletBalances", () => {
 				tokens: ["all"],
 			},
 			{
-				evmRpcClients: [
+				evmRpcProviders: [
 					{ chain: ethereumChain, client: successfulClient },
 					{ chain: polygonChain, client: failingClient },
 				],
@@ -358,27 +358,23 @@ describe("getWalletBalances", () => {
 	});
 
 	it("drops GoldRush spam tokens at source", async () => {
-		const fetcher = async (url: string): Promise<Response> => {
-			const chainId = Number(new URL(url).searchParams.get("chains"));
-
-			return new Response(JSON.stringify({
-				items: chainId === 1
-					? [
-						{
-							balance: "1000000",
-							chain_display_name: "Ethereum",
-							chain_id: 1,
-							chain_name: "eth-mainnet",
-							contract_address: TOKEN,
-							contract_decimals: 6,
-							contract_ticker_symbol: "DROP",
-							is_spam: true,
-							quote: 1,
-							quote_rate: 1,
-						},
-					]
-					: [],
-			}));
+		const portfolioIndexer = {
+			async getTokenBalances() {
+				return [
+					{
+						balance: "1000000",
+						chain_display_name: "Ethereum",
+						chain_id: 1,
+						chain_name: "eth-mainnet",
+						contract_address: TOKEN,
+						contract_decimals: 6,
+						contract_ticker_symbol: "DROP",
+						is_spam: true,
+						quote: 1,
+						quote_rate: 1,
+					},
+				];
+			},
 		};
 
 		const result = await getWalletBalances(
@@ -389,8 +385,8 @@ describe("getWalletBalances", () => {
 				tokens: ["all"],
 			},
 			{
-				fetch: fetcher,
 				goldRushApiKey: "test-key",
+				portfolioIndexer,
 			},
 		);
 
@@ -399,9 +395,9 @@ describe("getWalletBalances", () => {
 	});
 
 	it("skips malformed GoldRush priced items instead of failing the whole chain", async () => {
-		const fetcher = async (): Promise<Response> =>
-			new Response(JSON.stringify({
-				items: [
+		const portfolioIndexer = {
+			async getTokenBalances() {
+				return [
 					{
 						balance: "1000000",
 						chain_display_name: "Ethereum",
@@ -413,8 +409,9 @@ describe("getWalletBalances", () => {
 						quote: 1,
 						quote_rate: 1,
 					},
-				],
-			}));
+				];
+			},
+		};
 
 		const result = await getWalletBalances(
 			{
@@ -424,8 +421,8 @@ describe("getWalletBalances", () => {
 				tokens: ["all"],
 			},
 			{
-				fetch: fetcher,
 				goldRushApiKey: "test-key",
+				portfolioIndexer,
 			},
 		);
 
@@ -433,13 +430,11 @@ describe("getWalletBalances", () => {
 		expect(result.errors).toEqual([]);
 	});
 
-	it("falls back to Alchemy only for GoldRush chains that failed", async () => {
-		const fetcher = async (url: string): Promise<Response> => {
-			const chainId = Number(new URL(url).searchParams.get("chains"));
-
-			return chainId === 1
-				? new Response("{}", { status: 500 })
-				: new Response(JSON.stringify({ items: [] }));
+	it("falls back to Alchemy-supported chains when the GoldRush SDK call fails", async () => {
+		const portfolioIndexer = {
+			async getTokenBalances(): Promise<never> {
+				throw new Error("GoldRush SDK rejected request");
+			},
 		};
 		const calledChains: string[] = [];
 		const ethereumClient: EvmJsonRpcClient = {
@@ -461,8 +456,21 @@ describe("getWalletBalances", () => {
 			},
 		};
 		const polygonClient: EvmJsonRpcClient = {
-			async call(): Promise<never> {
-				throw new Error("Polygon fallback should not be called");
+			async call<Result = string>(method: string): Promise<Result> {
+				calledChains.push(`polygon:${method}`);
+
+				if (method === "eth_getBalance") {
+					return "0x1" as Result;
+				}
+
+				if (method === "alchemy_getTokenBalances") {
+					return {
+						address: THIRD_ADDRESS,
+						tokenBalances: [],
+					} as Result;
+				}
+
+				throw new Error("Unexpected Polygon fallback call");
 			},
 		};
 		const ethereumChain: AlchemyEvmChainConfig = {
@@ -488,18 +496,20 @@ describe("getWalletBalances", () => {
 				tokens: ["all"],
 			},
 			{
-				evmRpcClients: [
+				evmRpcProviders: [
 					{ chain: ethereumChain, client: ethereumClient },
 					{ chain: polygonChain, client: polygonClient },
 				],
-				fetch: fetcher,
 				goldRushApiKey: "test-key",
+				portfolioIndexer,
 			},
 		);
 
 		expect(calledChains).toEqual([
 			"ethereum:eth_getBalance",
 			"ethereum:alchemy_getTokenBalances",
+			"polygon:eth_getBalance",
+			"polygon:alchemy_getTokenBalances",
 		]);
 		expect(result.balances).toEqual([
 			expect.objectContaining({
@@ -509,14 +519,20 @@ describe("getWalletBalances", () => {
 				}),
 				symbol: "ETH",
 			}),
+			expect.objectContaining({
+				source: expect.objectContaining({
+					chainId: 137,
+					chainName: "Polygon",
+				}),
+				symbol: "MATIC",
+			}),
 		]);
 		expect(result.errors).toEqual([
 			{
 				address: THIRD_ADDRESS,
-				chainId: 1,
 				token: "all",
 				code: "GOLDRUSH_BALANCE_FETCH_FAILED",
-				message: "GoldRush HTTP 500",
+				message: "GoldRush SDK rejected request",
 			},
 		]);
 		expect(GOLDRUSH_PORTFOLIO_CHAIN_IDS).toContain(1);

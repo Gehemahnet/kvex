@@ -1,5 +1,5 @@
-import { normalizeAssetPriceSymbol } from "../../../services/portfolio/asset-prices.utils";
-import type { AssetPricesQuery } from "../../../services/portfolio/asset-prices.types";
+import { normalizeAssetPriceSymbol } from "#services/portfolio/asset-prices/asset-prices.utils";
+import type { AssetPricesQuery } from "#services/portfolio/asset-prices/asset-prices.types";
 import { BadRequestError } from "../http-errors";
 
 /** Parses and validates `/portfolio/prices` query parameters. */

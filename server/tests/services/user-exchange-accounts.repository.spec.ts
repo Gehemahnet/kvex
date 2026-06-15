@@ -4,7 +4,7 @@ import {
 	createUserExchangeAccount,
 	findUserExchangeAccountById,
 	listUserExchangeAccounts,
-} from "../../src/services/users/user-exchange-accounts.repository";
+} from "#services/users/user-exchange-accounts/user-exchange-accounts.repository";
 import type {
 	UserExchangeAccountRow,
 } from "../../src/services/users/user-exchange-accounts.types";

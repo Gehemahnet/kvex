@@ -1,7 +1,7 @@
-import { DURATIONS } from "../../common/constants";
-import { FetchHttpClient } from "../../common/http-client";
-import { DexRestClient } from "../../common/rest-client";
-import { Period } from "../../common/types";
+import { DURATIONS } from "#common/constants";
+import { FetchHttpClient } from "#common/http-client";
+import { DexRestClient } from "#common/rest-client";
+import { Period } from "#common/types";
 import { getFullMarketsMetadataAdapter } from "./adapters";
 import {
 	AdapterPerpFullMetadata,

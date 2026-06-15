@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { ServiceError } from "../../src/common/errors/service-errors";
-import { mapFundingSettledResult } from "../../src/services/funding/funding.error-handler";
-import type { FundingSeries } from "../../src/services/funding/funding.types";
+import { mapFundingSettledResult } from "#services/funding/funding-core/funding.error-handler";
+import type { FundingSeries } from "#services/funding/funding-core/funding.types";
 import {
 	annualizeFundingPoints,
 	createFundingSeries,
 	normalizeFundingPoints,
-} from "../../src/services/funding/funding.utils";
+} from "#services/funding/funding-core/funding.utils";
 
 describe("funding utils", () => {
 	it("annualizes funding points", () => {

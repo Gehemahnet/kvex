@@ -3,7 +3,7 @@ import {
 	mapUserWalletTokenRow,
 	normalizeWalletToken,
 	normalizeWalletTokenLabel,
-} from "../../src/services/portfolio/user-wallet-tokens.utils";
+} from "#services/portfolio/user-wallet-tokens/user-wallet-tokens.utils";
 import type { UserWalletTokenRow } from "../../src/services/portfolio/user-wallet-tokens.types";
 
 describe("user wallet token utils", () => {

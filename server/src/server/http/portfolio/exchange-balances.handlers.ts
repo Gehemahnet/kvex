@@ -1,14 +1,14 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { getUserExchangeBalances } from "../../../services/portfolio/exchange-balances.service";
+import { getUserExchangeBalances } from "#services/portfolio/exchange-balances/exchange-balances.service";
 import {
 	listUserExchangeAccounts,
 	updateUserExchangeAccountLastCheckedAt,
 	updateUserExchangeAccountPublicData,
-} from "../../../services/users/user-exchange-accounts.repository";
+} from "#services/users/user-exchange-accounts/user-exchange-accounts.repository";
 import type {
 	UserExchangeAccount,
 	UserExchangeFeeProfile,
-} from "../../../services/users/user-exchange-accounts.types";
+} from "#services/users/user-exchange-accounts/user-exchange-accounts.types";
 import {
 	getAuthRequestToken,
 } from "../auth/auth.utils";

@@ -1,7 +1,7 @@
-import { FetchHttpClient } from "../../common/http-client";
-import { DexRestClient } from "../../common/rest-client";
-import { Period } from "../../common/types";
-import { getFromTimestamp } from "../../common/utils";
+import { FetchHttpClient } from "#common/http-client";
+import { DexRestClient } from "#common/rest-client";
+import { Period } from "#common/types";
+import { getFromTimestamp } from "#common/utils";
 import {
 	FundingRateHistory,
 	GetFundingRateHistoryParams,

@@ -1,13 +1,13 @@
 import type { IncomingMessage } from "node:http";
-import { getAuthSessionTtlSeconds } from "../../../services/auth/auth.config";
+import { getAuthSessionTtlSeconds } from "#services/auth/auth-service/auth.config";
 import type {
 	ConfirmPasswordResetInput,
 	LoginUserInput,
 	RegisterUserInput,
 	RequestPasswordResetInput,
-} from "../../../services/auth/auth.types";
-import { getPostgresPool } from "../../../storage/postgres/postgres.client";
-import type { Queryable } from "../../../storage/postgres/postgres.client";
+} from "#services/auth/auth-service/auth.types";
+import { getPostgresPool } from "#storage/postgres/postgres.client";
+import type { Queryable } from "#storage/postgres/postgres.client";
 import {
 	BadRequestError,
 	InternalServerError,

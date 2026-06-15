@@ -1,11 +1,11 @@
 import type {
 	MarketSnapshotsQuery,
 	MarketSnapshotsResponse,
-} from "../../services/markets/market-snapshots.types";
+} from "#services/markets/market-snapshots/market-snapshots.types";
 import type {
 	SpreadsQuery,
 	SpreadsResponse,
-} from "../../services/spreads/spreads.types";
+} from "#services/spreads/spreads-core/spreads.types";
 
 export type MarketSnapshotsSubscribePayload = Partial<MarketSnapshotsQuery>;
 

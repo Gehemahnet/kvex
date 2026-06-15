@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAuthSessionDays } from "../../src/services/auth/auth.config";
+import { parseAuthSessionDays } from "#services/auth/auth-service/auth.config";
 
 describe("auth config", () => {
 	it("parses auth session days from env-compatible values", () => {

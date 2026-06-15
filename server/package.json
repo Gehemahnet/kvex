@@ -3,6 +3,13 @@
 	"version": "1.0.0",
 	"packageManager": "pnpm@10.18.3",
 	"type": "module",
+	"imports": {
+		"#common/*": "./src/common/*.ts",
+		"#exchanges/*": "./src/exchanges/*.ts",
+		"#server/*": "./src/server/*.ts",
+		"#services/*": "./src/services/*.ts",
+		"#storage/*": "./src/storage/*.ts"
+	},
 	"scripts": {
 		"dev": "tsx watch --clear-screen=false ./src/server/index.ts",
 		"dev:once": "tsx ./src/server/index.ts",
@@ -14,6 +21,7 @@
 		"lint:fix": "oxlint --fix src"
 	},
 	"dependencies": {
+		"@covalenthq/client-sdk": "^3.0.6",
 		"dotenv": "^17.4.1",
 		"pg": "^8.20.0",
 		"redis": "^6.0.0",

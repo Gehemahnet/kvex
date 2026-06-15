@@ -1,6 +1,6 @@
-import { normalizeOptionalNumber } from "../../common/number.utils";
-import { normalizeOptionalTimestamp } from "../../services/funding/funding-overview.utils";
-import type { FundingOverviewExchangeCell } from "../../services/funding/funding-overview.types";
+import { normalizeOptionalNumber } from "#common/number.utils";
+import { normalizeOptionalTimestamp } from "#services/funding/funding-overview/funding-overview.utils";
+import type { FundingOverviewExchangeCell } from "#services/funding/funding-overview/funding-overview.types";
 import type { OkxTicker } from "./okx.types";
 
 /** Normalizes OKX swap instrument ids to KVEX base symbols. */

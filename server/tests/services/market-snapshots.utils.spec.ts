@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { FundingOverviewExchangeCell } from "../../src/services/funding/funding-overview.types";
-import type { MarketSnapshot } from "../../src/services/markets/market-snapshots.types";
+import type { FundingOverviewExchangeCell } from "#services/funding/funding-overview/funding-overview.types";
+import type { MarketSnapshot } from "#services/markets/market-snapshots/market-snapshots.types";
 import {
 	filterMarketSnapshotsBySymbol,
 	mapFundingCellToMarketSnapshot,
-} from "../../src/services/markets/market-snapshots.utils";
+} from "#services/markets/market-snapshots/market-snapshots.utils";
 
 describe("market snapshot utils", () => {
 	it("maps funding cells into normalized market snapshots", () => {

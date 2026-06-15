@@ -1,10 +1,10 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { getWalletBalances } from "../../../services/portfolio/wallet-balances.service";
+import { getWalletBalances } from "#services/portfolio/wallet-balances/wallet-balances.service";
 import type {
 	WalletBalanceNetwork,
 	WalletBalancesQuery,
 	WalletBalancesResponse,
-} from "../../../services/portfolio/wallet-balances.types";
+} from "#services/portfolio/wallet-balances/wallet-balances.types";
 import {
 	getAuthRequestToken,
 } from "../auth/auth.utils";
@@ -16,7 +16,7 @@ import {
 	getUserPortfolioSources,
 } from "./user-portfolio-sources.utils";
 import { BadRequestError } from "../http-errors";
-import { ALL_WALLET_TOKENS } from "../../../services/portfolio/wallet-balances.constants";
+import { ALL_WALLET_TOKENS } from "#services/portfolio/wallet-balances/wallet-balances.constants";
 import { writeJsonResponse } from "../http-response.utils";
 import {
 	parseWalletBalancesQuery,

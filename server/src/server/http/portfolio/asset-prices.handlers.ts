@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { getAssetPrices } from "../../../services/portfolio/asset-prices.service";
-import type { AssetPricesResponse } from "../../../services/portfolio/asset-prices.types";
+import { getAssetPrices } from "#services/portfolio/asset-prices/asset-prices.service";
+import type { AssetPricesResponse } from "#services/portfolio/asset-prices/asset-prices.types";
 import { writeJsonResponse } from "../http-response.utils";
 import { parseAssetPricesQuery } from "./asset-prices-query";
 

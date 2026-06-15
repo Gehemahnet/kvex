@@ -7,11 +7,11 @@ import {
 	refreshAuthSession,
 	requestPasswordReset,
 	registerUser,
-} from "../../../services/auth/auth.service";
+} from "#services/auth/auth-service/auth.service";
 import type {
 	AuthSession,
 	AuthSessionStatus,
-} from "../../../services/auth/auth.types";
+} from "#services/auth/auth-service/auth.types";
 import { readJsonBody } from "../http-request.utils";
 import { writeJsonResponse } from "../http-response.utils";
 import {
@@ -112,13 +112,24 @@ export const logoutUserHandler = async (
 	response: ServerResponse,
 ) => {
 	const dependencies = getAuthDependencies();
+	const token = getOptionalAuthRequestToken(request);
+	const csrfToken = getOptionalCsrfRequestToken(request);
 
-	await logoutUser(dependencies.db, {
-		csrfToken: getCsrfRequestToken(request),
-		token: getAuthRequestToken(request),
-	});
-	clearAuthCookie(response);
-	clearCsrfCookie(response);
+	try {
+		if (token !== undefined && csrfToken !== undefined) {
+			await logoutUser(dependencies.db, {
+				csrfToken,
+				token,
+			});
+		}
+	} catch (error) {
+		if (!(error instanceof UnauthorizedError)) {
+			throw error;
+		}
+	} finally {
+		clearAuthCookie(response);
+		clearCsrfCookie(response);
+	}
 
 	writeJsonResponse(response, 200, {
 		ok: true,

@@ -5,7 +5,7 @@ import {
 	revokeAuthSession,
 	touchAuthSession,
 	updateAuthSessionCsrfTokenHash,
-} from "../../src/services/auth/auth-sessions.repository";
+} from "#services/auth/auth-sessions/auth-sessions.repository";
 import type { UserSessionRow } from "../../src/services/auth/auth-sessions.types";
 import type { Queryable } from "../../src/storage/postgres/postgres.client";
 

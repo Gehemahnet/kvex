@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { upsertMarketSnapshot } from "../../services/markets/market-snapshot-store";
+import { upsertMarketSnapshot } from "#services/markets/market-snapshots/market-snapshot-store";
 import { etherealRestClient } from "./ethereal";
 import type { ProductData } from "./ethereal.types";
 import {

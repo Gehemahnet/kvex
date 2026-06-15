@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import { FetchHttpClient, type HttpClient } from "../../common/http-client";
+import { FetchHttpClient, type HttpClient } from "#common/http-client";
 import type {
 	OkxAccountBalance,
 	OkxInstrument,

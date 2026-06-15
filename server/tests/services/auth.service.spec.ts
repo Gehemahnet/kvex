@@ -8,14 +8,14 @@ import {
 	refreshAuthSession,
 	requestPasswordReset,
 	registerUser,
-} from "../../src/services/auth/auth.service";
+} from "#services/auth/auth-service/auth.service";
 import {
 	hashPassword,
 	hashPasswordResetToken,
 	hashAuthSessionToken,
 	hashCsrfToken,
 	verifyPassword,
-} from "../../src/services/auth/auth.crypto";
+} from "#services/auth/auth-service/auth.crypto";
 import type { UserRow } from "../../src/services/users/users.types";
 import type { UserSessionRow } from "../../src/services/auth/auth-sessions.types";
 

@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MarketSnapshot } from "../../src/services/markets/market-snapshots.types";
-import { getMarketSnapshots } from "../../src/services/markets/market-snapshots.service";
-import { resetSpreadStability } from "../../src/services/spreads/spread-stability.store";
-import { getSpreads } from "../../src/services/spreads/spreads.service";
+import type { MarketSnapshot } from "#services/markets/market-snapshots/market-snapshots.types";
+import { getMarketSnapshots } from "#services/markets/market-snapshots/market-snapshots.service";
+import { resetSpreadStability } from "#services/spreads/spread-stability/spread-stability.store";
+import { getSpreads } from "#services/spreads/spreads-core/spreads.service";
 
-vi.mock("../../src/services/markets/market-snapshots.service", () => ({
+vi.mock("#services/markets/market-snapshots/market-snapshots.service", () => ({
 	getMarketSnapshots: vi.fn(),
 }));
 

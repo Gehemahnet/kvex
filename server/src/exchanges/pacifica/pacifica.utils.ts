@@ -1,5 +1,5 @@
-import { HOUR_IN_MS, PERIOD_POINTS } from "../../common/constants";
-import { Period } from "../../common/types";
+import { HOUR_IN_MS, PERIOD_POINTS } from "#common/constants";
+import { Period } from "#common/types";
 import type { FundingRateHistory } from "./pacifica.types";
 
 /** Fills missing Pacifica hourly funding points by carrying forward the last known value. */

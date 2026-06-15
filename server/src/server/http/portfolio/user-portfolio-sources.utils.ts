@@ -3,15 +3,15 @@ import {
 	deleteUserPortfolioSource,
 	listUserPortfolioSources,
 	updateUserPortfolioSource,
-} from "../../../services/portfolio/user-portfolio-sources.repository";
+} from "#services/portfolio/user-portfolio-sources/user-portfolio-sources.repository";
 import {
 	isPortfolioSourceStatus,
 	normalizePortfolioSourceAddress,
 	normalizePortfolioSourceLabel,
-} from "../../../services/portfolio/user-portfolio-sources.utils";
-import type { UserPortfolioSource } from "../../../services/portfolio/user-portfolio-sources.types";
-import type { WalletBalanceNetwork } from "../../../services/portfolio/wallet-balances.types";
-import type { Queryable } from "../../../storage/postgres/postgres.client";
+} from "#services/portfolio/user-portfolio-sources/user-portfolio-sources.utils";
+import type { UserPortfolioSource } from "#services/portfolio/user-portfolio-sources/user-portfolio-sources.types";
+import type { WalletBalanceNetwork } from "#services/portfolio/wallet-balances/wallet-balances.types";
+import type { Queryable } from "#storage/postgres/postgres.client";
 import {
 	BadRequestError,
 	NotFoundError,
@@ -23,6 +23,14 @@ import type {
 	ParsedUpdateUserPortfolioSourceBody,
 	UpdateUserPortfolioSourceBody,
 } from "./user-portfolio-sources.types";
+
+export type UserPortfolioSourceResponse = Omit<
+	UserPortfolioSource,
+	"createdAt" | "updatedAt"
+> & {
+	createdAt: string;
+	updatedAt: string;
+};
 
 /** Parses an optional source network query parameter. */
 export const parsePortfolioSourceNetwork = (
@@ -173,6 +181,21 @@ export const getUserPortfolioSources = (
 	network?: WalletBalanceNetwork,
 ): Promise<UserPortfolioSource[]> =>
 	listUserPortfolioSources(db, { network, userId });
+
+/** Serializes one portfolio source for HTTP JSON responses. */
+export const serializeUserPortfolioSourceForResponse = (
+	source: UserPortfolioSource,
+): UserPortfolioSourceResponse => ({
+	...source,
+	createdAt: source.createdAt.toISOString(),
+	updatedAt: source.updatedAt.toISOString(),
+});
+
+/** Serializes portfolio sources for HTTP JSON responses. */
+export const serializeUserPortfolioSourcesForResponse = (
+	sources: UserPortfolioSource[],
+): UserPortfolioSourceResponse[] =>
+	sources.map(serializeUserPortfolioSourceForResponse);
 
 /** Updates one portfolio source or throws when it is not owned by the user. */
 export const editUserPortfolioSource = async (

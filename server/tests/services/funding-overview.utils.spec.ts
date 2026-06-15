@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { FundingOverviewExchangeCell } from "../../src/services/funding/funding-overview.types";
+import type { FundingOverviewExchangeCell } from "#services/funding/funding-overview/funding-overview.types";
 import {
 	annualizeFundingRate,
 	annualizeHourlyFundingRate,
@@ -8,7 +8,7 @@ import {
 	normalizeFundingRateToHourly,
 	normalizeOptionalTimestamp,
 	scaleFundingOverviewCellsToTimeframe,
-} from "../../src/services/funding/funding-overview.utils";
+} from "#services/funding/funding-overview/funding-overview.utils";
 
 describe("funding overview utils", () => {
 	it("annualizes hourly funding rates", () => {

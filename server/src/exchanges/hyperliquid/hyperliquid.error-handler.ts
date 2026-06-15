@@ -1,4 +1,4 @@
-import { ServiceError } from "../../common/errors/service-errors";
+import { ServiceError } from "#common/errors/service-errors";
 
 type ErrorNormalizer = {
 	canHandle: (error: unknown) => boolean;

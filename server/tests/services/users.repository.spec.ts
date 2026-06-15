@@ -4,7 +4,7 @@ import {
 	createUser,
 	findUserById,
 	findUserByLogin,
-} from "../../src/services/users/users.repository";
+} from "#services/users/users-core/users.repository";
 import type { UserRow } from "../../src/services/users/users.types";
 
 describe("users repository", () => {

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { hyperliquidRestClient } from "../../src/exchanges/hyperliquid/hyperliquid";
 import { okxClient } from "../../src/exchanges/okx/okx";
-import { getUserExchangeBalances } from "../../src/services/portfolio/exchange-balances.service";
+import { getUserExchangeBalances } from "#services/portfolio/exchange-balances/exchange-balances.service";
 import type {
 	UserExchangeAccount,
 	UserExchangeData,

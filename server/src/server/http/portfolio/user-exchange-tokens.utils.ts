@@ -1,16 +1,16 @@
-import type { Exchange } from "../../../common/types";
+import type { Exchange } from "#common/types";
 import {
 	createUserExchangeAccount,
 	deleteUserExchangeAccount,
 	listUserExchangeAccounts,
-} from "../../../services/users/user-exchange-accounts.repository";
+} from "#services/users/user-exchange-accounts/user-exchange-accounts.repository";
 import type {
 	CreateUserExchangeAccountInput,
 	UserExchangeAccount,
 	UserExchangeData,
 	UserExchangePermission,
-} from "../../../services/users/user-exchange-accounts.types";
-import type { Queryable } from "../../../storage/postgres/postgres.client";
+} from "#services/users/user-exchange-accounts/user-exchange-accounts.types";
+import type { Queryable } from "#storage/postgres/postgres.client";
 import {
 	BadRequestError,
 	NotFoundError,
@@ -40,6 +40,15 @@ type ParsedCreateUserExchangeTokenInput = Omit<
 	CreateUserExchangeAccountInput,
 	"userId"
 >;
+
+export type UserExchangeTokenResponse = Omit<
+	UserExchangeAccount,
+	"createdAt" | "lastCheckedAt" | "updatedAt"
+> & {
+	createdAt: string;
+	lastCheckedAt?: string;
+	updatedAt: string;
+};
 
 /** Parses and validates a batch exchange-token create request body. */
 export const parseCreateUserExchangeTokensBody = (
@@ -117,11 +126,22 @@ export const getUserExchangeTokens = (
 /** Removes credential secrets from exchange token response payloads. */
 export const sanitizeUserExchangeTokensForResponse = (
 	tokens: UserExchangeAccount[],
-): UserExchangeAccount[] =>
-	tokens.map((token) => ({
-		...token,
-		publicData: sanitizeUserExchangeData(token.publicData),
-	}));
+): UserExchangeTokenResponse[] =>
+	tokens.map((token) => {
+		const { createdAt, lastCheckedAt, updatedAt, ...tokenData } = token;
+		const responseToken: UserExchangeTokenResponse = {
+			...tokenData,
+			createdAt: createdAt.toISOString(),
+			publicData: sanitizeUserExchangeData(tokenData.publicData),
+			updatedAt: updatedAt.toISOString(),
+		};
+
+		if (lastCheckedAt !== undefined) {
+			responseToken.lastCheckedAt = lastCheckedAt.toISOString();
+		}
+
+		return responseToken;
+	});
 
 /** Parses the exchange token id query parameter for deletion. */
 export const parseUserExchangeTokenId = (url: URL): string => {

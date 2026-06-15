@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { getFunding } from "../../../services/funding/funding.service";
-import { getFundingOverview } from "../../../services/funding/funding-overview.service";
-import type { FundingOverviewResponse } from "../../../services/funding/funding-overview.types";
-import type { FundingResponse } from "../../../services/funding/funding.types";
+import { getFunding } from "#services/funding/funding-core/funding.service";
+import { getFundingOverview } from "#services/funding/funding-overview/funding-overview.service";
+import type { FundingOverviewResponse } from "#services/funding/funding-overview/funding-overview.types";
+import type { FundingResponse } from "#services/funding/funding-core/funding.types";
 import { writeJsonResponse } from "../http-response.utils";
 import { parseFundingOverviewQuery } from "../funding-overview-query";
 import { parseFundingQuery } from "../funding-query";

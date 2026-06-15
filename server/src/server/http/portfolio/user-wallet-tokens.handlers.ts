@@ -16,6 +16,8 @@ import {
 	parseWalletTokenNetwork,
 	removeUserWalletToken,
 	saveUserWalletToken,
+	serializeUserWalletTokenForResponse,
+	serializeUserWalletTokensForResponse,
 } from "./user-wallet-tokens.utils";
 
 /** Handles `GET /portfolio/tokens` and returns saved wallet token watchlist items. */
@@ -35,7 +37,9 @@ export const listUserWalletTokensHandler = async (
 		parseWalletTokenNetwork(url),
 	);
 
-	writeJsonResponse(response, 200, { tokens });
+	writeJsonResponse(response, 200, {
+		tokens: serializeUserWalletTokensForResponse(tokens),
+	});
 };
 
 /** Handles `POST /portfolio/tokens` and stores one wallet token for the user. */
@@ -52,7 +56,9 @@ export const createUserWalletTokenHandler = async (
 	const input = parseCreateUserWalletTokenBody(body);
 	const token = await saveUserWalletToken(dependencies.db, user.id, input);
 
-	writeJsonResponse(response, 201, { token });
+	writeJsonResponse(response, 201, {
+		token: serializeUserWalletTokenForResponse(token),
+	});
 };
 
 /** Handles `DELETE /portfolio/tokens?id=...` and removes one saved wallet token. */

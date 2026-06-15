@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { upsertMarketSnapshot } from "../../services/markets/market-snapshot-store";
+import { upsertMarketSnapshot } from "#services/markets/market-snapshots/market-snapshot-store";
 import { nadoClient } from "./nado";
 import {
 	NADO_BOOK_DEPTH_RESYNC_LOG_INTERVAL_MS,
@@ -21,7 +21,7 @@ import {
 import type {
 	MarketOrderBookLevel,
 	MarketSnapshot,
-} from "../../services/markets/market-snapshots.types";
+} from "#services/markets/market-snapshots/market-snapshots.types";
 import type { NadoBookDepthEvent } from "./nado.ws.types";
 
 const NADO_ORDER_BOOK_DEPTH = 10;

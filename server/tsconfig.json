@@ -5,6 +5,14 @@
 		"moduleResolution": "bundler",
 		"outDir": "./dist",
 		"rootDir": "./src",
+		"baseUrl": ".",
+		"paths": {
+			"#common/*": ["src/common/*.ts"],
+			"#exchanges/*": ["src/exchanges/*.ts"],
+			"#server/*": ["src/server/*.ts"],
+			"#services/*": ["src/services/*.ts"],
+			"#storage/*": ["src/storage/*.ts"]
+		},
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,

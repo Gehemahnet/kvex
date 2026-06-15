@@ -7,7 +7,7 @@ import {
 	formatTokenUnits,
 	isEvmAddress,
 	normalizeEvmAddress,
-} from "../../src/services/portfolio/evm-wallet-balances.utils";
+} from "#services/portfolio/wallet-balances/evm-wallet-balances.utils";
 
 describe("evm wallet balance utils", () => {
 	it("validates and normalizes EVM addresses", () => {
