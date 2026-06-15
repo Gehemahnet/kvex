@@ -55,7 +55,7 @@
 - backend routes `GET/POST/DELETE /portfolio/exchange-tokens` are implemented for authenticated saved exchange access tokens
 - `POST /portfolio/sources` accepts only a batch body `{ sources: [...] }`; the older single-source create body is intentionally not supported because the product has not shipped yet
 - funding query parsing validates required `symbol`, required `timeframe`, and optional `exchanges`
-- funding service aggregates per-exchange data from `hyperliquid`, `pacifica`, `ethereal`, `nado`, and `okx`
+- funding service aggregates per-exchange data from `hyperliquid`, `pacifica`, `ethereal`, `nado`, `okx`, and `variational`
 - funding response includes normalized per-exchange series plus partial per-exchange errors
 - Funding frontend consumes `/funding/overview` and renders one row per normalized symbol
 - Spreads frontend consumes `/spreads`, subscribes to Socket.IO updates, and renders executable spread opportunities
@@ -83,7 +83,7 @@
 
 - `symbol`: required normalized market symbol, for example `BTC`
 - `timeframe`: required period, currently `DAY`, `WEEK`, `MONTH`, or `YEAR`
-- `exchanges`: optional comma-separated list, currently `hyperliquid`, `pacifica`, `ethereal`, `nado`, `okx`
+- `exchanges`: optional comma-separated list, currently `hyperliquid`, `pacifica`, `ethereal`, `nado`, `okx`, `variational`
 
 ### Frontend Direction
 

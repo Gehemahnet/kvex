@@ -4,16 +4,16 @@ KVEX uses PrimeVue with a custom Sakai-inspired preset and an app-level CSS toke
 
 There are two places to customize the theme:
 
-- PrimeVue component tokens: `src/theme/atlantis.theme.ts`
+- PrimeVue component tokens: `src/theme/primary.theme.ts`
 - KVEX layout/component overrides: `src/style.css`
 
 Use the PrimeVue layer for component semantics shared by PrimeVue internals. Use the KVEX CSS layer for page shell, cards, Funding table, and app-specific states.
 
 ## PrimeVue Preset
 
-File: `src/theme/atlantis.theme.ts`
+File: `src/theme/primary.theme.ts`
 
-The preset is created with `definePreset(Aura, { semantic: ... })`.
+The preset is created with `definePreset(Lara, { semantic: ... })`.
 
 ### Primary Scale
 
@@ -153,7 +153,7 @@ When customizing components, prefer changing variables first. Add selector overr
 
 ## Safe Change Order
 
-1. Update `semantic.primary` and `semantic.colorScheme` in `src/theme/atlantis.theme.ts`.
+1. Update `semantic.primary` and `semantic.colorScheme` in `src/theme/primary.theme.ts`.
 2. Mirror page-level colors in `:root` and `.kvex-dark` in `src/style.css`.
 3. Check topbar, card surface, filters, DataTable header/body, overlays, hover states, and funding pills.
 4. Run:
