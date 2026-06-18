@@ -8,6 +8,7 @@ import { marketSnapshotRoutes } from "./http/markets/market-snapshots.routes";
 import { metricsRoutes } from "./http/metrics/metrics.routes";
 import { assetPriceRoutes } from "./http/portfolio/asset-prices.routes";
 import { exchangeBalanceRoutes } from "./http/portfolio/exchange-balances.routes";
+import { portfolioBalanceRoutes } from "./http/portfolio/portfolio-balances.routes";
 import { walletBalanceRoutes } from "./http/portfolio/wallet-balances.routes";
 import { userExchangeTokenRoutes } from "./http/portfolio/user-exchange-tokens.routes";
 import { userPortfolioSourceRoutes } from "./http/portfolio/user-portfolio-sources.routes";
@@ -28,6 +29,7 @@ const routes: Route[] = [
 	...metricsRoutes,
 	...assetPriceRoutes,
 	...exchangeBalanceRoutes,
+	...portfolioBalanceRoutes,
 	...walletBalanceRoutes,
 	...userExchangeTokenRoutes,
 	...userPortfolioSourceRoutes,

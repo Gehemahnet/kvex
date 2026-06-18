@@ -1,6 +1,7 @@
 import type { Queryable } from "#storage/postgres/postgres.client";
 import type {
 	CreateUserExchangeAccountInput,
+	UpdateUserExchangeAccountInput,
 	UserExchangeAccount,
 	UserExchangeData,
 	UserExchangeAccountRow,
@@ -134,6 +135,41 @@ export const deleteUserExchangeAccount = async (
 	return result.rows.length > 0;
 };
 
+/** Updates mutable exchange account fields owned by a user. */
+export const updateUserExchangeAccount = async (
+	db: Queryable,
+	input: UpdateUserExchangeAccountInput,
+): Promise<UserExchangeAccount | undefined> => {
+	const result = await db.query<UserExchangeAccountRow>(
+		`
+			UPDATE user_exchange_accounts
+			SET
+				label = $3,
+				updated_at = now()
+			WHERE user_id = $1 AND id = $2
+			RETURNING
+				id,
+				user_id,
+				exchange,
+				label,
+				status,
+				public_data,
+				capabilities,
+				last_checked_at,
+				created_at,
+				updated_at
+		`,
+		[
+			input.userId,
+			input.id,
+			normalizeUserExchangeAccountLabel(input.label),
+		],
+	);
+	const row = result.rows[0];
+
+	return row === undefined ? undefined : mapUserExchangeAccountRow(row);
+};
+
 /** Marks one exchange account as successfully checked. */
 export const updateUserExchangeAccountLastCheckedAt = async (
 	db: Queryable,
@@ -153,6 +189,32 @@ export const updateUserExchangeAccountLastCheckedAt = async (
 			RETURNING id
 		`,
 		[params.userId, params.id, params.checkedAt],
+	);
+
+	return result.rows.length > 0;
+};
+
+/** Updates exchange account status and optionally refreshes the successful check timestamp. */
+export const updateUserExchangeAccountStatus = async (
+	db: Queryable,
+	params: {
+		checkedAt?: Date;
+		id: string;
+		status: UserExchangeAccount["status"];
+		userId: string;
+	},
+): Promise<boolean> => {
+	const result = await db.query<{ id: string }>(
+		`
+			UPDATE user_exchange_accounts
+			SET
+				status = $3,
+				last_checked_at = COALESCE($4, last_checked_at),
+				updated_at = now()
+			WHERE user_id = $1 AND id = $2
+			RETURNING id
+		`,
+		[params.userId, params.id, params.status, params.checkedAt ?? null],
 	);
 
 	return result.rows.length > 0;

@@ -11,6 +11,7 @@ export const DEV_SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com";
 export const ALCHEMY_API_KEY_ENV = "ALCHEMY_API_KEY";
 export const GOLDRUSH_API_KEY_ENV = "GOLDRUSH_API_KEY";
 export const GOLDRUSH_PORTFOLIO_BALANCES_CACHE_TTL_MS = 180_000;
+export const WALLET_BALANCE_DISCOVERY_CACHE_TTL_MS = 60_000;
 export const GOLDRUSH_PORTFOLIO_CHAIN_IDS = [
 	1,
 	10,

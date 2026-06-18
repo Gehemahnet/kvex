@@ -3,6 +3,7 @@ import { getMarketSnapshots } from "#services/markets/market-snapshots/market-sn
 import type { MarketSnapshot } from "#services/markets/market-snapshots/market-snapshots.types";
 import type {
 	SpreadOpportunity,
+	SpreadBalanceProfile,
 	SpreadFeeProfile,
 	SpreadsQuery,
 	SpreadsResponse,
@@ -16,9 +17,11 @@ type SpreadBuildOptions = {
 	maxSnapshotAgeMs?: number;
 	positionSizeUsd?: number;
 	holdingPeriodHours?: number;
+	balanceProfiles?: SpreadBalanceProfile[];
 };
 
 type GetSpreadsOptions = {
+	balanceProfiles?: SpreadBalanceProfile[];
 	feeProfiles?: SpreadFeeProfile[];
 };
 
@@ -50,7 +53,7 @@ export const getSpreads = async (
 	const pairingStartedAt = performance.now();
 	const rawOpportunities = createSpreadOpportunities(
 		snapshotsWithUserFees,
-		createSpreadBuildOptions(query),
+		createSpreadBuildOptions(query, options),
 	);
 	const pairingMs = performance.now() - pairingStartedAt;
 
@@ -88,10 +91,14 @@ export const getSpreads = async (
 	return response;
 };
 
-const createSpreadBuildOptions = (query: SpreadsQuery): SpreadBuildOptions => ({
+const createSpreadBuildOptions = (
+	query: SpreadsQuery,
+	options: GetSpreadsOptions,
+): SpreadBuildOptions => ({
 	maxSnapshotAgeMs: query.maxSnapshotAgeMs,
 	positionSizeUsd: query.positionSizeUsd,
 	holdingPeriodHours: query.holdingPeriodHours,
+	balanceProfiles: options.balanceProfiles,
 });
 
 const enrichSpreadOpportunities = (

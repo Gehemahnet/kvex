@@ -2,5 +2,9 @@ packages:
   - .
   - server
 
+allowBuilds:
+  esbuild: true
+  vue-demi: false
+
 overrides:
   vite: npm:rolldown-vite@7.2.5

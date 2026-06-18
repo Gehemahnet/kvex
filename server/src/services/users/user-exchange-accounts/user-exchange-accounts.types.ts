@@ -64,6 +64,17 @@ export type OkxUserExchangeData = {
 
 export type NadoUserExchangeData = {
 	exchange: "nado";
+	address?: string;
+	apiKey?: string;
+	apiSecret?: string;
+	expiresAt?: string;
+	feeProfiles?: UserExchangeFeeProfile[];
+	permissions?: UserExchangePermission[];
+	subaccountName?: string;
+};
+
+export type EtherealUserExchangeData = {
+	exchange: "ethereal";
 	apiKey?: string;
 	apiSecret?: string;
 	expiresAt?: string;
@@ -71,8 +82,8 @@ export type NadoUserExchangeData = {
 	permissions?: UserExchangePermission[];
 };
 
-export type EtherealUserExchangeData = {
-	exchange: "ethereal";
+export type VariationalUserExchangeData = {
+	exchange: "variational";
 	apiKey?: string;
 	apiSecret?: string;
 	expiresAt?: string;
@@ -85,7 +96,8 @@ export type UserExchangeData =
 	| HyperliquidUserExchangeData
 	| NadoUserExchangeData
 	| OkxUserExchangeData
-	| PacificaUserExchangeData;
+	| PacificaUserExchangeData
+	| VariationalUserExchangeData;
 
 export type UserExchangeAccount = {
 	id: string;
@@ -106,6 +118,12 @@ export type CreateUserExchangeAccountInput = {
 	label: string;
 	publicData?: Partial<UserExchangeData>;
 	capabilities?: UserExchangeCapabilities;
+};
+
+export type UpdateUserExchangeAccountInput = {
+	id: string;
+	label: string;
+	userId: string;
 };
 
 export type UserExchangeAccountRow = {

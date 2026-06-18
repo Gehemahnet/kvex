@@ -9,7 +9,6 @@ import {
 import {
 	applyNadoBookDepthUpdate,
 	createNadoBookDepthResyncMonitor,
-	createNadoMarketDataSubscriptionMessage,
 	createNadoSymbolMap,
 	isNadoBestBidOfferEvent,
 	isNadoBookDepthEvent,
@@ -52,6 +51,7 @@ class NadoMarketDataStream {
 				depth: number,
 				symbolMap: Map<number, string>,
 			) => Promise<MarketSnapshot | undefined>;
+			getSubscriptionMessages: (productIds: number[]) => unknown[];
 			getSymbols: () => Promise<Map<number, string>>;
 			reconnectDelayMs: number;
 			url: string;
@@ -108,7 +108,7 @@ class NadoMarketDataStream {
 		this.pendingBookDepthEvents.clear();
 		this.bootstrappingProductIds = new Set(productIds);
 
-		for (const message of createNadoMarketDataSubscriptionMessage(productIds)) {
+		for (const message of this.params.getSubscriptionMessages(productIds)) {
 			this.send(message);
 		}
 
@@ -417,6 +417,8 @@ export const nadoMarketDataStream = new NadoMarketDataStream({
 			: undefined;
 	},
 	getSymbols: async () => createNadoSymbolMap(await nadoClient.getSymbols()),
+	getSubscriptionMessages: (productIds) =>
+		nadoClient.createMarketDataSubscriptionMessages(productIds),
 	reconnectDelayMs: NADO_WS_RECONNECT_DELAY_MS,
 	url: NADO_MARKET_DATA_WS_URL,
 });

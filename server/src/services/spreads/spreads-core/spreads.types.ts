@@ -93,7 +93,8 @@ export type SpreadExecutableNotionalReason =
 	| "missing-long-ask"
 	| "missing-long-ask-size"
 	| "missing-short-bid"
-	| "missing-short-bid-size";
+	| "missing-short-bid-size"
+	| "user-balance";
 
 export type SpreadStability = {
 	firstSeenAt: number;
@@ -162,4 +163,9 @@ export type SpreadsResponse = SpreadsQuery & {
 
 export type SpreadFeeProfile = UserExchangeFeeProfile & {
 	exchange: Exchange;
+};
+
+export type SpreadBalanceProfile = {
+	exchange: Exchange;
+	availableNotionalUsd: number;
 };

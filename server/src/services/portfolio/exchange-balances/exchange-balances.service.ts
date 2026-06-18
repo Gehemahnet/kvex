@@ -1,4 +1,5 @@
 import { hyperliquidRestClient } from "#exchanges/hyperliquid/hyperliquid";
+import { nadoClient } from "#exchanges/nado/nado";
 import { okxClient } from "#exchanges/okx/okx";
 import type {
 	OkxAccountBalance,
@@ -26,6 +27,10 @@ type UserExchangeBalancesOptions = {
 		account: UserExchangeAccount,
 		balance: UserExchangeBalanceResult,
 	) => Promise<void> | void;
+	onAccountFailed?: (
+		account: UserExchangeAccount,
+		error: UserExchangeBalanceError,
+	) => Promise<void> | void;
 	onFeeProfiles?: (
 		account: UserExchangeAccount,
 		feeProfiles: UserExchangeFeeProfile[],
@@ -38,7 +43,7 @@ export const getUserExchangeBalances = async (
 	options: UserExchangeBalancesOptions = {},
 ): Promise<UserExchangeBalancesResponse> => {
 	const activeAccounts = accounts.filter((account) =>
-		account.status === "active" && account.capabilities.balances !== false
+		account.status !== "disabled" && account.capabilities.balances !== false
 	);
 	const settledResults = await Promise.all(
 		activeAccounts.map((account) => getUserExchangeBalance(account, options)),
@@ -72,6 +77,8 @@ const getUserExchangeBalance = async (
 
 		if (account.exchange === "hyperliquid") {
 			result = { balance: await getHyperliquidUserExchangeBalance(account) };
+		} else if (account.exchange === "nado") {
+			result = { balance: await getNadoUserExchangeBalance(account) };
 		} else if (account.exchange === "okx") {
 			result = await getOkxUserExchangeBalance(account);
 		} else if (account.exchange === "pacifica") {
@@ -94,14 +101,18 @@ const getUserExchangeBalance = async (
 
 		return result;
 	} catch (error) {
-		return {
-			error: {
-				accountId: account.id,
-				exchange: account.exchange,
-				code: getExchangeBalanceErrorCode(error),
-				message: getExchangeBalanceErrorMessage(error),
-			},
+		const exchangeError: UserExchangeBalanceError = {
+			accountId: account.id,
+			exchange: account.exchange,
+			code: getExchangeBalanceErrorCode(error),
+			message: getExchangeBalanceErrorMessage(error),
 		};
+
+		await callOptionalSideEffect(() =>
+			options.onAccountFailed?.(account, exchangeError)
+		);
+
+		return { error: exchangeError };
 	}
 };
 
@@ -204,6 +215,51 @@ const getHyperliquidUserExchangeBalance = async (
 		...(perpState.time === undefined
 			? {}
 			: { updatedAt: new Date(perpState.time).toISOString() }),
+	};
+};
+
+const getNadoUserExchangeBalance = async (
+	account: UserExchangeAccount,
+): Promise<UserExchangeBalanceResult> => {
+	const data = account.publicData.exchange === "nado" ? account.publicData : undefined;
+	const address = data?.address?.trim();
+	const subaccountName = data?.subaccountName?.trim() || "default";
+
+	if (!address) {
+		throw new ExchangeBalanceError(
+			"EXCHANGE_BALANCE_CREDENTIALS_REQUIRED",
+			"Nado owner wallet address is required",
+		);
+	}
+
+	const summary = await nadoClient.getSubaccountSummary({
+		subaccountName,
+		subaccountOwner: address,
+	});
+
+	if (!summary.exists) {
+		throw new ExchangeBalanceError(
+			"EXCHANGE_BALANCE_CREDENTIALS_REQUIRED",
+			`Nado subaccount "${subaccountName}" was not found for this wallet`,
+		);
+	}
+
+	const assets = summary.balances
+		.filter((balance) => parseOptionalNumber(balance.amount) !== 0)
+		.map((balance) => ({
+			asset: balance.symbol ?? `NADO-${balance.type}-${balance.productId}`,
+			...(balance.vQuoteBalance === undefined ? {} : { equity: balance.vQuoteBalance }),
+			total: balance.amount,
+			...(balance.valueUsd === undefined ? {} : { valueUsd: balance.valueUsd }),
+		}));
+
+	return {
+		accountId: account.id,
+		exchange: "nado",
+		label: account.label,
+		assets,
+		totalValueUsd: assets.reduce((total, asset) => total + (asset.valueUsd ?? 0), 0),
+		updatedAt: new Date().toISOString(),
 	};
 };
 

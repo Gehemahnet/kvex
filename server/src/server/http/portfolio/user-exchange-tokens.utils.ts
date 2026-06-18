@@ -3,6 +3,7 @@ import {
 	createUserExchangeAccount,
 	deleteUserExchangeAccount,
 	listUserExchangeAccounts,
+	updateUserExchangeAccount,
 } from "#services/users/user-exchange-accounts/user-exchange-accounts.repository";
 import type {
 	CreateUserExchangeAccountInput,
@@ -13,11 +14,13 @@ import type {
 import type { Queryable } from "#storage/postgres/postgres.client";
 import {
 	BadRequestError,
+	ConflictError,
 	NotFoundError,
 } from "../http-errors";
 import type {
 	CreateUserExchangeTokenBody,
 	CreateUserExchangeTokensBody,
+	UpdateUserExchangeTokenBody,
 } from "./user-exchange-tokens.types";
 
 const SUPPORTED_EXCHANGES: Exchange[] = [
@@ -26,6 +29,7 @@ const SUPPORTED_EXCHANGES: Exchange[] = [
 	"nado",
 	"okx",
 	"pacifica",
+	"variational",
 ];
 const DEFAULT_EXCHANGE_PERMISSIONS: UserExchangePermission[] = [
 	"balances",
@@ -86,6 +90,24 @@ export const parseCreateUserExchangeTokenBody = (
 		label,
 		publicData,
 		capabilities: createCapabilities(permissions),
+	};
+};
+
+/** Parses one exchange-token update payload. */
+export const parseUpdateUserExchangeTokenBody = (
+	value: unknown,
+): { label: string } => {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		throw new BadRequestError(
+			"Exchange token update must be an object",
+			"INVALID_EXCHANGE_TOKEN_UPDATE",
+		);
+	}
+
+	const body = value as UpdateUserExchangeTokenBody;
+
+	return {
+		label: parseUpdateLabel(body.label),
 	};
 };
 
@@ -170,6 +192,43 @@ export const removeUserExchangeToken = async (
 	}
 };
 
+/** Updates one exchange access token or throws when it is not owned by the user. */
+export const updateUserExchangeToken = async (
+	db: Queryable,
+	userId: string,
+	id: string,
+	input: { label: string },
+): Promise<UserExchangeAccount> => {
+	const token = await updateUserExchangeAccount(db, {
+		id,
+		label: input.label,
+		userId,
+	}).catch((error: unknown) => {
+		if (isPostgresUniqueViolation(error)) {
+			throw new ConflictError(
+				"Exchange token label is already used for this exchange",
+				"EXCHANGE_TOKEN_LABEL_TAKEN",
+			);
+		}
+
+		throw error;
+	});
+
+	if (token === undefined) {
+		throw new NotFoundError(`/portfolio/exchange-tokens?id=${id}`);
+	}
+
+	return token;
+};
+
+const isPostgresUniqueViolation = (
+	error: unknown,
+): error is { code: string } =>
+	typeof error === "object" &&
+	error !== null &&
+	"code" in error &&
+	(error as { code?: unknown }).code === "23505";
+
 const parseExchange = (value: unknown): Exchange => {
 	if (typeof value !== "string") {
 		throw new BadRequestError(
@@ -195,6 +254,17 @@ const parseLabel = (value: unknown, exchange: Exchange): string => {
 		return `${exchange} token`;
 	}
 
+	if (typeof value !== "string" || value.trim() === "") {
+		throw new BadRequestError(
+			"Field `label` must be a non-empty string",
+			"INVALID_EXCHANGE_TOKEN_LABEL",
+		);
+	}
+
+	return value.trim();
+};
+
+const parseUpdateLabel = (value: unknown): string => {
 	if (typeof value !== "string" || value.trim() === "") {
 		throw new BadRequestError(
 			"Field `label` must be a non-empty string",
@@ -253,6 +323,7 @@ const createExchangeTokenData = (
 	...readOptionalStringField(body, "apiKey"),
 	...readOptionalStringField(body, "apiSecret"),
 	...readOptionalStringField(body, "passphrase"),
+	...readOptionalStringField(body, "subaccountName"),
 	...parseOptionalExpiry(body.expiresAt),
 	permissions,
 } as Partial<UserExchangeData>);

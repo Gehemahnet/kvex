@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
 	applyNadoBookDepthUpdate,
 	createNadoBookDepthResyncMonitor,
-	createNadoMarketDataSubscriptionMessage,
 	createNadoSymbolMap,
 	isNadoBestBidOfferEvent,
 	isNadoBookDepthEvent,
@@ -32,35 +31,6 @@ describe("nado ws utils", () => {
 			trading_status: "live",
 		},
 	];
-
-	it("creates market data subscription payload", () => {
-		expect(createNadoMarketDataSubscriptionMessage([1])).toEqual([
-			{
-				method: "subscribe",
-				stream: {
-					type: "best_bid_offer",
-					product_id: 1,
-				},
-				id: 1,
-			},
-			{
-				method: "subscribe",
-				stream: {
-					type: "funding_rate",
-					product_id: 1,
-				},
-				id: 2,
-			},
-			{
-				method: "subscribe",
-				stream: {
-					type: "book_depth",
-					product_id: 1,
-				},
-				id: 3,
-			},
-		]);
-	});
 
 	it("creates a normalized perp symbol map", () => {
 		expect(createNadoSymbolMap(symbols)).toEqual(new Map([[1, "BTC"]]));

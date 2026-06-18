@@ -50,7 +50,9 @@ export type WalletBalanceSourceResult = {
 	status: "success" | "partial" | "failed";
 };
 
-export type WalletBalancesResponse = WalletBalancesQuery & {
+export type WalletBalancesResponse = {
+	networks: WalletBalanceNetwork[];
+	tokens: WalletBalanceTokenInput[];
 	balances: WalletTokenBalance[];
 	errors: WalletBalanceError[];
 	sourceResults: WalletBalanceSourceResult[];

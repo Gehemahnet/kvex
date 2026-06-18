@@ -1,6 +1,8 @@
 import { getCachedValue } from "#common/cache.utils";
 import { log } from "#common/logger";
 import { InternalServerError } from "#server/http/http-errors";
+import { getAssetPrices } from "#services/portfolio/asset-prices/asset-prices.service";
+import type { AssetPrice } from "#services/portfolio/asset-prices/asset-prices.types";
 import { createEvmJsonRpcClient, type EvmJsonRpcClient } from "./evm-json-rpc.client";
 import {
 	GoldRushPortfolioBalanceIndexer,
@@ -32,6 +34,7 @@ import {
 	GOLDRUSH_PORTFOLIO_CHAIN_IDS,
 	NATIVE_WALLET_TOKEN,
 	SOLANA_TOKEN_PROGRAM_ID,
+	WALLET_BALANCE_DISCOVERY_CACHE_TTL_MS,
 } from "#services/portfolio/wallet-balances/wallet-balances.constants";
 import { SUPPORTED_ASSET_PRICE_SYMBOLS } from "#services/portfolio/asset-prices/asset-prices.constants";
 import type {
@@ -62,6 +65,7 @@ export const getWalletBalances = async (
 		evmRpcUrl?: string;
 		goldRushApiKey?: string;
 		portfolioIndexer?: PortfolioBalanceIndexer;
+		assetPriceResolver?: WalletAssetPriceResolver;
 		goldRushClient?: PortfolioBalanceIndexer;
 		solanaRpcClient?: SolanaJsonRpcClient;
 		solanaRpcUrl?: string;
@@ -105,6 +109,7 @@ export const getWalletBalances = async (
 					: dependencies.solanaRpcUrl,
 			)
 		: undefined;
+	const priceResolver = dependencies.assetPriceResolver ?? getWalletAssetPrices;
 	const results = await Promise.all(
 		networks.flatMap((network) =>
 			(addressesByNetwork[network] ?? []).map((address) =>
@@ -126,19 +131,15 @@ export const getWalletBalances = async (
 			),
 		),
 	);
-	const sourceResults = results.map(({ address, network, result }) => {
-		const balances = shouldReadAllTokens
-			? filterSupportedWalletBalances(result.balances)
-			: result.balances;
+	const sourceResults = await createWalletBalanceSourceResults(
+		results,
+		shouldReadAllTokens,
+		priceResolver,
+	);
 
-		return {
-			address,
-			network,
-			balances,
-			errors: result.errors,
-		};
-	});
-	const balances = sourceResults.flatMap((result) => result.balances);
+	const balances = sortWalletBalancesByValueUsd(
+		sourceResults.flatMap((result) => result.balances),
+	);
 	const errors = sourceResults.flatMap((result) => result.errors);
 
 	const sourceResultSummaries = sourceResults.map(
@@ -161,7 +162,8 @@ export const getWalletBalances = async (
 	});
 
 	return {
-		...query,
+		networks,
+		tokens: query.tokens,
 		balances,
 		errors,
 		sourceResults: sourceResultSummaries,
@@ -172,6 +174,21 @@ type WalletBalanceDiscoveryResult = {
 	balances: WalletTokenBalance[];
 	errors: WalletBalanceError[];
 };
+
+type WalletBalanceAddressResult = {
+	address: string;
+	network: WalletBalancesQuery["network"];
+	result: WalletBalanceDiscoveryResult;
+};
+
+type WalletBalanceSourceDiscoveryResult = {
+	address: string;
+	network: WalletBalancesQuery["network"];
+	balances: WalletTokenBalance[];
+	errors: WalletBalanceError[];
+};
+
+type WalletAssetPriceResolver = (symbols: string[]) => Promise<Map<string, AssetPrice>>;
 
 type WalletAddressBalanceParams = {
 	address: string;
@@ -185,16 +202,128 @@ type WalletAddressBalanceParams = {
 	tokens: WalletBalanceTokenInput[];
 };
 
-const filterSupportedWalletBalances = (
+const createWalletBalanceSourceResults = async (
+	results: WalletBalanceAddressResult[],
+	shouldReadAllTokens: boolean,
+	priceResolver: WalletAssetPriceResolver,
+): Promise<WalletBalanceSourceDiscoveryResult[]> => {
+	if (!shouldReadAllTokens) {
+		return results.map(({ address, network, result }) => ({
+			address,
+			network,
+			balances: result.balances,
+			errors: result.errors,
+		}));
+	}
+
+	const pricedBalances = await enrichWalletBalancesWithPrices(
+		results.flatMap(({ result }) => result.balances),
+		priceResolver,
+	);
+	let balanceOffset = 0;
+
+	return results.map(({ address, network, result }) => {
+		const balances = pricedBalances.slice(
+			balanceOffset,
+			balanceOffset + result.balances.length,
+		);
+		balanceOffset += result.balances.length;
+
+		return {
+			address,
+			network,
+			balances: filterPricedWalletBalances(balances),
+			errors: result.errors,
+		};
+	});
+};
+
+const enrichWalletBalancesWithPrices = async (
+	balances: WalletTokenBalance[],
+	priceResolver: WalletAssetPriceResolver,
+): Promise<WalletTokenBalance[]> => {
+	const symbols = getWalletBalanceSymbolsMissingPrices(balances);
+
+	if (symbols.length === 0) {
+		return balances;
+	}
+
+	let prices: Map<string, AssetPrice>;
+
+	try {
+		prices = await priceResolver(symbols);
+	} catch (error) {
+		log("warn", "wallet_balance_price_enrichment_failed", {
+			message: error instanceof Error ? error.message : "Unable to enrich wallet balance prices",
+			symbols: symbols.join(","),
+		});
+
+		return balances;
+	}
+
+	return balances.map((balance) => enrichWalletBalanceWithPrice(balance, prices));
+};
+
+const getWalletBalanceSymbolsMissingPrices = (
+	balances: WalletTokenBalance[],
+): string[] => [
+	...new Set(
+		balances
+			.filter((balance) => !hasPositiveUsdValue(balance))
+			.map((balance) => normalizeWalletBalanceSymbol(balance.symbol))
+			.filter((symbol): symbol is string => symbol !== undefined)
+			.filter((symbol) => SUPPORTED_ASSET_PRICE_SYMBOLS.has(symbol)),
+	),
+];
+
+const enrichWalletBalanceWithPrice = (
+	balance: WalletTokenBalance,
+	prices: Map<string, AssetPrice>,
+): WalletTokenBalance => {
+	if (hasPositiveUsdValue(balance)) {
+		return balance;
+	}
+
+	const symbol = normalizeWalletBalanceSymbol(balance.symbol);
+	const price = symbol ? prices.get(symbol) : undefined;
+	const formattedBalance = Number.parseFloat(balance.formattedBalance);
+
+	if (!price || !Number.isFinite(formattedBalance) || formattedBalance <= 0) {
+		return balance;
+	}
+
+	return {
+		...balance,
+		priceUsd: price.priceUsd,
+		valueUsd: formattedBalance * price.priceUsd,
+	};
+};
+
+const filterPricedWalletBalances = (
+	balances: WalletTokenBalance[],
+): WalletTokenBalance[] => balances.filter(hasPositiveUsdValue);
+
+const hasPositiveUsdValue = (balance: WalletTokenBalance): boolean =>
+	balance.valueUsd !== undefined &&
+	Number.isFinite(balance.valueUsd) &&
+	balance.valueUsd > 0;
+
+const sortWalletBalancesByValueUsd = (
 	balances: WalletTokenBalance[],
 ): WalletTokenBalance[] =>
-	balances.filter((balance) =>
-		(balance.valueUsd !== undefined && balance.valueUsd > 0) ||
-		isSupportedWalletBalanceSymbol(balance.symbol)
-	);
+	[...balances].sort((left, right) => (right.valueUsd ?? 0) - (left.valueUsd ?? 0));
 
-const isSupportedWalletBalanceSymbol = (symbol: string | undefined): boolean =>
-	symbol !== undefined && SUPPORTED_ASSET_PRICE_SYMBOLS.has(symbol.trim().toUpperCase());
+const normalizeWalletBalanceSymbol = (symbol: string | undefined): string | undefined => {
+	const normalizedSymbol = symbol?.trim().toUpperCase();
+
+	return normalizedSymbol || undefined;
+};
+
+const getWalletAssetPrices: WalletAssetPriceResolver = async (symbols) => {
+	const result = await getAssetPrices({ symbols });
+
+	return new Map(result.prices.map((price) => [price.symbol, price]));
+};
 
 const getWalletBalanceSourceStatus = (
 	result: {
@@ -223,118 +352,24 @@ const readWalletBalancesForAddress = async ({
 	const startedAt = performance.now();
 
 	if (shouldReadAllTokens) {
-		try {
-			if (network === "evm") {
-				const discoveryResult = goldRushApiKey
-					? await getGoldRushEvmTokenBalances({
-						address,
-						indexer: assertPortfolioIndexer(portfolioIndexer),
-					})
-					: await getAllAlchemyEvmTokenBalances(
-						evmRpcProviders,
-						assertEvmRpcClient(evmRpcClient),
-						address,
-					);
-
-				if (
-					!goldRushApiKey ||
-					discoveryResult.errors.length === 0 ||
-					!shouldFallbackToAlchemy(discoveryResult)
-				) {
-					logWalletProviderTiming({
-						address,
-						durationMs: performance.now() - startedAt,
-						network,
-						provider: goldRushApiKey ? "goldrush_indexer" : "alchemy_rpc",
-						result: discoveryResult,
-					});
-					return discoveryResult;
-				}
-
-				const fallbackClients = getGoldRushFallbackAlchemyClients(
-					discoveryResult,
-					evmRpcProviders,
-				);
-
-				if (fallbackClients.length === 0) {
-					logWalletProviderTiming({
-						address,
-						durationMs: performance.now() - startedAt,
-						network,
-						provider: "goldrush_indexer",
-						result: discoveryResult,
-					});
-					return discoveryResult;
-				}
-
-				const fallbackStartedAt = performance.now();
-				const fallbackResult = await getAllAlchemyEvmTokenBalances(
-					fallbackClients,
-					assertEvmRpcClient(evmRpcClient),
-					address,
-				);
-				logWalletProviderTiming({
-					address,
-					durationMs: performance.now() - fallbackStartedAt,
-					network,
-					provider: "alchemy_rpc_fallback",
-					result: fallbackResult,
-				});
-
-				const result = {
-					balances: [...discoveryResult.balances, ...fallbackResult.balances],
-					errors: [...discoveryResult.errors, ...fallbackResult.errors],
-				};
-
-				logWalletProviderTiming({
-					address,
-					durationMs: performance.now() - startedAt,
-					network,
-					provider: "goldrush_indexer_with_rpc_fallback",
-					result,
-				});
-
-				return result;
-			}
-
-			const result = {
-				balances: await getAllSolanaTokenBalances(
-					assertSolanaRpcClient(solanaRpcClient),
-					address,
-				),
-				errors: [],
-			};
-
-			logWalletProviderTiming({
+		return getCachedValue(
+			createWalletBalanceDiscoveryCacheKey({
 				address,
-				durationMs: performance.now() - startedAt,
 				network,
-				provider: "solana_rpc",
-				result,
-			});
-
-			return result;
-		} catch (error) {
-			const result = {
-				balances: [],
-				errors: [{
-					address,
-					token: ALL_WALLET_TOKENS,
-					code: "BALANCE_FETCH_FAILED",
-					message: error instanceof Error ? error.message : "Unable to fetch balances",
-				}],
-			};
-
-			logWalletProviderTiming({
+				provider: goldRushApiKey ? "goldrush" : "rpc",
+			}),
+			WALLET_BALANCE_DISCOVERY_CACHE_TTL_MS,
+			() => readAllWalletBalancesForAddress({
 				address,
-				durationMs: performance.now() - startedAt,
+				evmRpcProviders,
+				evmRpcClient,
+				goldRushApiKey,
+				portfolioIndexer,
 				network,
-				provider: `${network}_rpc`,
-				result,
-			});
-
-			return result;
-		}
+				solanaRpcClient,
+				startedAt,
+			}),
+		);
 	}
 
 	const tokenResults = await Promise.all(
@@ -380,6 +415,137 @@ const readWalletBalancesForAddress = async ({
 	});
 
 	return result;
+};
+
+type AllWalletAddressBalanceParams = Omit<
+	WalletAddressBalanceParams,
+	"shouldReadAllTokens" | "tokens"
+> & {
+	startedAt: number;
+};
+
+const readAllWalletBalancesForAddress = async ({
+	address,
+	evmRpcProviders,
+	evmRpcClient,
+	goldRushApiKey,
+	portfolioIndexer,
+	network,
+	solanaRpcClient,
+	startedAt,
+}: AllWalletAddressBalanceParams): Promise<WalletBalanceDiscoveryResult> => {
+	try {
+		if (network === "evm") {
+			const discoveryResult = goldRushApiKey
+				? await getGoldRushEvmTokenBalances({
+					address,
+					indexer: assertPortfolioIndexer(portfolioIndexer),
+				})
+				: await getAllAlchemyEvmTokenBalances(
+					evmRpcProviders,
+					assertEvmRpcClient(evmRpcClient),
+					address,
+				);
+
+			if (
+				!goldRushApiKey ||
+				discoveryResult.errors.length === 0 ||
+				!shouldFallbackToAlchemy(discoveryResult)
+			) {
+				logWalletProviderTiming({
+					address,
+					durationMs: performance.now() - startedAt,
+					network,
+					provider: goldRushApiKey ? "goldrush_indexer" : "alchemy_rpc",
+					result: discoveryResult,
+				});
+				return discoveryResult;
+			}
+
+			const fallbackClients = getGoldRushFallbackAlchemyClients(
+				discoveryResult,
+				evmRpcProviders,
+			);
+
+			if (fallbackClients.length === 0) {
+				logWalletProviderTiming({
+					address,
+					durationMs: performance.now() - startedAt,
+					network,
+					provider: "goldrush_indexer",
+					result: discoveryResult,
+				});
+				return discoveryResult;
+			}
+
+			const fallbackStartedAt = performance.now();
+			const fallbackResult = await getAllAlchemyEvmTokenBalances(
+				fallbackClients,
+				assertEvmRpcClient(evmRpcClient),
+				address,
+			);
+			logWalletProviderTiming({
+				address,
+				durationMs: performance.now() - fallbackStartedAt,
+				network,
+				provider: "alchemy_rpc_fallback",
+				result: fallbackResult,
+			});
+
+			const result = {
+				balances: [...discoveryResult.balances, ...fallbackResult.balances],
+				errors: [...discoveryResult.errors, ...fallbackResult.errors],
+			};
+
+			logWalletProviderTiming({
+				address,
+				durationMs: performance.now() - startedAt,
+				network,
+				provider: "goldrush_indexer_with_rpc_fallback",
+				result,
+			});
+
+			return result;
+		}
+
+		const result = {
+			balances: await getAllSolanaTokenBalances(
+				assertSolanaRpcClient(solanaRpcClient),
+				address,
+			),
+			errors: [],
+		};
+
+		logWalletProviderTiming({
+			address,
+			durationMs: performance.now() - startedAt,
+			network,
+			provider: "solana_rpc",
+			result,
+		});
+
+		return result;
+	} catch (error) {
+		const result = {
+			balances: [],
+			errors: [{
+				address,
+				token: ALL_WALLET_TOKENS,
+				code: "BALANCE_FETCH_FAILED",
+				message: error instanceof Error ? error.message : "Unable to fetch balances",
+			}],
+		};
+
+		logWalletProviderTiming({
+			address,
+			durationMs: performance.now() - startedAt,
+			network,
+			provider: `${network}_rpc`,
+			result,
+		});
+
+		return result;
+	}
 };
 
 const shouldFallbackToAlchemy = (result: WalletBalanceDiscoveryResult): boolean =>
@@ -543,6 +709,16 @@ const assertPortfolioIndexer = (
 
 const createGoldRushPortfolioCacheKey = (address: string, chainIds: number[]): string =>
 	`portfolio:goldrush:${address.toLowerCase()}:${chainIds.join(",")}`;
+
+const createWalletBalanceDiscoveryCacheKey = ({
+	address,
+	network,
+	provider,
+}: {
+	address: string;
+	network: WalletBalancesQuery["network"];
+	provider: "goldrush" | "rpc";
+}): string => `portfolio:wallet-balances:${network}:${provider}:${address.toLowerCase()}`;
 
 const mapGoldRushTokenBalance = (
 	address: string,

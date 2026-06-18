@@ -8,8 +8,13 @@ export type CreateUserExchangeTokenBody = {
 	label?: unknown;
 	passphrase?: unknown;
 	permissions?: unknown;
+	subaccountName?: unknown;
 };
 
 export type CreateUserExchangeTokensBody = {
 	tokens?: unknown;
+};
+
+export type UpdateUserExchangeTokenBody = {
+	label?: unknown;
 };

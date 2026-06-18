@@ -3,6 +3,7 @@ import {
 	createUserExchangeTokensHandler,
 	deleteUserExchangeTokenHandler,
 	listUserExchangeTokensHandler,
+	updateUserExchangeTokenHandler,
 } from "./user-exchange-tokens.handlers";
 
 export const userExchangeTokenRoutes: Route[] = [
@@ -15,6 +16,11 @@ export const userExchangeTokenRoutes: Route[] = [
 		method: "POST",
 		pathname: "/portfolio/exchange-tokens",
 		handler: createUserExchangeTokensHandler,
+	},
+	{
+		method: "PATCH",
+		pathname: "/portfolio/exchange-tokens",
+		handler: updateUserExchangeTokenHandler,
 	},
 	{
 		method: "DELETE",

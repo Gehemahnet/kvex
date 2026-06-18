@@ -14,10 +14,12 @@ import type { CreateUserExchangeTokensBody } from "./user-exchange-tokens.types"
 import {
 	getUserExchangeTokens,
 	parseCreateUserExchangeTokensBody,
+	parseUpdateUserExchangeTokenBody,
 	parseUserExchangeTokenId,
 	removeUserExchangeToken,
 	sanitizeUserExchangeTokensForResponse,
 	saveUserExchangeTokens,
+	updateUserExchangeToken,
 } from "./user-exchange-tokens.utils";
 
 /** Handles `GET /portfolio/exchange-tokens` and returns saved exchange tokens. */
@@ -53,6 +55,31 @@ export const createUserExchangeTokensHandler = async (
 
 	writeJsonResponse(response, 201, {
 		tokens: sanitizeUserExchangeTokensForResponse(tokens),
+	});
+};
+
+/** Handles `PATCH /portfolio/exchange-tokens?id=...` and updates one exchange token. */
+export const updateUserExchangeTokenHandler = async (
+	request: IncomingMessage,
+	response: ServerResponse,
+	url: URL,
+) => {
+	const dependencies = getPortfolioDependencies();
+	const user = await getPortfolioMutationUser(dependencies.db, {
+		csrfToken: getCsrfRequestToken(request),
+		token: getAuthRequestToken(request),
+	});
+	const body = await readJsonBody<unknown>(request);
+	const input = parseUpdateUserExchangeTokenBody(body);
+	const token = await updateUserExchangeToken(
+		dependencies.db,
+		user.id,
+		parseUserExchangeTokenId(url),
+		input,
+	);
+
+	writeJsonResponse(response, 200, {
+		token: sanitizeUserExchangeTokensForResponse([token])[0],
 	});
 };
 

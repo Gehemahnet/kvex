@@ -83,9 +83,7 @@ describe("getWalletBalances", () => {
 		);
 
 		expect(result).toEqual({
-			address: ADDRESS,
-			addresses: [ADDRESS],
-			network: "evm",
+			networks: ["evm"],
 			tokens: ["native", TOKEN],
 			balances: [
 				{
@@ -255,31 +253,23 @@ describe("getWalletBalances", () => {
 				network: "evm",
 				tokens: ["all"],
 			},
-			{ evmRpcClient },
+			{
+				assetPriceResolver: createTestAssetPriceResolver({
+					ETH: 1703.19,
+					USDC: 1,
+				}),
+				evmRpcClient,
+			},
 		);
 
 		expect(result.balances).toEqual([
-			{
-				token: "native",
-				rawBalance: "1",
-				formattedBalance: "0.000000000000000001",
-				decimals: 18,
-				source: {
-					type: "wallet",
-					network: "evm",
-					address: ADDRESS,
-					chainId: 1,
-					chainKey: "ethereum",
-					chainName: "Ethereum",
-				},
-				symbol: "ETH",
-			},
 			{
 				token: TOKEN,
 				tokenAddress: TOKEN,
 				rawBalance: "1000000",
 				formattedBalance: "1",
 				decimals: 6,
+				priceUsd: 1,
 				source: {
 					type: "wallet",
 					network: "evm",
@@ -289,6 +279,24 @@ describe("getWalletBalances", () => {
 					chainName: "Ethereum",
 				},
 				symbol: "USDC",
+				valueUsd: 1,
+			},
+			{
+				token: "native",
+				rawBalance: "1",
+				formattedBalance: "0.000000000000000001",
+				decimals: 18,
+				priceUsd: 1703.19,
+				source: {
+					type: "wallet",
+					network: "evm",
+					address: ADDRESS,
+					chainId: 1,
+					chainKey: "ethereum",
+					chainName: "Ethereum",
+				},
+				symbol: "ETH",
+				valueUsd: 1.7031900000000002e-15,
 			},
 		]);
 	});
@@ -332,8 +340,8 @@ describe("getWalletBalances", () => {
 
 		const result = await getWalletBalances(
 			{
-				address: ADDRESS,
-				addresses: [ADDRESS],
+				address: SECOND_ADDRESS,
+				addresses: [SECOND_ADDRESS],
 				network: "evm",
 				tokens: ["all"],
 			},
@@ -347,9 +355,10 @@ describe("getWalletBalances", () => {
 
 		expect(result.balances).toHaveLength(1);
 		expect(result.balances[0]?.source.chainName).toBe("Ethereum");
+		expect(result.balances[0]?.source.address).toBe(SECOND_ADDRESS);
 		expect(result.errors).toEqual([
 			{
-				address: ADDRESS,
+				address: SECOND_ADDRESS,
 				token: "all",
 				code: "CHAIN_BALANCE_FETCH_FAILED",
 				message: "Polygon: HTTP 403",
@@ -631,7 +640,12 @@ describe("getWalletBalances", () => {
 				network: "solana",
 				tokens: ["all"],
 			},
-			{ solanaRpcClient },
+			{
+				assetPriceResolver: createTestAssetPriceResolver({
+					SOL: 69.37,
+				}),
+				solanaRpcClient,
+			},
 		);
 
 		expect(result.balances).toEqual([
@@ -640,13 +654,32 @@ describe("getWalletBalances", () => {
 				rawBalance: "2000000000",
 				formattedBalance: "2",
 				decimals: 9,
+				priceUsd: 69.37,
 				source: {
 					type: "wallet",
 					network: "solana",
 					address: SOLANA_ADDRESS,
 				},
 				symbol: "SOL",
+				valueUsd: 138.74,
 			},
 		]);
 	});
 });
+
+const createTestAssetPriceResolver = (
+	prices: Record<string, number>,
+) => async (symbols: string[]) =>
+	new Map(
+		symbols
+			.filter((symbol) => prices[symbol] !== undefined)
+			.map((symbol) => [
+				symbol,
+				{
+					symbol,
+					priceUsd: prices[symbol] ?? 0,
+					source: "test",
+					updatedAt: "2026-01-01T00:00:00.000Z",
+				},
+			]),
+	);

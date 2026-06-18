@@ -10,6 +10,7 @@ import {
 } from "#services/spreads/spreads-core/spreads.constants";
 import type {
 	SpreadOpportunity,
+	SpreadBalanceProfile,
 	SpreadConfidenceBreakdown,
 	SpreadExecutableNotionalReason,
 	SpreadPriceSource,
@@ -66,6 +67,7 @@ export const createSpreadOpportunity = (
 		now?: number;
 		positionSizeUsd?: number;
 		holdingPeriodHours?: number;
+		balanceProfiles?: SpreadBalanceProfile[];
 	} = {},
 ): SpreadOpportunity | undefined => {
 	if (first.symbol !== second.symbol) {
@@ -107,6 +109,7 @@ export const createSpreadOpportunity = (
 	const maxExecutableNotional = createMaxExecutableNotional(
 		longSnapshot,
 		shortSnapshot,
+		options.balanceProfiles,
 	);
 
 	if (
@@ -488,6 +491,7 @@ const createExecutionSlippagePercent = (
 const createMaxExecutableNotional = (
 	longSnapshot: MarketSnapshot,
 	shortSnapshot: MarketSnapshot,
+	balanceProfiles: SpreadBalanceProfile[] = [],
 ): ExecutableNotional => {
 	if (longSnapshot.askPrice === undefined) {
 		return { reason: "missing-long-ask" };
@@ -510,10 +514,46 @@ const createMaxExecutableNotional = (
 	}
 
 	return {
-		value: Math.min(longNotional, shortNotional),
-		reason: "available",
+		...applyUserBalanceNotionalCap(
+			Math.min(longNotional, shortNotional),
+			longSnapshot,
+			shortSnapshot,
+			balanceProfiles,
+		),
 	};
 };
+
+const applyUserBalanceNotionalCap = (
+	marketNotional: number,
+	longSnapshot: MarketSnapshot,
+	shortSnapshot: MarketSnapshot,
+	balanceProfiles: SpreadBalanceProfile[],
+): ExecutableNotional => {
+	const balanceNotionals = [
+		findSpreadBalanceProfile(longSnapshot.exchange, balanceProfiles)?.availableNotionalUsd,
+		findSpreadBalanceProfile(shortSnapshot.exchange, balanceProfiles)?.availableNotionalUsd,
+	].filter((value): value is number => value !== undefined);
+
+	if (balanceNotionals.length === 0) {
+		return {
+			value: marketNotional,
+			reason: "available",
+		};
+	}
+
+	const userBalanceNotional = Math.min(...balanceNotionals);
+
+	return {
+		value: Math.min(marketNotional, userBalanceNotional),
+		reason: userBalanceNotional < marketNotional ? "user-balance" : "available",
+	};
+};
+
+const findSpreadBalanceProfile = (
+	exchange: MarketSnapshot["exchange"],
+	balanceProfiles: SpreadBalanceProfile[],
+): SpreadBalanceProfile | undefined =>
+	balanceProfiles.find((profile) => profile.exchange === exchange);
 
 /** Computes executable notional for one side from depth or top-of-book size. */
 const createExecutableSideNotional = (

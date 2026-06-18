@@ -2,8 +2,8 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { getUserExchangeBalances } from "#services/portfolio/exchange-balances/exchange-balances.service";
 import {
 	listUserExchangeAccounts,
-	updateUserExchangeAccountLastCheckedAt,
 	updateUserExchangeAccountPublicData,
+	updateUserExchangeAccountStatus,
 } from "#services/users/user-exchange-accounts/user-exchange-accounts.repository";
 import type {
 	UserExchangeAccount,
@@ -32,6 +32,8 @@ export const getMyExchangeBalancesHandler = async (
 	const data = await getUserExchangeBalances(accounts, {
 		onAccountChecked: (account) =>
 			markSuccessfulExchangeBalanceCheck(dependencies.db, user.id, account.id),
+		onAccountFailed: (account) =>
+			markFailedExchangeBalanceCheck(dependencies.db, user.id, account.id),
 		onFeeProfiles: (account, feeProfiles) =>
 			saveExchangeFeeProfiles(dependencies.db, user.id, account, feeProfiles),
 	});
@@ -44,9 +46,22 @@ const markSuccessfulExchangeBalanceCheck = async (
 	userId: string,
 	accountId: string,
 ): Promise<void> => {
-	await updateUserExchangeAccountLastCheckedAt(db, {
+	await updateUserExchangeAccountStatus(db, {
 		checkedAt: new Date(),
 		id: accountId,
+		status: "active",
+		userId,
+	});
+};
+
+const markFailedExchangeBalanceCheck = async (
+	db: ReturnType<typeof getPortfolioDependencies>["db"],
+	userId: string,
+	accountId: string,
+): Promise<void> => {
+	await updateUserExchangeAccountStatus(db, {
+		id: accountId,
+		status: "error",
 		userId,
 	});
 };

@@ -40,3 +40,18 @@ export type NadoMarketLiquidityResponse = {
 	error_code?: number;
 	request_type: string;
 };
+
+export type NadoSubaccountBalance = {
+	amount: string;
+	oraclePrice?: string;
+	productId: number;
+	symbol?: string;
+	type: "perp" | "spot";
+	valueUsd?: number;
+	vQuoteBalance?: string;
+};
+
+export type NadoSubaccountSummary = {
+	balances: NadoSubaccountBalance[];
+	exists: boolean;
+};

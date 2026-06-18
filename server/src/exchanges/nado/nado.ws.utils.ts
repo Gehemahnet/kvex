@@ -18,8 +18,6 @@ import type {
 	NadoBestBidOfferEvent,
 	NadoBookDepthEvent,
 	NadoFundingRateEvent,
-	NadoWsSubscriptionMessage,
-	NadoWsStreamSubscription,
 } from "./nado.ws.types";
 
 type NadoBookDepthResyncEvent = {
@@ -39,16 +37,6 @@ export type NadoBookDepthResyncSummary = {
 	actualLastMaxTimestamp?: string;
 	maxTimestamp?: string;
 };
-
-/** Builds per-product Nado market-data subscriptions for BBO, funding, and depth. */
-export const createNadoMarketDataSubscriptionMessage = (
-	productIds: number[],
-): NadoWsSubscriptionMessage[] =>
-	productIds.flatMap(createNadoProductSubscriptions).map((stream, index) => ({
-		method: "subscribe",
-		stream,
-		id: index + 1,
-	}));
 
 /** Type guard for live Nado best-bid-offer events. */
 export const isNadoBestBidOfferEvent = (
@@ -270,23 +258,6 @@ export const createNadoBookDepthResyncMonitor = (params: {
 				: undefined,
 	};
 };
-
-const createNadoProductSubscriptions = (
-	productId: number,
-): NadoWsStreamSubscription[] => [
-	{
-		type: "best_bid_offer",
-		product_id: productId,
-	},
-	{
-		type: "funding_rate",
-		product_id: productId,
-	},
-	{
-		type: "book_depth",
-		product_id: productId,
-	},
-];
 
 const normalizeX18Number = (value?: string): number | undefined => {
 	const numberValue = normalizeOptionalNumber(value);
