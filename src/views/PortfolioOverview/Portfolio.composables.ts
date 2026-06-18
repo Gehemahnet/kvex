@@ -1,9 +1,9 @@
 import { computed, ref } from "vue";
-import PortfolioAssetsTab from "./PortfolioAssetsTab/PortfolioAssetsTab.vue";
-import { usePortfolioAssetsTab } from "./PortfolioAssetsTab/PortfolioAssetsTab.composables";
-import PortfolioSourcesTab from "./PortfolioSourcesTab/PortfolioSourcesTab.vue";
-import { usePortfolioSourcesTab } from "./PortfolioSourcesTab/PortfolioSourcesTab.composables";
-import { PORTFOLIO_TAB_TITLES, PORTFOLIO_TAB_VALUES } from "./PortfolioOverview.constants";
+import PortfolioAssetsTab from "@views/PortfolioOverview/components/PortfolioAssetsTab/PortfolioAssetsTab.vue";
+import { usePortfolioAssetsTab } from "@views/PortfolioOverview/components/PortfolioAssetsTab/PortfolioAssetsTab.composables";
+import PortfolioSourcesTab from "@views/PortfolioOverview/components/PortfolioSourcesTab/PortfolioSourcesTab.vue";
+import { usePortfolioSourcesTab } from "@views/PortfolioOverview/components/PortfolioSourcesTab/PortfolioSourcesTab.composables";
+import { PORTFOLIO_TAB_TITLES, PORTFOLIO_TAB_VALUES } from "./Portfolio.constants";
 
 const PORTFOLIO_TABS = [
 	{

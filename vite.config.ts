@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
 	const serverPort = env.SERVER_PORT || "3000";
 
 	return {
-		plugins: [tailwindcss(), vue(), vueDevTools()],
+		plugins: [tailwindcss(), vue(), vueDevTools({launchEditor: 'webstorm'})],
 		resolve: {
 			alias: {
 				"@api": fileURLToPath(new URL("./src/api", import.meta.url)),

@@ -1,4 +1,4 @@
-import type { WalletType } from "../../../shared/types";
+import type { WalletType } from "@shared/types";
 
 export const DIALOG_HINTS = {
     evm: "Use comma or new line for multiple EVM wallets. Balances update only after Apply.",

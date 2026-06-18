@@ -4,24 +4,22 @@ import { computed, ref, watch } from "vue";
 import type { FilterPanelConfig } from "@components/FilterPanel/FilterPanel.types";
 import { useIndexedDbState } from "@utils/indexed-db-state.utils";
 import {
-	DEFAULT_BALANCE_TOKENS,
 	DEFAULT_PORTFOLIO_HIDE_SMALL_ASSETS,
 	DEFAULT_PORTFOLIO_MIN_ASSET_VALUE_USD,
 	PORTFOLIO_ASSET_FILTERS_INDEXED_DB_KEY,
-} from "../PortfolioOverview.constants";
+} from "../../Portfolio.constants";
 import {
 	useAssetPricesQuery,
-	useUserExchangeBalancesQuery,
-	useUserWalletBalancesQuery,
+	useUserPortfolioBalancesQuery,
 	USER_EXCHANGE_TOKENS_QUERY_KEY,
-} from "../PortfolioOverview.query";
+} from "../../Portfolio.query";
 import {
 	createExchangeAssetRows,
 	createPortfolioAssetRows,
 	formatUsdValue,
 	getPortfolioPriceSymbols,
 	getTotalPortfolioValueUsd,
-} from "../PortfolioOverview.utils";
+} from "../../Portfolio.utils";
 import { usePortfolioSourcesTab } from "../PortfolioSourcesTab/PortfolioSourcesTab.composables";
 
 type PortfolioAssetFilters = {
@@ -54,14 +52,9 @@ export const usePortfolioAssetsTab = createSharedComposable(() => {
 	);
 	const draftFilters = ref<PortfolioAssetFilters>({ ...appliedFilters.value });
 	const assetTableFilters = ref(createAssetTableFilters());
-	const balanceTokens = computed(() => DEFAULT_BALANCE_TOKENS);
-	const walletBalancesQuery = useUserWalletBalancesQuery({
-		enabled: computed(() => activeWalletSourceRows.value.length > 0),
-		tokens: balanceTokens,
-	});
-	const exchangeBalancesQuery = useUserExchangeBalancesQuery();
+	const portfolioBalancesQuery = useUserPortfolioBalancesQuery();
 	watch(
-		() => exchangeBalancesQuery.data.value,
+		() => portfolioBalancesQuery.data.value?.exchangeBalances,
 		(data) => {
 			if (data !== undefined) {
 				void queryClient.invalidateQueries({ queryKey: USER_EXCHANGE_TOKENS_QUERY_KEY });
@@ -69,13 +62,14 @@ export const usePortfolioAssetsTab = createSharedComposable(() => {
 		},
 	);
 	const walletBalances = computed(() =>
-		walletBalancesQuery.data.value?.balances ?? [],
+		portfolioBalancesQuery.data.value?.walletBalances.balances ?? [],
 	);
 	const exchangeBalances = computed(() =>
-		exchangeBalancesQuery.data.value?.balances ?? [],
+		portfolioBalancesQuery.data.value?.exchangeBalances.balances ?? [],
 	);
 	const exchangeAccountsCount = computed(() =>
-		exchangeBalances.value.length + (exchangeBalancesQuery.data.value?.errors.length ?? 0),
+		exchangeBalances.value.length +
+		(portfolioBalancesQuery.data.value?.exchangeBalances.errors.length ?? 0),
 	);
 	const priceSymbols = computed(() =>
 		getPortfolioPriceSymbols(walletBalances.value),
@@ -128,10 +122,10 @@ export const usePortfolioAssetsTab = createSharedComposable(() => {
 		totalPortfolioValueUsd.value > 0 ? formatUsdValue(totalPortfolioValueUsd.value) : "-",
 	);
 	const balanceErrors = computed(() =>
-		walletBalancesQuery.data.value?.errors ?? [],
+		portfolioBalancesQuery.data.value?.walletBalances.errors ?? [],
 	);
 	const balanceSourceResults = computed(() =>
-		walletBalancesQuery.data.value?.sourceResults ?? [],
+		portfolioBalancesQuery.data.value?.walletBalances.sourceResults ?? [],
 	);
 	const balanceErrorMessages = computed(() =>
 		balanceErrors.value.map((error) => {
@@ -142,40 +136,39 @@ export const usePortfolioAssetsTab = createSharedComposable(() => {
 	);
 	const balanceQueryErrors = computed(() =>
 		[
-			walletBalancesQuery.error.value,
+			portfolioBalancesQuery.error.value,
 			assetPricesQuery.error.value,
-			exchangeBalancesQuery.error.value,
 		].filter(
 			(error): error is Error => error instanceof Error,
 		),
 	);
 	const exchangeBalanceErrorMessages = computed(() =>
-		(exchangeBalancesQuery.data.value?.errors ?? []).map((error) =>
+		(portfolioBalancesQuery.data.value?.exchangeBalances.errors ?? []).map((error) =>
 			`${error.exchange}: ${error.message}`
 		),
 	);
 	const exchangeBalanceErrorsCount = computed(() =>
-		exchangeBalancesQuery.data.value?.errors.length ?? 0
+		portfolioBalancesQuery.data.value?.exchangeBalances.errors.length ?? 0
 	);
 	const totalWalletSourcesCount = computed(() => activeWalletSourceRows.value.length);
 	const loadedWalletSourcesCount = computed(() =>
 		balanceSourceResults.value.filter((result) => result.status !== "failed").length,
 	);
 	const loadingWalletSourcesCount = computed(() =>
-		walletBalancesQuery.isFetching.value || walletBalancesQuery.isLoading.value
+		portfolioBalancesQuery.isFetching.value || portfolioBalancesQuery.isLoading.value
 			? Math.max(totalWalletSourcesCount.value - balanceSourceResults.value.length, 0)
 			: 0,
 	);
 	const failedWalletSourcesCount = computed(() =>
 		balanceSourceResults.value.filter((result) => result.status === "failed").length +
-		(walletBalancesQuery.isError.value ? totalWalletSourcesCount.value : 0),
+		(portfolioBalancesQuery.isError.value ? totalWalletSourcesCount.value : 0),
 	);
 	const failedBalanceSourcesCount = computed(() =>
 		failedWalletSourcesCount.value + exchangeBalanceErrorsCount.value
 	);
 	const walletLoadStatus = computed(() => {
 		if (totalWalletSourcesCount.value === 0) {
-			if (exchangeBalancesQuery.isFetching.value || exchangeBalancesQuery.isLoading.value) {
+			if (portfolioBalancesQuery.isFetching.value || portfolioBalancesQuery.isLoading.value) {
 				return "Checking exchange accounts";
 			}
 
@@ -198,13 +191,11 @@ export const usePortfolioAssetsTab = createSharedComposable(() => {
 			: baseStatus;
 	});
 	const isBalancesFetching = computed(() =>
-		walletBalancesQuery.isFetching.value ||
-		walletBalancesQuery.isLoading.value ||
-		exchangeBalancesQuery.isFetching.value ||
-		exchangeBalancesQuery.isLoading.value
+		portfolioBalancesQuery.isFetching.value ||
+		portfolioBalancesQuery.isLoading.value
 	);
 	const shouldShowAssetTableLoader = computed(() =>
-		(walletBalancesQuery.isLoading.value || exchangeBalancesQuery.isLoading.value) &&
+		portfolioBalancesQuery.isLoading.value &&
 		filteredAssetRows.value.length === 0
 	);
 	const assetTableEmptyMessage = computed(() => {
@@ -227,17 +218,11 @@ export const usePortfolioAssetsTab = createSharedComposable(() => {
 	);
 
 	const refreshWalletBalances = async () => {
-		await Promise.all([
-			walletBalancesQuery.refetch(),
-			exchangeBalancesQuery.refetch(),
-		]);
+		await portfolioBalancesQuery.refetch();
 	};
 
 	const retryFailedWalletBalances = async () => {
-		await Promise.all([
-			walletBalancesQuery.refetch(),
-			exchangeBalancesQuery.refetch(),
-		]);
+		await portfolioBalancesQuery.refetch();
 	};
 
 	const syncDraftFilters = () => {

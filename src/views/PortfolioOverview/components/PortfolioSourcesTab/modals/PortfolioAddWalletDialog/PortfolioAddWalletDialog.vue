@@ -7,10 +7,10 @@ import FormItem from "@components/FormItem/FormItem.vue";
 import {
   DIALOG_HINTS,
   WALLET_NETWORK_OPTIONS
-} from "@views/PortfolioOverview/PortfolioAddWalletDialog/PortfolioAddWalletDialog.constants";
+} from "./PortfolioAddWalletDialog.constants";
 import {
   useAddWalletDialog
-} from "@views/PortfolioOverview/PortfolioAddWalletDialog/PortfolioAddWalletDialog.composables";
+} from "./PortfolioAddWalletDialog.composables";
 
 const emit = defineEmits<{
   confirm: [];

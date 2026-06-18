@@ -6,7 +6,7 @@ import DataTable from "primevue/datatable";
 import InputNumber from "primevue/inputnumber";
 import Select from "primevue/select";
 import FilterPanel from "@components/FilterPanel/FilterPanel.vue";
-import { formatUsdValue } from "../PortfolioOverview.utils";
+import { formatUsdValue } from "../../Portfolio.utils";
 import { usePortfolioAssetsTab } from "./PortfolioAssetsTab.composables";
 
 const {
@@ -181,19 +181,14 @@ const getAssetIconFallbackLabel = (symbol: string): string =>
 
 		<Column
 			field="chainName"
-			header="Network"
+			header="Location"
 			:show-filter-match-modes="false"
 			sortable
 		>
 			<template #body="{ data }">
-				<div class="flex flex-col gap-1">
-					<span class="font-bold text-[var(--p-text-color)]">
-						{{ data.chainName }}
-					</span>
-					<span class="text-xs uppercase text-[var(--kvex-text-muted-color)]">
-						{{ data.sourceNetwork }}
-					</span>
-				</div>
+				<span class="font-bold text-[var(--p-text-color)]">
+					{{ data.chainName }}
+				</span>
 			</template>
 			<template #filter="{ filterModel }">
 				<Select
@@ -210,18 +205,13 @@ const getAssetIconFallbackLabel = (symbol: string): string =>
 
 		<Column
 			field="sourceLabel"
-			header="Data Source"
+			header="Source"
 			sortable
 		>
 			<template #body="{ data }">
-				<div class="flex flex-col gap-1">
-					<span class="font-semibold text-[var(--p-text-color)]">
-						{{ data.sourceType }}
-					</span>
-					<span class="text-xs text-[var(--kvex-text-muted-color)]">
-						{{ data.sourceLabel }}
-					</span>
-				</div>
+				<span class="text-xs text-[var(--kvex-text-muted-color)]">
+					{{ data.sourceLabel }}
+				</span>
 			</template>
 		</Column>
 

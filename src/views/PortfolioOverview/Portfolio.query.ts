@@ -20,6 +20,10 @@ export const USER_EXCHANGE_BALANCES_QUERY_KEY = [
 	"portfolio",
 	"userExchangeBalances",
 ] as const;
+export const USER_PORTFOLIO_BALANCES_QUERY_KEY = [
+	"portfolio",
+	"userPortfolioBalances",
+] as const;
 export const USER_EXCHANGE_TOKENS_QUERY_KEY = [
 	"portfolio",
 	"exchangeTokens",
@@ -93,6 +97,15 @@ export const useUserExchangeBalancesQuery = () =>
 	useQuery({
 		queryKey: USER_EXCHANGE_BALANCES_QUERY_KEY,
 		queryFn: () => portfolioApi.getUserExchangeBalances(),
+		retry: false,
+		staleTime: PORTFOLIO_CACHE_TTL_MS,
+	});
+
+/** Fetches current-user wallet and exchange balances from saved portfolio sources. */
+export const useUserPortfolioBalancesQuery = () =>
+	useQuery({
+		queryKey: USER_PORTFOLIO_BALANCES_QUERY_KEY,
+		queryFn: () => portfolioApi.getUserPortfolioBalances(),
 		retry: false,
 		staleTime: PORTFOLIO_CACHE_TTL_MS,
 	});

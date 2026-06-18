@@ -3,6 +3,7 @@ import {
 	useQueryClient,
 } from "@tanstack/vue-query";
 import useVuelidate from "@vuelidate/core";
+import { useToast } from "primevue/usetoast";
 import {
 	computed,
 	nextTick,
@@ -17,13 +18,13 @@ import { useAuthSession } from "@views/Auth/Auth.composable";
 import {
 	USER_PORTFOLIO_SOURCES_QUERY_KEY,
 	USER_WALLET_BALANCES_QUERY_KEY,
-} from "@views/PortfolioOverview/PortfolioOverview.query";
+} from "@views/PortfolioOverview/Portfolio.query";
 import {
 	parseSolanaWalletAddressesInput,
 	parseWalletAddressesInput,
-} from "@views/PortfolioOverview/PortfolioOverview.utils";
-import type { WalletType } from "../../../shared/types";
-import { validationRules } from "../../../shared/utils/validation";
+} from "@views/PortfolioOverview/Portfolio.utils";
+import type { WalletType } from "@shared/types";
+import { validationRules } from "@shared/utils/validation";
 
 export const useAddWalletDialog = () => {
 	const walletForm = ref({
@@ -31,6 +32,7 @@ export const useAddWalletDialog = () => {
 	});
 	const activeWalletNetwork = ref<WalletType>("evm");
 	const queryClient = useQueryClient();
+	const toast = useToast();
 
 	const { validateAddress, requiredField } = validationRules;
 
@@ -46,7 +48,22 @@ export const useAddWalletDialog = () => {
 
 			return portfolioApi.createUserPortfolioSources({ sources }, session.csrfToken);
 		},
-		onSuccess: invalidatePortfolioTables,
+		onSuccess: () => {
+			invalidatePortfolioTables();
+			toast.add({
+				severity: "success",
+				summary: "Wallet source added",
+				life: 3000,
+			});
+		},
+		onError: (error) => {
+			toast.add({
+				severity: "error",
+				summary: "Wallet source was not added",
+				detail: getErrorToastDetail(error),
+				life: 5000,
+			});
+		},
 	});
 
 	const confirmWalletAddresses = async () => {
@@ -99,3 +116,6 @@ export const useAddWalletDialog = () => {
 	}
 
 };
+
+const getErrorToastDetail = (error: unknown): string =>
+	error instanceof Error ? error.message : "Please try again.";

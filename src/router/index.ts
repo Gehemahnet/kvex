@@ -8,7 +8,7 @@ import { useAuthSession } from "@views/Auth/Auth.composable";
 const FundingOverviewView = () =>
 	import("@views/FundingOverview/FundingOverview.vue");
 const PortfolioOverviewView = () =>
-	import("@views/PortfolioOverview/PortfolioOverview.vue");
+	import("@views/PortfolioOverview/Portfolio.vue");
 const SpreadsOverviewView = () =>
 	import("@views/SpreadsOverview/SpreadsOverview.vue");
 const LoginView = () => import("@views/Auth/LoginView.vue");

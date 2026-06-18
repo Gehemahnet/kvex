@@ -3,6 +3,7 @@ import "./style.css";
 import { VueQueryPlugin } from "@tanstack/vue-query";
 import PrimeVue from "primevue/config";
 import Tooltip from "primevue/tooltip";
+import ToastService from "primevue/toastservice";
 import App from "./App.vue";
 import { router } from "./router";
 import { PrimaryPreset } from "./theme/primary.theme";
@@ -21,5 +22,6 @@ app
 	})
 	.use(router)
 	.use(VueQueryPlugin)
+	.use(ToastService)
 	.directive("tooltip", Tooltip)
 	.mount("#app");

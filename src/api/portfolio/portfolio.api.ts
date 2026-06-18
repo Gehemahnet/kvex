@@ -9,10 +9,13 @@ import type {
 	AssetPricesResponse,
 	CreateUserPortfolioSourcesRequest,
 	CreateUserExchangeTokensRequest,
+	UpdateUserExchangeTokenRequest,
 	UpdateUserPortfolioSourceRequest,
 	UserExchangeToken,
+	UserExchangeTokenResponse,
 	UserExchangeTokensResponse,
 	UserPortfolioSource,
+	UserPortfolioBalancesResponse,
 	UserPortfolioSourceResponse,
 	UserPortfolioSourcesResponse,
 	UserExchangeBalancesResponse,
@@ -183,6 +186,23 @@ export const portfolioApi = {
 			query: { id },
 		}),
 
+	/** Updates one exchange access token for the current user. */
+	updateUserExchangeToken: (
+		id: string,
+		body: UpdateUserExchangeTokenRequest,
+		csrfToken: string,
+	): Promise<UserExchangeToken> =>
+		apiPatch<UserExchangeTokenResponse, UpdateUserExchangeTokenRequest>(
+			"/api/portfolio/exchange-tokens",
+			body,
+			{
+				headers: {
+					"X-CSRF-Token": csrfToken,
+				},
+				query: { id },
+			},
+		).then((body) => body.token),
+
 	/** Fetches current-user balances from saved wallet sources. */
 	getUserWalletBalances: (
 		params: UserWalletBalancesRequestParams,
@@ -194,4 +214,8 @@ export const portfolioApi = {
 	/** Fetches current-user balances from saved exchange accounts. */
 	getUserExchangeBalances: (): Promise<UserExchangeBalancesResponse> =>
 		apiGet<UserExchangeBalancesResponse>("/api/portfolio/exchange-balances/me"),
+
+	/** Fetches current-user wallet and exchange balances from saved portfolio sources. */
+	getUserPortfolioBalances: (): Promise<UserPortfolioBalancesResponse> =>
+		apiGet<UserPortfolioBalancesResponse>("/api/portfolio/balances/me"),
 };

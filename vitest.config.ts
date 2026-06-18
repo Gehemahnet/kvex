@@ -17,6 +17,6 @@ export default {
 	},
 	test: {
 		environment: "node",
-		include: ["src/**/*.spec.ts"],
+		include: ["tests/**/*.spec.ts"],
 	},
 };

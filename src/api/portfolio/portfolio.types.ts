@@ -78,10 +78,6 @@ export type WalletBalanceSourceResult = {
 };
 
 export type WalletBalancesResponse = {
-	address: string;
-	addresses: string[];
-	addressesByNetwork?: Partial<Record<WalletBalanceNetwork, string[]>>;
-	network: WalletBalanceNetwork;
 	networks?: WalletBalanceNetwork[];
 	tokens: WalletBalanceTokenInput[];
 	balances: WalletTokenBalance[];
@@ -138,6 +134,11 @@ export type UserExchangeBalancesResponse = {
 	errors: UserExchangeBalanceError[];
 };
 
+export type UserPortfolioBalancesResponse = {
+	exchangeBalances: UserExchangeBalancesResponse;
+	walletBalances: WalletBalancesResponse;
+};
+
 export type UserExchangePermission =
 	| "balances"
 	| "orders"
@@ -155,7 +156,8 @@ export type UserExchangeTokenExchange =
 	| "hyperliquid"
 	| "nado"
 	| "okx"
-	| "pacifica";
+	| "pacifica"
+	| "variational";
 
 export type UserExchangeTokenStatus = "active" | "disabled" | "error";
 
@@ -168,6 +170,7 @@ export type UserExchangeTokenPublicData = {
 	expiresAt?: string;
 	passphrase?: string;
 	permissions?: UserExchangePermission[];
+	subaccountName?: string;
 };
 
 export type UserExchangeToken = {
@@ -193,10 +196,19 @@ export type CreateUserExchangeTokenRequest = {
 	label?: string;
 	passphrase?: string;
 	permissions: UserExchangePermission[];
+	subaccountName?: string;
 };
 
 export type CreateUserExchangeTokensRequest = {
 	tokens: CreateUserExchangeTokenRequest[];
+};
+
+export type UpdateUserExchangeTokenRequest = {
+	label: string;
+};
+
+export type UserExchangeTokenResponse = {
+	token: UserExchangeToken;
 };
 
 export type UserExchangeTokensResponse = {

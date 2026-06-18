@@ -28,6 +28,8 @@ export type PortfolioWalletSourceRow = {
 	network: WalletBalanceNetwork;
 	sourceLabel: string;
 	status: "active" | "disabled";
+	valueUsd?: number;
+	valueUsdLabel: string;
 };
 
 export type PortfolioExchangeTokenRow = {
@@ -39,4 +41,6 @@ export type PortfolioExchangeTokenRow = {
 	label: string;
 	permissions: UserExchangePermission[];
 	status: string;
+	valueUsd?: number;
+	valueUsdLabel: string;
 };

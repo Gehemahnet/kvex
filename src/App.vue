@@ -1,4 +1,5 @@
 <template>
+	<Toast />
 	<RouterView v-if="isStandaloneRoute" />
 	<div
 		v-else
@@ -144,6 +145,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "primevue/button";
 import Popover from "primevue/popover";
+import Toast from "primevue/toast";
 import { authApi } from "@api/auth";
 import { ROUTES } from "./router";
 import { useAuthSession } from "./views/Auth/Auth.composable";

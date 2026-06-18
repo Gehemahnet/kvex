@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { spreadsApi } from "@api/spreads";
-import { createSpreadsQueryKey } from "./SpreadsOverview.query";
+import { createSpreadsQueryKey } from "@views/SpreadsOverview/SpreadsOverview.query";
 
 describe("SpreadsOverview query", () => {
 	it("creates stable cache keys from spread filters", () => {

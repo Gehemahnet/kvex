@@ -9,7 +9,7 @@ import type {
 import type {
 	PortfolioAssetRow,
 	PortfolioExchangeTokenRow,
-} from "./PortfolioOverview.types";
+} from "./Portfolio.types";
 import { DEFAULT_CURRENCY } from "@shared/constants/currencies";
 import {
 	isEvmAddress,
@@ -84,7 +84,7 @@ export const createPortfolioAssetRows = (
 				...(balance.logoUrl ? { logoUrl: balance.logoUrl } : {}),
 				name,
 				...(priceUsd ? { priceUsd } : {}),
-				sourceLabel: formatPortfolioSource(balance.source.address, balance.source.chainName),
+				sourceLabel: formatPortfolioSource(balance.source.address),
 				sourceNetwork: balance.source.network,
 				sourceType: "Wallet",
 				symbol,
@@ -137,6 +137,7 @@ export const createPortfolioExchangeTokenRows = (
 		label: token.label,
 		permissions: token.publicData.permissions ?? [],
 		status: token.status,
+		valueUsdLabel: "-",
 	}));
 
 const createPortfolioAssetRowId = (balance: WalletTokenBalance): string =>
@@ -176,14 +177,8 @@ export const formatUsdValue = (value: number): string =>
 	}).format(value);
 
 /** Formats a portfolio source label for table display. */
-export const formatPortfolioSource = (
-	address: string,
-	chainName?: string,
-): string => {
-	const walletLabel = `Wallet ${shortenAddress(address)}`;
-
-	return chainName ? `${chainName} / ${walletLabel}` : walletLabel;
-};
+export const formatPortfolioSource = (address: string): string =>
+	shortenAddress(address);
 
 /** Formats token amounts with enough precision for tiny non-zero balances. */
 export const formatPortfolioAssetAmount = (value: string): string => {

@@ -26,6 +26,7 @@ export const EXCHANGE_TOKEN_OPTIONS: {
 	{ label: "Pacifica", value: "pacifica" },
 	{ label: "Ethereal", value: "ethereal" },
 	{ label: "Nado", value: "nado" },
+	{ label: "Variational", value: "variational" },
 ];
 
 export const EXCHANGE_TOKEN_PERMISSION_OPTIONS: {

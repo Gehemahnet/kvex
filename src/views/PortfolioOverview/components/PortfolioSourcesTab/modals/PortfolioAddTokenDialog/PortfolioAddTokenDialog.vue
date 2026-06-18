@@ -2,13 +2,8 @@
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
-import MultiSelect from "primevue/multiselect";
 import Select from "primevue/select";
 import FormItem from "@components/FormItem/FormItem.vue";
-import {
-	EXCHANGE_TOKEN_OPTIONS,
-	EXCHANGE_TOKEN_PERMISSION_OPTIONS,
-} from "../PortfolioOverview.constants";
 import { useAddTokenDialog } from "./PortfolioAddTokenDialog.composables";
 
 const emit = defineEmits<{
@@ -18,13 +13,16 @@ const emit = defineEmits<{
 const isVisible = defineModel<boolean>("isVisible", { required: true });
 
 const {
+	canSaveExchangeToken,
 	confirmExchangeToken,
+	exchangeOptions,
 	isSavingExchangeToken,
-	requiresPassphrase,
+	permissionOptions,
 	resetTokenForm,
-	supportsAccountAddress,
-	supportsAddress,
+	selectedExchangeConfig,
+	selectedPermissionConfig,
 	tokenForm,
+	visibleFields,
 } = useAddTokenDialog();
 
 const closeTokenDialog = () => {
@@ -51,7 +49,8 @@ const saveToken = async () => {
 				<Select
 					v-model="tokenForm.exchange"
 					class="w-full"
-					:options="EXCHANGE_TOKEN_OPTIONS"
+					:options="exchangeOptions"
+					option-disabled="disabled"
 					option-label="label"
 					option-value="value"
 				/>
@@ -65,84 +64,36 @@ const saveToken = async () => {
 				/>
 			</FormItem>
 
-			<FormItem label="Permissions">
-				<MultiSelect
-					v-model="tokenForm.permissions"
+			<FormItem label="Permission type">
+				<Select
+					v-model="tokenForm.permissionType"
 					class="w-full"
-					:options="EXCHANGE_TOKEN_PERMISSION_OPTIONS"
+					:disabled="selectedExchangeConfig.disabled === true"
+					:options="permissionOptions"
+					option-disabled="disabled"
 					option-label="label"
 					option-value="value"
-					display="chip"
 				/>
 			</FormItem>
 
 			<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-				<FormItem label="API key">
+				<FormItem
+					v-for="field in visibleFields"
+					:key="field.name"
+					:label="field.label"
+				>
 					<InputText
-						v-model="tokenForm.apiKey"
+						v-model="tokenForm[field.name]"
 						class="w-full"
-						autocomplete="off"
-						placeholder="API key"
-					/>
-				</FormItem>
-
-				<FormItem label="API secret">
-					<InputText
-						v-model="tokenForm.apiSecret"
-						class="w-full"
-						autocomplete="off"
-						placeholder="Secret key"
-						type="password"
+						:autocomplete="field.autocomplete"
+						:placeholder="field.placeholder"
+						:type="field.type ?? 'text'"
 					/>
 				</FormItem>
 			</div>
 
-			<FormItem
-				v-if="requiresPassphrase"
-				label="Passphrase"
-			>
-				<InputText
-					v-model="tokenForm.passphrase"
-					class="w-full"
-					autocomplete="off"
-					placeholder="OKX passphrase"
-					type="password"
-				/>
-			</FormItem>
-
-			<FormItem
-				v-if="supportsAddress"
-				label="Account address"
-			>
-				<InputText
-					v-model="tokenForm.address"
-					class="w-full"
-					placeholder="0x..."
-				/>
-			</FormItem>
-
-			<FormItem
-				v-if="supportsAccountAddress"
-				label="Pacifica account"
-			>
-				<InputText
-					v-model="tokenForm.accountAddress"
-					class="w-full"
-					placeholder="Account address"
-				/>
-			</FormItem>
-
-			<FormItem label="Expires at">
-				<InputText
-					v-model="tokenForm.expiresAt"
-					class="w-full"
-					placeholder="2026-12-31"
-					type="date"
-				/>
-			</FormItem>
-
 			<p class="m-0 text-xs text-[var(--kvex-text-muted-color)]">
-				Base tokens should grant balances. Trades and order permissions are stored for future workflows but are not used by KVEX yet.
+				{{ selectedExchangeConfig.disabledReason ?? selectedPermissionConfig?.disabledReason ?? "Only the selected permission scope is saved for this exchange." }}
 			</p>
 		</div>
 
@@ -156,6 +107,7 @@ const saveToken = async () => {
 				<Button
 					icon="pi pi-check"
 					label="Save"
+					:disabled="!canSaveExchangeToken"
 					:loading="isSavingExchangeToken"
 					@click="saveToken"
 				/>

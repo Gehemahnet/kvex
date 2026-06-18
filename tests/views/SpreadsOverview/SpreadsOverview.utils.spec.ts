@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_CURRENCY, TOKENS } from "@shared/constants/currencies";
+import type { SpreadOpportunity } from "@api/spreads";
 import {
 	filterSpreadOpportunities,
 	formatAverageSpread,
@@ -8,9 +10,7 @@ import {
 	getSpreadsSelectionStatus,
 	hasFeeAdjustedSpread,
 	shouldWarnAboutFeeAdjustedSpread,
-} from "./SpreadsOverview.utils";
-import {DEFAULT_CURRENCY, TOKENS} from "../../shared/constants/currencies";
-import {SpreadOpportunity} from "../../api/spreads";
+} from "@views/SpreadsOverview/SpreadsOverview.utils";
 
 describe("SpreadsOverview utils", () => {
 	it("formats spread and funding impact percentages", () => {

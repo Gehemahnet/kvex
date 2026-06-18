@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { portfolioApi } from "@api/portfolio";
-import { TOKENS } from "../../shared/constants/currencies";
+import { TOKENS } from "@shared/constants/currencies";
 import {
 	createPortfolioAssetRows,
 	formatPortfolioAssetAmount,
@@ -10,7 +10,7 @@ import {
 	parseWalletAddressesInput,
 	parseSolanaWalletAddressesInput,
 	shortenAddress,
-} from "./PortfolioOverview.utils";
+} from "@views/PortfolioOverview/PortfolioOverview.utils";
 
 const ADDRESS = "0x1111111111111111111111111111111111111111";
 const SECOND_ADDRESS = "0x2222222222222222222222222222222222222222";
@@ -65,7 +65,7 @@ describe("PortfolioOverview utils", () => {
 				chainName: "EVM",
 				name: shortenAddress(TOKEN),
 				priceUsd: 1,
-				sourceLabel: `Wallet ${shortenAddress(ADDRESS)}`,
+				sourceLabel: shortenAddress(ADDRESS),
 				sourceNetwork: "evm",
 				sourceType: "Wallet",
 				symbol: TOKENS.usdc,

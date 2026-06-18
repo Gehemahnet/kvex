@@ -6,7 +6,7 @@ import TabPanels from "primevue/tabpanels";
 import Tabs from "primevue/tabs";
 import CollapsibleCard from "@components/CollapsibleCard/CollapsibleCard.vue";
 import PortfolioSummaryCard from "./components/PortfolioSummaryCard.vue";
-import { usePortfolioOverviewPage } from "./PortfolioOverview.composables";
+import { usePortfolioOverviewPage } from "./Portfolio.composables";
 
 const {
 	activePortfolioTab,
