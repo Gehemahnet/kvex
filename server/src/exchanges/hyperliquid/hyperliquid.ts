@@ -15,6 +15,8 @@ import {
 	HyperliquidInfoRequestType,
 	HyperliquidSpotClearinghouseState,
 	HyperliquidSpotClearinghouseStateRequestBody,
+	HyperliquidUserFees,
+	HyperliquidUserFeesRequestBody,
 } from "./hyperliquid.types";
 
 class HyperliquidDexClient extends DexRestClient {
@@ -105,6 +107,13 @@ class HyperliquidDexClient extends DexRestClient {
 			type: HyperliquidInfoRequestType.SpotClearinghouseState,
 			user,
 		});
+	}
+
+	async getUserFees(user: string): Promise<HyperliquidUserFees> {
+		return this.httpClient.post<HyperliquidUserFees, HyperliquidUserFeesRequestBody>(
+			this.getInfoUrl().href,
+			{ type: HyperliquidInfoRequestType.UserFees, user },
+		);
 	}
 }
 

@@ -37,6 +37,7 @@ export type WalletTokenBalance = {
 export type WalletBalanceError = {
 	address: string;
 	chainId?: number;
+	label?: string;
 	token: WalletBalanceTokenInput;
 	code: string;
 	message: string;
@@ -45,6 +46,7 @@ export type WalletBalanceError = {
 export type WalletBalanceSourceResult = {
 	address: string;
 	network: WalletBalanceNetwork;
+	label?: string;
 	balancesCount: number;
 	errorsCount: number;
 	status: "success" | "partial" | "failed";

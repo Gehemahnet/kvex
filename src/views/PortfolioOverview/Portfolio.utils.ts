@@ -84,7 +84,7 @@ export const createPortfolioAssetRows = (
 				...(balance.logoUrl ? { logoUrl: balance.logoUrl } : {}),
 				name,
 				...(priceUsd ? { priceUsd } : {}),
-				sourceLabel: formatPortfolioSource(balance.source.address),
+				sourceLabel: balance.source.label ?? formatPortfolioSource(balance.source.address),
 				sourceNetwork: balance.source.network,
 				sourceType: "Wallet",
 				symbol,

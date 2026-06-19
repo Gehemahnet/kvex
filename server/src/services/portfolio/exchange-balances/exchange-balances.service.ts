@@ -16,6 +16,7 @@ import type {
 	UserExchangeBalanceResult,
 	UserExchangeBalancesResponse,
 } from "./exchange-balances.types";
+import { EXCHANGE_FEE_PROFILE_TTL_MS } from "./exchange-balances.constants";
 
 type UserExchangeBalanceSuccess = {
 	balance: UserExchangeBalanceResult;
@@ -76,7 +77,7 @@ const getUserExchangeBalance = async (
 		let result: UserExchangeBalanceSuccess;
 
 		if (account.exchange === "hyperliquid") {
-			result = { balance: await getHyperliquidUserExchangeBalance(account) };
+			result = await getHyperliquidUserExchangeBalance(account);
 		} else if (account.exchange === "nado") {
 			result = { balance: await getNadoUserExchangeBalance(account) };
 		} else if (account.exchange === "okx") {
@@ -105,6 +106,7 @@ const getUserExchangeBalance = async (
 			accountId: account.id,
 			exchange: account.exchange,
 			code: getExchangeBalanceErrorCode(error),
+			label: account.label,
 			message: getExchangeBalanceErrorMessage(error),
 		};
 
@@ -164,7 +166,7 @@ const assertExchangeAccountTokenIsUsable = (
 
 const getHyperliquidUserExchangeBalance = async (
 	account: UserExchangeAccount,
-): Promise<UserExchangeBalanceResult> => {
+): Promise<UserExchangeBalanceSuccess> => {
 	const data = account.publicData.exchange === "hyperliquid"
 		? account.publicData
 		: undefined;
@@ -177,9 +179,10 @@ const getHyperliquidUserExchangeBalance = async (
 		);
 	}
 
-	const [perpState, spotState] = await Promise.all([
+	const [perpState, spotState, fees] = await Promise.all([
 		hyperliquidRestClient.getClearinghouseState(address),
 		hyperliquidRestClient.getSpotClearinghouseState(address),
+		refreshUserExchangeFeeProfiles(account),
 	]);
 	const assets: UserExchangeBalanceAsset[] = [];
 	const accountValue = parseOptionalNumber(perpState.marginSummary?.accountValue);
@@ -207,15 +210,38 @@ const getHyperliquidUserExchangeBalance = async (
 	}
 
 	return {
-		accountId: account.id,
-		exchange: "hyperliquid",
-		label: account.label,
-		assets,
-		...(accountValue === undefined ? {} : { totalValueUsd: accountValue }),
-		...(perpState.time === undefined
-			? {}
-			: { updatedAt: new Date(perpState.time).toISOString() }),
+		balance: {
+			accountId: account.id,
+			exchange: "hyperliquid",
+			label: account.label,
+			assets,
+			...(accountValue === undefined ? {} : { totalValueUsd: accountValue }),
+			...(perpState.time === undefined
+				? {}
+				: { updatedAt: new Date(perpState.time).toISOString() }),
+		},
+		...(fees === undefined ? {} : { feeProfiles: fees }),
 	};
+};
+
+const mapHyperliquidUserFees = (
+	fees: { userAddRate: string; userCrossRate: string },
+): UserExchangeFeeProfile[] => {
+	const makerFeeRate = parseOptionalNumber(fees.userAddRate);
+	const takerFeeRate = parseOptionalNumber(fees.userCrossRate);
+
+	if (makerFeeRate === undefined || takerFeeRate === undefined) {
+		return [];
+	}
+
+	return [{
+		expiresAt: new Date(Date.now() + EXCHANGE_FEE_PROFILE_TTL_MS).toISOString(),
+		instrumentType: "PERP",
+		makerFeeRate,
+		marketType: "perp",
+		source: "api",
+		takerFeeRate,
+	}];
 };
 
 const getNadoUserExchangeBalance = async (
@@ -281,14 +307,13 @@ const getOkxUserExchangeBalance = async (
 	const credentials = { apiKey, apiSecret, passphrase };
 	const [balances, fees] = await Promise.all([
 		okxClient.getAccountBalance(credentials),
-		okxClient.getTradeFee(credentials, { instType: "SWAP" })
-			.catch(() => [] as OkxTradeFee[]),
+		refreshUserExchangeFeeProfiles(account),
 	]);
 	const [accountBalance] = balances;
 
 	return {
 		balance: mapOkxAccountBalance(account, accountBalance),
-		feeProfiles: mapOkxTradeFees(fees),
+		...(fees === undefined ? {} : { feeProfiles: fees }),
 	};
 };
 
@@ -328,8 +353,6 @@ const mapOkxTradeFees = (
 	fees.flatMap((fee) => {
 		const makerFeeRate = parseOptionalNumber(fee.maker);
 		const takerFeeRate = parseOptionalNumber(fee.taker);
-		const timestamp = parseOptionalNumber(fee.ts);
-
 		if (makerFeeRate === undefined || takerFeeRate === undefined) {
 			return [];
 		}
@@ -341,11 +364,56 @@ const mapOkxTradeFees = (
 			instrumentType: fee.instType ?? "SWAP",
 			marketType: "perp",
 			...(fee.level === undefined ? {} : { tierLabel: fee.level }),
-			...(timestamp === undefined
-				? {}
-				: { expiresAt: new Date(timestamp + 180_000).toISOString() }),
+			expiresAt: new Date(Date.now() + EXCHANGE_FEE_PROFILE_TTL_MS).toISOString(),
 		}];
 	});
+
+/** Refreshes an expired account-specific fee profile without affecting balance reads. */
+export const refreshUserExchangeFeeProfiles = async (
+	account: UserExchangeAccount,
+): Promise<UserExchangeFeeProfile[] | undefined> => {
+	if (!shouldRefreshFeeProfiles(account)) {
+		return undefined;
+	}
+
+	try {
+		if (account.publicData.exchange === "hyperliquid") {
+			const address = account.publicData.address?.trim();
+
+			return address
+				? mapHyperliquidUserFees(await hyperliquidRestClient.getUserFees(address))
+				: undefined;
+		}
+
+		if (account.publicData.exchange === "okx") {
+			const { apiKey, apiSecret, passphrase } = account.publicData;
+
+			if (!apiKey?.trim() || !apiSecret?.trim() || !passphrase?.trim()) {
+				return undefined;
+			}
+
+			return mapOkxTradeFees(await okxClient.getTradeFee(
+				{ apiKey: apiKey.trim(), apiSecret: apiSecret.trim(), passphrase: passphrase.trim() },
+				{ instType: "SWAP" },
+			));
+		}
+	} catch {
+		return undefined;
+	}
+
+	return undefined;
+};
+
+const shouldRefreshFeeProfiles = (
+	account: UserExchangeAccount,
+	now: number = Date.now(),
+): boolean =>
+	!(account.publicData.feeProfiles ?? []).some((profile) =>
+		profile.source === "api" &&
+		profile.marketType === "perp" &&
+		profile.expiresAt !== undefined &&
+		new Date(profile.expiresAt).getTime() > now
+	);
 
 const getPacificaUserExchangeBalance = async (
 	account: UserExchangeAccount,

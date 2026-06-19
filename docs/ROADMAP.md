@@ -71,7 +71,8 @@
 - backend portfolio balance responses drop known spam and unsupported priced
   tokens before they reach the frontend
 - authenticated `/spreads` reads can apply saved account-specific fee profiles;
-  OKX SWAP fees are refreshed during exchange balance reads
+  OKX SWAP and Hyperliquid perp fees are refreshed during exchange balance reads
+  and by a periodic best-effort background job
 - exchange tokens do not gate public spread visibility; they only improve
   precision and prepare future portfolio/trading workflows
 
@@ -199,7 +200,8 @@
 4. Add frontend component/integration tests when Vue component test tooling is introduced.
 5. Keep Redis hot state focused on live market snapshots and opportunities.
 6. Before first release, move exchange API secrets from the temporary local JSONB bridge to encrypted secret storage.
-7. Expand account-specific fee profiles beyond OKX SWAP and add expiry/refresh jobs.
+7. Expand account-specific fee profiles beyond OKX SWAP and Hyperliquid perp to
+   the next exchanges whose official account-tier fee APIs are available.
 8. Add exchange account-history ingestion only after portfolio balances and fee profiles are stable.
 9. Add Postgres/Timescale for market and opportunity history.
 10. Add paper trading and execution audit log.

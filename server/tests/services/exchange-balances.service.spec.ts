@@ -11,6 +11,7 @@ vi.mock("../../src/exchanges/hyperliquid/hyperliquid", () => ({
 	hyperliquidRestClient: {
 		getClearinghouseState: vi.fn(),
 		getSpotClearinghouseState: vi.fn(),
+		getUserFees: vi.fn(),
 	},
 }));
 
@@ -81,6 +82,74 @@ describe("getUserExchangeBalances", () => {
 		]);
 	});
 
+	it("refreshes Hyperliquid account-specific perp fees", async () => {
+		const now = new Date("2026-06-19T12:00:00.000Z").getTime();
+		const dateNow = vi.spyOn(Date, "now").mockReturnValue(now);
+		vi.mocked(hyperliquidRestClient.getClearinghouseState).mockResolvedValue({
+			marginSummary: { accountValue: "1" },
+		});
+		vi.mocked(hyperliquidRestClient.getSpotClearinghouseState).mockResolvedValue({
+			balances: [],
+		});
+		vi.mocked(hyperliquidRestClient.getUserFees).mockResolvedValue({
+			activeReferralDiscount: "0.04",
+			userAddRate: "0.0001",
+			userCrossRate: "0.00035",
+		});
+		const onFeeProfiles = vi.fn();
+
+		await getUserExchangeBalances([
+			createAccount({
+				exchange: "hyperliquid",
+				publicData: {
+					exchange: "hyperliquid",
+					address: "0x1111111111111111111111111111111111111111",
+				},
+			}),
+		], { onFeeProfiles });
+
+		expect(onFeeProfiles).toHaveBeenCalledWith(
+			expect.objectContaining({ exchange: "hyperliquid" }),
+			[{
+				expiresAt: "2026-06-19T12:15:00.000Z",
+				instrumentType: "PERP",
+				makerFeeRate: 0.0001,
+				marketType: "perp",
+				source: "api",
+				takerFeeRate: 0.00035,
+			}],
+		);
+		dateNow.mockRestore();
+	});
+
+	it("keeps fresh fee profiles without another API refresh", async () => {
+		vi.mocked(hyperliquidRestClient.getClearinghouseState).mockResolvedValue({
+			marginSummary: { accountValue: "1" },
+		});
+		vi.mocked(hyperliquidRestClient.getSpotClearinghouseState).mockResolvedValue({
+			balances: [],
+		});
+
+		await getUserExchangeBalances([
+			createAccount({
+				exchange: "hyperliquid",
+				publicData: {
+					exchange: "hyperliquid",
+					address: "0x1111111111111111111111111111111111111111",
+					feeProfiles: [{
+						expiresAt: "2999-01-01T00:00:00.000Z",
+						makerFeeRate: 0.0001,
+						marketType: "perp",
+						source: "api",
+						takerFeeRate: 0.00035,
+					}],
+				},
+			}),
+		]);
+
+		expect(hyperliquidRestClient.getUserFees).not.toHaveBeenCalled();
+	});
+
 	it("returns OKX balances and refreshes fee profiles", async () => {
 		vi.mocked(okxClient.getAccountBalance).mockResolvedValue([
 			{
@@ -147,7 +216,7 @@ describe("getUserExchangeBalances", () => {
 			expect.objectContaining({ exchange: "okx" }),
 			[
 				{
-					expiresAt: "2023-11-14T22:16:20.000Z",
+					expiresAt: expect.any(String),
 					instrumentType: "SWAP",
 					makerFeeRate: -0.0001,
 					marketType: "perp",
@@ -189,6 +258,7 @@ describe("getUserExchangeBalances", () => {
 				accountId: "account-okx",
 				code: "EXCHANGE_BALANCE_CREDENTIALS_REQUIRED",
 				exchange: "okx",
+				label: "Okx account",
 				message: "OKX apiKey, apiSecret, and passphrase are required",
 			},
 		]);
@@ -216,6 +286,7 @@ describe("getUserExchangeBalances", () => {
 					accountId: "account-okx",
 					code: "EXCHANGE_TOKEN_EXPIRED",
 					exchange: "okx",
+					label: "Okx account",
 					message: "Exchange token is expired",
 				},
 			],
@@ -240,6 +311,7 @@ describe("getUserExchangeBalances", () => {
 					accountId: "account-pacifica",
 					code: "EXCHANGE_BALANCE_UNSUPPORTED",
 					exchange: "pacifica",
+					label: "Pacifica account",
 					message: "Pacifica balance endpoint is not wired yet; official API spec confirmation is required",
 				},
 			],

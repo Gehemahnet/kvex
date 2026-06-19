@@ -21,6 +21,7 @@ import {
 	getPortfolioUser,
 } from "./user-wallet-tokens.utils";
 import type { UserPortfolioBalancesResponse } from "./portfolio-balances.types";
+import { addWalletSourceLabels } from "./portfolio-balances.utils";
 
 /** Handles `GET /portfolio/balances/me` and returns wallet plus exchange-token balances. */
 export const getMyPortfolioBalancesHandler = async (
@@ -60,7 +61,7 @@ export const getMyPortfolioBalancesHandler = async (
 	]);
 	const data: UserPortfolioBalancesResponse = {
 		exchangeBalances,
-		walletBalances,
+		walletBalances: addWalletSourceLabels(walletBalances, activeSources),
 	};
 
 	writeJsonResponse(response, 200, data);

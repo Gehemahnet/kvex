@@ -85,6 +85,33 @@ export const listUserExchangeAccounts = async (
 	return result.rows.map(mapUserExchangeAccountRow);
 };
 
+/** Lists active accounts supported by the background fee-profile refresher. */
+export const listExchangeAccountsForFeeRefresh = async (
+	db: Queryable,
+): Promise<UserExchangeAccount[]> => {
+	const result = await db.query<UserExchangeAccountRow>(
+		`
+			SELECT
+				id,
+				user_id,
+				exchange,
+				label,
+				status,
+				public_data,
+				capabilities,
+				last_checked_at,
+				created_at,
+				updated_at
+			FROM user_exchange_accounts
+			WHERE status <> 'disabled'
+				AND exchange IN ('hyperliquid', 'okx')
+			ORDER BY updated_at
+		`,
+	);
+
+	return result.rows.map(mapUserExchangeAccountRow);
+};
+
 /** Finds one exchange account profile by id and owner. */
 export const findUserExchangeAccountById = async (
 	db: Queryable,

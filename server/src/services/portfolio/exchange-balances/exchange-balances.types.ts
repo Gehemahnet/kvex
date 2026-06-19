@@ -20,6 +20,7 @@ export type UserExchangeBalanceError = {
 	accountId: string;
 	code: UserExchangeBalanceErrorCode;
 	exchange: Exchange;
+	label: string;
 	message: string;
 };
 

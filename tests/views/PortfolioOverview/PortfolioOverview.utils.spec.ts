@@ -10,7 +10,7 @@ import {
 	parseWalletAddressesInput,
 	parseSolanaWalletAddressesInput,
 	shortenAddress,
-} from "@views/PortfolioOverview/PortfolioOverview.utils";
+} from "@views/PortfolioOverview/Portfolio.utils";
 
 const ADDRESS = "0x1111111111111111111111111111111111111111";
 const SECOND_ADDRESS = "0x2222222222222222222222222222222222222222";

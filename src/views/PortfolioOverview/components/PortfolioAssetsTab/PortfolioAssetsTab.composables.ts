@@ -130,8 +130,9 @@ export const usePortfolioAssetsTab = createSharedComposable(() => {
 	const balanceErrorMessages = computed(() =>
 		balanceErrors.value.map((error) => {
 			const chainLabel = error.chainId === undefined ? "" : `Chain ${error.chainId}: `;
+			const sourceLabel = error.label ?? error.address;
 
-			return `${chainLabel}${error.message}`;
+			return `${sourceLabel}: ${chainLabel}${error.message}`;
 		}),
 	);
 	const balanceQueryErrors = computed(() =>
@@ -144,7 +145,7 @@ export const usePortfolioAssetsTab = createSharedComposable(() => {
 	);
 	const exchangeBalanceErrorMessages = computed(() =>
 		(portfolioBalancesQuery.data.value?.exchangeBalances.errors ?? []).map((error) =>
-			`${error.exchange}: ${error.message}`
+			`${error.label}: ${error.message}`
 		),
 	);
 	const exchangeBalanceErrorsCount = computed(() =>

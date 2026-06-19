@@ -14,6 +14,7 @@ const {
 	assetRows,
 	assetTableFilters,
 	assetTableEmptyMessage,
+	balanceErrorMessages,
 	exchangeBalanceErrorMessages,
 	draftFilters,
 	failedBalanceSourcesCount,
@@ -113,12 +114,18 @@ const getAssetIconFallbackLabel = (symbol: string): string =>
 	</div>
 
 	<div
-		v-if="exchangeBalanceErrorMessages.length > 0"
+		v-if="balanceErrorMessages.length > 0 || exchangeBalanceErrorMessages.length > 0"
 		class="mb-4 flex flex-col gap-1 rounded-md border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.12)] px-3 py-2 text-xs font-semibold text-[var(--p-yellow-400)]"
 	>
 		<span
+			v-for="message in balanceErrorMessages"
+			:key="`wallet-${message}`"
+		>
+			{{ message }}
+		</span>
+		<span
 			v-for="message in exchangeBalanceErrorMessages"
-			:key="message"
+			:key="`exchange-${message}`"
 		>
 			{{ message }}
 		</span>

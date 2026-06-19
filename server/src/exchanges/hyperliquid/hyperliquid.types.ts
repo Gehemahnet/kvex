@@ -6,6 +6,7 @@ export enum HyperliquidInfoRequestType {
 	FundingHistory = "fundingHistory",
 	ClearinghouseState = "clearinghouseState",
 	SpotClearinghouseState = "spotClearinghouseState",
+	UserFees = "userFees",
 }
 
 // Doesn't need to use it in params if you don't need data directly from HIP-3 dex.
@@ -122,6 +123,17 @@ export type HyperliquidClearinghouseStateRequestBody = {
 export type HyperliquidSpotClearinghouseStateRequestBody = {
 	type: HyperliquidInfoRequestType.SpotClearinghouseState;
 	user: string;
+};
+
+export type HyperliquidUserFeesRequestBody = {
+	type: HyperliquidInfoRequestType.UserFees;
+	user: string;
+};
+
+export type HyperliquidUserFees = {
+	activeReferralDiscount: string;
+	userAddRate: string;
+	userCrossRate: string;
 };
 
 export type HyperliquidClearinghouseState = {
