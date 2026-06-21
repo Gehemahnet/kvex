@@ -9,10 +9,10 @@ Current goal:
 
 - local user identity
 - login-capable account model
-- email for password reset and future account operations
+- email for password reset
 - server-side browser sessions
 - public wallet source tracking for portfolio balances
-- read-only exchange credentials for portfolio balances and future account data
+- read-only exchange connections for balances, fees, positions, and history
 
 Out of scope for now:
 
@@ -99,10 +99,10 @@ The exchange token API is:
 }
 ```
 
-The default frontend token permissions are `balances`. `trades` and `orders`
-are modeled for future workflows but are not used by KVEX today. The frontend
-displays declared permissions, `last_checked_at` freshness, and the
-user-provided expiry window.
+The default frontend token permission is `balances`. Ethereal's read-only flow
+also declares `trades` because it supplies position history. `orders` remains
+disabled until execution work begins. The frontend displays declared
+permissions, `last_checked_at` freshness, and the user-provided expiry window.
 
 Exchange token read responses are sanitized. API key, secret, and passphrase are
 not returned to the browser after creation.
@@ -110,7 +110,7 @@ not returned to the browser after creation.
 Secrets should live in a separate table or vault-backed store:
 
 - OKX API key, secret, passphrase
-- future exchange API credentials
+- credentials for additional exchanges
 
 Hyperliquid and Pacifica may need only public account addresses for fee lookup
 depending on the endpoint.
@@ -125,8 +125,13 @@ partial account errors.
 Current behavior:
 
 - Hyperliquid uses a saved public account address and the public `info` endpoint.
+- Nado uses a saved owner address/subaccount.
+- Ethereal uses a saved owner address/subaccount and REST/WS account state.
 - OKX uses signed read-only API credentials to call account balance.
 - Pacifica is modeled but not wired to a concrete balance endpoint yet.
+
+The same exchange account records feed read-only open positions and supported
+closed-position history. Trading endpoints return partial per-account errors.
 
 Important: exchange credential-shaped fields in `public_data` are a temporary
 local development bridge. They can stay there while the product is pre-release,
@@ -204,6 +209,7 @@ Current behavior:
 - OKX balance refresh also attempts to refresh SWAP fee profiles
 - authenticated `/spreads` requests apply non-expired saved fee profiles before
   opportunity calculation
+- Hyperliquid user fees and OKX SWAP fees have concrete API refresh paths
 
 ## Safety Rules
 

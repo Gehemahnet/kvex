@@ -46,15 +46,10 @@ address.
 
 Current handling:
 
-- use documented base perp fees as fallback
-- set `feeSource` to `documentation`
-
-Future handling:
-
-- allow the user to provide a Hyperliquid user address
-- query `userFees`
-- cache the effective maker/taker rates
-- set `feeSource` to `api`
+- use documented base perp fees as public fallback
+- when a saved user address exists, query `userFees`
+- cache the effective maker/taker rates as an account fee profile
+- set account-specific `feeSource` to `api`
 
 ### Pacifica
 
@@ -82,15 +77,10 @@ instruments, and funding endpoints do not provide the user's effective fee tier.
 
 Current handling:
 
-- use documented base swap/futures fees as fallback
-- set `feeSource` to `documentation`
-
-Future handling:
-
-- add an account-specific fee profile backed by OKX API credentials
-- query `GET /api/v5/account/trade-fee`
-- cache the effective maker/taker rates by instrument type or fee group
-- set `feeSource` to `api`
+- use documented base swap/futures fees as public fallback
+- for saved read-only credentials, query `GET /api/v5/account/trade-fee`
+- cache effective SWAP maker/taker rates in the account fee profile
+- set account-specific `feeSource` to `api`
 
 ## User Guide Topics
 
@@ -103,5 +93,5 @@ When the frontend gets a user guide, explain:
   - Hyperliquid user address
   - Pacifica account address
   - OKX API credentials with read permissions
-- that secrets must not be stored until portfolio, secrets handling, and risk
-  controls are implemented
+- that the current credential bridge is local-development-only and encrypted
+  secret storage is mandatory before release

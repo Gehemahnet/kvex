@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-06-21
+
+- Added read-only Trading with normalized open positions for Hyperliquid, OKX,
+  Nado, Pacifica, and Ethereal.
+- Added closed-position history for OKX, Nado, and Ethereal, including native
+  OKX history, position-cycle aggregation, and partial per-account errors.
+- Added Ethereal REST/WS account-state reconciliation and fill tracking.
+- Expanded read-only exchange balance and fee support, including Nado, Ethereal,
+  Hyperliquid user fees, and OKX SWAP fees.
+- Added backend restart-safe auth recovery, public `/health`, Service Unavailable,
+  and frontend 404 pages.
+- Added the Trading frontend and updated exchange connection options.
+- Synchronized roadmap, onboarding, account, fee, MCP, theme, and agent guidance;
+  the next week is dedicated to refactoring and bug discovery.
+
 ## 2026-06-14
 
 - Added authenticated saved portfolio sources for EVM and Solana wallets.

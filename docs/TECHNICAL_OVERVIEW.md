@@ -2,15 +2,16 @@
 
 ## Product Shape
 
-KVEX is currently a server-first perp/funding, spread, and portfolio monitor.
+KVEX is currently a server-first perp/funding, spread, portfolio, and read-only
+trading monitor.
 The backend collects public market data from centralized exchanges, normalizes
 it into a shared snapshot model, computes spread opportunities, reads public
 wallet balances, and exposes REST plus Socket.IO contracts to the Vue frontend.
 
 The product follows a public-first, token-enhanced model. Public market data and
 spread discovery stay available without user exchange tokens. Tokens refine the
-same public view with account-specific fees, balances, positions, and future
-terminal execution data.
+same public view with account-specific fees, balances, open positions, and
+closed-position history. Execution remains future scope.
 
 Current exchanges:
 
@@ -38,13 +39,16 @@ Important backend areas:
   price/slippage, and in-memory signal stability.
 - `server/src/services/portfolio`: public wallet balance discovery, USD price
   lookup, authenticated saved wallet sources, and saved token watchlists.
+- `server/src/services/trading`: normalized open positions and closed-position
+  history with partial per-account errors.
+- `server/src/services/auth`: Postgres-backed sessions, CSRF, and password reset.
 - `server/src/server/realtime`: Socket.IO bridge for frontend live updates.
 
 ### Frontend
 
 The frontend is Vue 3 + Vue Router + TanStack Query + PrimeVue + Tailwind.
-The app currently exposes Funding, Spreads, Auth, and Portfolio views in a
-Sakai-inspired shell.
+The app currently exposes Funding, Spreads, Portfolio, Trading, Auth, 404, and
+Service Unavailable views in a Sakai-inspired shell.
 
 Important frontend areas:
 
@@ -52,6 +56,8 @@ Important frontend areas:
 - `src/views/SpreadsOverview`: spread table, filters, live Socket.IO cache updates.
 - `src/views/PortfolioOverview`: public wallet tracking, exchange access token
   management, priced asset table, and saved wallet/exchange source controls.
+- `src/views/Trading`: open positions and closed-position history.
+- `src/views/Status`: backend availability and 404 pages.
 - `src/common/market-data-socket.ts`: singleton Socket.IO client.
 - `src/common/local-storage.utils.ts`: localStorage-backed theme/session cleanup helpers.
 - `src/common/indexed-db-state.utils.ts`: IndexedDB-backed persisted table/filter state.
@@ -228,8 +234,8 @@ Authenticated users can manage saved exchange access tokens through:
 
 Supported declared permissions are `balances`, `trades`, and `orders`. The
 default frontend flow submits `balances`, which is enough for portfolio balances
-now. Broader account-data permissions can be selected later when those workflows
-are enabled.
+now. Ethereal's read-only connection also declares `trades` for position history;
+`orders` remains disabled.
 
 The Portfolio Sources frontend keeps wallet sources and exchange tokens as
 separate controls. The token table displays declared permissions, last-check
@@ -252,7 +258,9 @@ reported as partial account errors.
 Current connector behavior:
 
 - Hyperliquid: reads public account state through the `info` endpoint using the
-  saved account address.
+  saved account address and can refresh user fee profiles.
+- Nado: reads the saved owner/subaccount summary and maps spot/perp balances.
+- Ethereal: resolves the saved owner/subaccount and maps REST account balances.
 - OKX: reads `/api/v5/account/balance` with signed read-only API credentials.
   The same refresh also attempts to read OKX SWAP trade fees and stores them as
   account-specific `feeProfiles`.
@@ -278,8 +286,8 @@ the handler loads saved user exchange accounts and applies non-expired
 expired, or missing auth simply falls back to public/documented fee data.
 
 This lets the spread engine prefer user/account-specific API fee rates over
-documentation fallbacks. The current concrete fee refresh path is OKX SWAP fees
-collected during `/portfolio/exchange-balances/me`.
+documentation fallbacks. Concrete refresh paths exist for OKX SWAP account fees
+and Hyperliquid perp user fees.
 
 Exchange tokens never gate public opportunity visibility. They improve precision
 and prepare account-aware portfolio/trading workflows.
@@ -498,6 +506,21 @@ Authenticated CSRF-protected endpoint that stores one watchlist token.
 
 Authenticated CSRF-protected endpoint that deletes one owned watchlist token.
 
+### `GET /trading/positions/me`
+
+Authenticated read endpoint for normalized open positions. Successful accounts
+remain in the response when another account fails.
+
+### `GET /trading/history/me`
+
+Authenticated read endpoint for normalized closed-position history. OKX uses
+native position history, Ethereal groups native position fills, and Nado
+reconstructs complete position cycles from matches. Errors are partial.
+
+### `GET /health`
+
+Public backend process availability probe used by the Service Unavailable page.
+
 ## Socket.IO Contract
 
 Socket path: `/market-data`
@@ -519,12 +542,8 @@ Socket spread payloads use the same filter shape as `GET /spreads`. The frontend
 writes socket updates into the matching TanStack Query cache key, so REST and
 live updates stay aligned.
 
-## Current Gaps
+## Current Gaps And Planned Work
 
-- Account-specific OKX SWAP taker/maker fees can be refreshed through portfolio
-  exchange balances and applied to authenticated spread reads.
-- User portfolio currently supports public wallet balances, saved wallet
-  sources, exchange access tokens, and basic exchange API-key balance ingestion.
 - Exchange token secrets are allowed to stay in the local development bridge for
   now, but encrypted storage is a first-release blocker.
 - Redis hot cache exists for market snapshots; broader Redis usage is still
@@ -537,3 +556,6 @@ live updates stay aligned.
   PrimeVue table interaction coverage.
 - Live trading is intentionally blocked until portfolio, secrets, paper trading,
   risk controls, and audit logging exist.
+- The next development week is reserved for refactoring and bug discovery:
+  exchange mapping verification, partial errors, reconnect/restart behavior,
+  Nado history-window edge cases, and frontend state/error audits.

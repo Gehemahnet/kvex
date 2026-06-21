@@ -12,6 +12,17 @@
 
 - PrimeVue theme customization notes: `docs/PRIMEVUE_THEME.md`
 
+## Exchange Documentation
+
+- Local skill: `.skills/exchange-docs`
+- Source registry: `.skills/exchange-docs/references/exchanges.md`
+- Purpose: verify exchange REST/WS contracts, authentication, symbols, funding,
+  fees, balances, positions, and history against official sources.
+- Important sources include the official OKX API guide and Agent Trade Kit,
+  Ethereal developer docs, Nado developer docs, Pacifica API docs, and
+  Hyperliquid API docs.
+- Keep raw exchange terminology inside connector modules.
+
 ## GoldRush
 
 - API key env example: `GOLDRUSH_API_KEY` in `.env.example`

@@ -140,14 +140,14 @@ Current app-level overrides live in `src/style.css`.
 
 Important selectors:
 
-- `.kvex-topbar-menu`: PrimeVue Menubar in the shell
-- `.kvex-theme-switch`: PrimeVue ToggleSwitch in the shell
 - `.kvex-data-surface`: Atlantis-style card surface
-- `.kvex-card-toolbar`: table toolbar/filter panel
-- `.kvex-table-scroll`: scroll container for lazy row rendering
 - `.kvex-data-surface .p-datatable-*`: DataTable header/body/dark overrides
 - `.p-select-overlay`, `.p-multiselect-overlay`: dropdown overlays rendered outside the table
-- `.kvex-rate-*`: positive/negative funding colors and pills
+- `.kvex-auth-surface`: standalone auth card surface
+- `.kvex-user-popover`: authenticated user menu
+
+The next refactoring pass should delete selectors that no rendered component
+uses instead of documenting them as supported extension points.
 
 When customizing components, prefer changing variables first. Add selector overrides only when PrimeVue tokens do not cover the specific visual state.
 
