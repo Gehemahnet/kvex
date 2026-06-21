@@ -1,5 +1,6 @@
 import { computed, ref } from "vue";
 import { authApi, type AuthResponse, type AuthUser } from "@api/auth";
+import { isTransientAuthError, retryTransientAuthRequest } from "./Auth.utils";
 
 const LEGACY_AUTH_STORAGE_KEY = "kvex-auth";
 
@@ -36,6 +37,10 @@ export const useAuthSession = () => {
 	};
 
 	const restoreAuthSession = async (): Promise<boolean> => {
+		if (authStatus.value === "authenticated") {
+			return true;
+		}
+
 		restoreSessionPromise ??= restoreAuthSessionOnce(setAuthSession, clearAuthSession)
 			.finally(() => {
 				restoreSessionPromise = undefined;
@@ -61,14 +66,22 @@ export const useAuthSession = () => {
 			return false;
 		}
 
-	try {
-			setAuthSession(await authApi.refreshSession(authState.value.csrfToken));
+		const csrfToken = authState.value.csrfToken;
+
+		try {
+			setAuthSession(await retryTransientAuthRequest(() =>
+				authApi.refreshSession(csrfToken)
+			));
 
 			return true;
-		} catch {
-			clearAuthSession();
+		} catch (error) {
+			if (!isTransientAuthError(error)) {
+				clearAuthSession();
 
-			return false;
+				return false;
+			}
+
+			return authState.value !== null;
 		}
 	};
 
@@ -91,7 +104,7 @@ const restoreAuthSessionOnce = async (
 	authStatus.value = "loading";
 
 	try {
-		const session = await authApi.getCurrentSession();
+		const session = await retryTransientAuthRequest(authApi.getCurrentSession);
 
 		if ("needsLogin" in session) {
 			clearAuthSession();
@@ -102,8 +115,18 @@ const restoreAuthSessionOnce = async (
 		setAuthSession(session);
 
 		return true;
-	} catch {
-		clearAuthSession();
+	} catch (error) {
+		if (!isTransientAuthError(error)) {
+			clearAuthSession();
+
+			return false;
+		}
+
+		if (authState.value !== null) {
+			authStatus.value = "authenticated";
+
+			return true;
+		}
 
 		return false;
 	}

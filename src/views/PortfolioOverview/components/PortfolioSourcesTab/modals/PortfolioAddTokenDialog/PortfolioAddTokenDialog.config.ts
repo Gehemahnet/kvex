@@ -109,10 +109,22 @@ export const EXCHANGE_TOKEN_FORM_CONFIGS: Record<
 	ExchangeTokenFormConfig
 > = {
 	ethereal: {
-		disabled: true,
-		disabledReason: "portfolio connection is not wired yet",
 		label: "Ethereal",
-		permissions: [],
+		permissions: [{
+			fields: [
+				walletAddressField("Owner wallet address"),
+				{
+					defaultValue: "primary",
+					label: "Subaccount name",
+					name: "subaccountName",
+					placeholder: "primary",
+					required: true,
+				},
+			],
+			label: "Read-only portfolio & trading",
+			permissions: ["balances", "trades"],
+			value: "readBalances",
+		}],
 		value: "ethereal",
 	},
 	hyperliquid: {

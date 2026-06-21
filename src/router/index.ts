@@ -11,11 +11,14 @@ const PortfolioOverviewView = () =>
 	import("@views/PortfolioOverview/Portfolio.vue");
 const SpreadsOverviewView = () =>
 	import("@views/SpreadsOverview/SpreadsOverview.vue");
+const TradingView = () => import("@views/Trading/Trading.vue");
 const LoginView = () => import("@views/Auth/LoginView.vue");
 const RegisterView = () => import("@views/Auth/RegisterView.vue");
 const ErrorView = () => import("@views/Auth/ErrorView.vue");
 const ForgotPasswordView = () => import("@views/Auth/ForgotPasswordView.vue");
 const ResetPasswordView = () => import("@views/Auth/ResetPasswordView.vue");
+const NotFoundView = () => import("@views/Status/NotFound.vue");
+const ServiceUnavailableView = () => import("@views/Status/ServiceUnavailable.vue");
 
 export enum ROUTES {
 	AUTH_ERROR = "AuthError",
@@ -25,7 +28,10 @@ export enum ROUTES {
 	AUTH_RESET_PASSWORD = "AuthResetPassword",
 	FUNDING_OVERVIEW = "FundingOverview",
 	PORTFOLIO_OVERVIEW = "PortfolioOverview",
+	NOT_FOUND = "NotFound",
+	SERVICE_UNAVAILABLE = "ServiceUnavailable",
 	SPREADS_OVERVIEW = "SpreadsOverview",
+	TRADING = "Trading",
 }
 
 const routes: RouteRecordRaw[] = [
@@ -43,6 +49,12 @@ const routes: RouteRecordRaw[] = [
 		name: ROUTES.PORTFOLIO_OVERVIEW,
 		path: "/portfolio",
 		component: PortfolioOverviewView,
+		meta: { requiresAuth: true },
+	},
+	{
+		name: ROUTES.TRADING,
+		path: "/trading",
+		component: TradingView,
 		meta: { requiresAuth: true },
 	},
 	{
@@ -76,20 +88,35 @@ const routes: RouteRecordRaw[] = [
 		meta: { standalone: true },
 	},
 	{
+		name: ROUTES.SERVICE_UNAVAILABLE,
+		path: "/service-unavailable",
+		component: ServiceUnavailableView,
+		meta: { standalone: true },
+	},
+	{
 		path: "/funding-overview",
 		redirect: { name: ROUTES.FUNDING_OVERVIEW },
 	},
 	{
+		name: ROUTES.NOT_FOUND,
 		path: "/:pathMatch(.*)*",
-		redirect: { name: ROUTES.AUTH_ERROR },
+		component: NotFoundView,
+		meta: { standalone: true },
 	},
 ];
 
 export const router = createRouter({ history: createWebHistory(), routes });
-const { ensureAuthSession } = useAuthSession();
+const { authStatus, ensureAuthSession } = useAuthSession();
 
 router.beforeEach(async (to) => {
 	if (to.meta.requiresAuth === true && !(await ensureAuthSession())) {
+		if (authStatus.value === "loading") {
+			return {
+				name: ROUTES.SERVICE_UNAVAILABLE,
+				query: { redirect: to.fullPath },
+			};
+		}
+
 		return {
 			name: ROUTES.AUTH_LOGIN,
 			query: {

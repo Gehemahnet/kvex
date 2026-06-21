@@ -35,9 +35,6 @@ const submitResetRequest = async () => {
 				class="mb-8 inline-flex items-center gap-3 text-xl font-bold text-[var(--kvex-symbol-color)] no-underline"
 				:to="{ name: ROUTES.AUTH_LOGIN }"
 			>
-				<span class="grid h-10 w-10 place-items-center rounded-full bg-[var(--kvex-logo-background)] text-sm font-bold text-white">
-					K
-				</span>
 				<span>KVEX</span>
 			</router-link>
 

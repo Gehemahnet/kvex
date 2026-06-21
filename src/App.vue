@@ -19,9 +19,6 @@
 					class="inline-flex items-center gap-3 text-xl font-bold text-[var(--kvex-symbol-color)] no-underline"
 					:to="{ name: ROUTES.FUNDING_OVERVIEW }"
 				>
-					<span class="grid h-[2.125rem] w-[2.125rem] place-items-center rounded-full bg-[var(--kvex-logo-background)] text-sm font-bold text-white">
-						K
-					</span>
 					<span>KVEX</span>
 				</router-link>
 			</div>
@@ -127,6 +124,13 @@
 					<span class="h-3 w-3 rounded-full border border-current" />
 					<span>Spreads</span>
 				</router-link>
+				<router-link
+					class="flex w-full items-center gap-2.5 rounded-md px-3.5 py-3 text-sm font-bold text-[var(--kvex-text-muted-color)] hover:bg-[var(--kvex-panel-hover-background)] hover:text-[var(--kvex-accent-color)] [&.router-link-active]:bg-[var(--kvex-panel-hover-background)] [&.router-link-active]:text-[var(--kvex-accent-color)]"
+					:to="{ name: ROUTES.TRADING }"
+				>
+					<i class="pi pi-chart-line" />
+					<span>Trading</span>
+				</router-link>
 			</nav>
 		</aside>
 
@@ -147,6 +151,7 @@ import Button from "primevue/button";
 import Popover from "primevue/popover";
 import Toast from "primevue/toast";
 import { authApi } from "@api/auth";
+import { BACKEND_UNAVAILABLE_EVENT } from "@api/api-client.events";
 import { ROUTES } from "./router";
 import { useAuthSession } from "./views/Auth/Auth.composable";
 import { useThemeMode } from "./theme/theme.composable";
@@ -219,9 +224,19 @@ const handleDesktopViewportChange = (event: MediaQueryListEvent) => {
 	isDesktopViewport.value = event.matches;
 };
 
+const handleBackendUnavailable = () => {
+	if (route.name === ROUTES.SERVICE_UNAVAILABLE) return;
+
+	void router.replace({
+		name: ROUTES.SERVICE_UNAVAILABLE,
+		query: { redirect: route.fullPath },
+	});
+};
+
 desktopMediaQuery.addEventListener("change", handleDesktopViewportChange);
 
 onMounted(() => {
+	window.addEventListener(BACKEND_UNAVAILABLE_EVENT, handleBackendUnavailable);
 	void restoreAuthSession();
 });
 
@@ -234,6 +249,7 @@ watch(
 
 onBeforeUnmount(() => {
 	clearSessionRefreshTimeout();
+	window.removeEventListener(BACKEND_UNAVAILABLE_EVENT, handleBackendUnavailable);
 	desktopMediaQuery.removeEventListener("change", handleDesktopViewportChange);
 });
 

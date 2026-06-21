@@ -4,6 +4,17 @@ import type {
 	ApiQueryValue,
 	ApiRequestOptions,
 } from "./api-client.types";
+import { notifyBackendUnavailable } from "./api-client.events";
+
+export class ApiRequestError extends Error {
+	constructor(
+		message: string,
+		readonly status: number,
+	) {
+		super(message);
+		this.name = "ApiRequestError";
+	}
+}
 
 /** Sends a typed JSON API request and returns the parsed response body. */
 export const apiRequest = async <TResponse, TBody = unknown>(
@@ -11,14 +22,29 @@ export const apiRequest = async <TResponse, TBody = unknown>(
 	options: ApiRequestOptions<TBody> = {},
 ): Promise<TResponse> => {
 	const { body, query, ...fetchOptions } = options;
-	const response = await fetch(createApiUrl(pathname, query), {
-		...fetchOptions,
-		headers: createApiHeaders(options),
-		body: createApiBody(body),
-	});
+	let response: Response;
+
+	try {
+		response = await fetch(createApiUrl(pathname, query), {
+			...fetchOptions,
+			headers: createApiHeaders(options),
+			body: createApiBody(body),
+		});
+	} catch (error) {
+		notifyBackendUnavailable(pathname);
+
+		throw error;
+	}
 
 	if (!response.ok) {
-		throw new Error(await getApiErrorMessage(response, pathname));
+		if (response.status >= 500) {
+			notifyBackendUnavailable(pathname);
+		}
+
+		throw new ApiRequestError(
+			await getApiErrorMessage(response, pathname),
+			response.status,
+		);
 	}
 
 	return readApiJson<TResponse>(response);
