@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { etherealRestClient } from "../../src/exchanges/ethereal/ethereal";
 import { hyperliquidRestClient } from "../../src/exchanges/hyperliquid/hyperliquid";
 import { okxClient } from "../../src/exchanges/okx/okx";
 import { getUserExchangeBalances } from "#services/portfolio/exchange-balances/exchange-balances.service";
@@ -12,6 +13,13 @@ vi.mock("../../src/exchanges/hyperliquid/hyperliquid", () => ({
 		getClearinghouseState: vi.fn(),
 		getSpotClearinghouseState: vi.fn(),
 		getUserFees: vi.fn(),
+	},
+}));
+
+vi.mock("../../src/exchanges/ethereal/ethereal", () => ({
+	etherealRestClient: {
+		getSubaccountBalances: vi.fn(),
+		resolveSubaccount: vi.fn(),
 	},
 }));
 
@@ -80,6 +88,39 @@ describe("getUserExchangeBalances", () => {
 				],
 			},
 		]);
+	});
+
+	it("returns Ethereal subaccount balances", async () => {
+		vi.mocked(etherealRestClient.resolveSubaccount).mockResolvedValue({
+			account: "0x1111111111111111111111111111111111111111",
+			createdAt: 1,
+			id: "subaccount-id",
+			name: "primary",
+		});
+		vi.mocked(etherealRestClient.getSubaccountBalances).mockResolvedValue([{
+			amount: "125",
+			available: "100",
+			subaccountId: "subaccount-id",
+			tokenName: "USD",
+			totalUsed: "25",
+			updatedAt: 1_700_000_000_000,
+		}]);
+
+		const result = await getUserExchangeBalances([createAccount({
+			exchange: "ethereal",
+			publicData: {
+				exchange: "ethereal",
+				address: "0x1111111111111111111111111111111111111111",
+				subaccountName: "primary",
+			},
+		})]);
+
+		expect(result.errors).toEqual([]);
+		expect(result.balances).toEqual([expect.objectContaining({
+			exchange: "ethereal",
+			totalValueUsd: 125,
+			assets: [expect.objectContaining({ asset: "USD", valueUsd: 125 })],
+		})]);
 	});
 
 	it("refreshes Hyperliquid account-specific perp fees", async () => {

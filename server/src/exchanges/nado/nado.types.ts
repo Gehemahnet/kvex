@@ -43,6 +43,8 @@ export type NadoMarketLiquidityResponse = {
 
 export type NadoSubaccountBalance = {
 	amount: string;
+	markPrice?: string;
+	netEntryUnrealized?: string;
 	oraclePrice?: string;
 	productId: number;
 	symbol?: string;
@@ -54,4 +56,15 @@ export type NadoSubaccountBalance = {
 export type NadoSubaccountSummary = {
 	balances: NadoSubaccountBalance[];
 	exists: boolean;
+};
+
+export type NadoTrade = {
+	fee: string;
+	id: string;
+	price: string;
+	productId: number;
+	realizedPnl: string;
+	side: "buy" | "sell";
+	size: string;
+	timestamp: string;
 };

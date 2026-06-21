@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+	createEtherealAccountSubscriptionMessage,
 	createEtherealL2BookSubscriptionMessage,
 	createEtherealTickerSubscriptionMessage,
 	isEtherealL2BookMessage,
+	isEtherealOrderFillMessage,
+	isEtherealPositionUpdateMessage,
 	isEtherealTickerMessage,
 	mapEtherealL2BookToMarketSnapshot,
+	mapEtherealOrderFill,
+	mapEtherealPositionUpdate,
 	mapEtherealTickerToMarketSnapshot,
 } from "../../src/exchanges/ethereal/ethereal.ws.utils";
 
@@ -27,6 +32,70 @@ describe("ethereal ws utils", () => {
 				symbol: "BTCUSD",
 			},
 		});
+	});
+
+	it("creates and maps account position subscriptions", () => {
+		expect(createEtherealAccountSubscriptionMessage(
+			"PositionUpdate",
+			"subaccount-id",
+		)).toEqual({
+			event: "subscribe",
+			data: { type: "PositionUpdate", subaccountId: "subaccount-id" },
+		});
+		const message = {
+			e: "PositionUpdate" as const,
+			t: 1_000,
+			data: {
+				t: 900,
+				d: [{
+					cost: "1000",
+					fee: "2",
+					fpnl: "-1",
+					id: "position-id",
+					rpnl: "5",
+					s: "ETHUSD",
+					sd: 0 as const,
+					sid: "subaccount-id",
+					sz: "0.5",
+				}],
+			},
+		};
+
+		expect(isEtherealPositionUpdateMessage(message)).toBe(true);
+		expect(mapEtherealPositionUpdate(message)).toEqual([expect.objectContaining({
+			id: "position-id",
+			sourceSymbol: "ETHUSD",
+			subaccountId: "subaccount-id",
+		})]);
+	});
+
+	it("detects and maps account order fills", () => {
+		const message = {
+			e: "OrderFill" as const,
+			t: 1_000,
+			data: {
+				t: 1_000,
+				d: [{
+					fee: "1",
+					id: "fill-id",
+					px: "2000",
+					ro: false,
+					s: "ETHUSD",
+					sd: 0 as const,
+					sid: "subaccount-id",
+					sz: "0.5",
+					t: 950,
+					typ: "MARKET" as const,
+				}],
+			},
+		};
+
+		expect(isEtherealOrderFillMessage(message)).toBe(true);
+		expect(mapEtherealOrderFill(message)).toEqual([expect.objectContaining({
+			id: "fill-id",
+			price: "2000",
+			filled: "0.5",
+		})]);
 	});
 
 	it("detects ticker messages", () => {

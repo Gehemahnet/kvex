@@ -134,3 +134,71 @@ export interface FundingData {
 }
 
 export type GetFundingResponse = EtherealPaginatingResponse<FundingData>;
+
+export type EtherealSubaccount = {
+	account: string;
+	createdAt: number;
+	id: string;
+	name: string;
+};
+
+export type EtherealPosition = {
+	cost: string;
+	createdAt: number;
+	feesAccruedUsd: string;
+	fundingAccruedUsd: string;
+	fundingUsd: string;
+	id: string;
+	isLiquidated: boolean;
+	liquidationPrice?: string;
+	productId: string;
+	realizedPnl: string;
+	side: 0 | 1;
+	size: string;
+	unrealizedPnl: string;
+	updatedAt: number;
+};
+
+export type EtherealPositionFill = {
+	createdAt: number;
+	feeUsd: string;
+	filled: string;
+	price: string;
+	realizedPnl: string;
+	reduceOnly: boolean;
+	side: 0 | 1;
+	type: "LIMIT" | "MARKET";
+};
+
+export type EtherealSubaccountBalance = {
+	amount: string;
+	available: string;
+	subaccountId: string;
+	tokenName: string;
+	totalUsed: string;
+	updatedAt: number;
+};
+
+export type EtherealAccountPosition = {
+	cost: string;
+	feesAccruedUsd: string;
+	fundingAccruedUsd: string;
+	id: string;
+	liquidationPrice?: string;
+	productId?: string;
+	realizedPnl: string;
+	side: 0 | 1;
+	size: string;
+	sourceSymbol?: string;
+	subaccountId: string;
+	unrealizedPnl?: string;
+	updatedAt: number;
+};
+
+export type EtherealAccountFill = Omit<EtherealPositionFill, "realizedPnl"> & {
+	id: string;
+	productId?: string;
+	realizedPnl?: string;
+	sourceSymbol?: string;
+	subaccountId: string;
+};

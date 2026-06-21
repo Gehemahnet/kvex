@@ -3,6 +3,8 @@ import { FetchHttpClient, type HttpClient } from "#common/http-client";
 import type {
 	OkxAccountBalance,
 	OkxInstrument,
+	OkxPositionHistory,
+	OkxPosition,
 	OkxResponse,
 	OkxTicker,
 	OkxTradeFee,
@@ -66,6 +68,50 @@ class OkxClient {
 		const requestPath = `/api/v5/account/trade-fee?${query.toString()}`;
 		const timestamp = new Date().toISOString();
 		const response = await this.httpClient.get<OkxResponse<OkxTradeFee>>(
+			`${this.baseUrl}${requestPath}`,
+			{
+				headers: createOkxAuthHeaders({
+					...credentials,
+					method: "GET",
+					requestPath,
+					timestamp,
+				}),
+			},
+		);
+
+		return response.data;
+	}
+
+	async getPositions(credentials: {
+		apiKey: string;
+		apiSecret: string;
+		passphrase: string;
+	}): Promise<OkxPosition[]> {
+		const requestPath = "/api/v5/account/positions?instType=SWAP";
+		const timestamp = new Date().toISOString();
+		const response = await this.httpClient.get<OkxResponse<OkxPosition>>(
+			`${this.baseUrl}${requestPath}`,
+			{
+				headers: createOkxAuthHeaders({
+					...credentials,
+					method: "GET",
+					requestPath,
+					timestamp,
+				}),
+			},
+		);
+
+		return response.data;
+	}
+
+	async getPositionHistory(credentials: {
+		apiKey: string;
+		apiSecret: string;
+		passphrase: string;
+	}): Promise<OkxPositionHistory[]> {
+		const requestPath = "/api/v5/account/positions-history?instType=SWAP";
+		const timestamp = new Date().toISOString();
+		const response = await this.httpClient.get<OkxResponse<OkxPositionHistory>>(
 			`${this.baseUrl}${requestPath}`,
 			{
 				headers: createOkxAuthHeaders({

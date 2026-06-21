@@ -22,6 +22,7 @@ import type {
 	NadoSubaccountBalance,
 	NadoSubaccountSummary,
 	NadoSymbol,
+	NadoTrade,
 } from "./nado.types";
 import type { NadoWsSubscriptionMessage } from "./nado.ws.types";
 
@@ -90,20 +91,80 @@ class NadoClient {
 		subaccountName: string;
 		subaccountOwner: string;
 	}): Promise<NadoSubaccountSummary> {
-		const [summary, symbols] = await Promise.all([
+		const timestamp = Math.floor(Date.now() / 1_000);
+		const [summary, symbols, snapshots] = await Promise.all([
 			this.sdkClient.subaccount.getSubaccountSummary(params),
 			this.getSymbols(),
+			this.sdkClient.context.indexerClient.getMultiSubaccountSnapshots({
+				subaccounts: [params],
+				timestamps: [timestamp],
+				isolated: false,
+			}),
 		]);
 		const symbolsByProductId = new Map(
 			symbols.map((symbol) => [symbol.product_id, symbol.symbol]),
 		);
 
+		const perpProductIds = summary.balances
+			.filter((balance) => Number(balance.type) === 1)
+			.map((balance) => balance.productId);
+		const perpPrices = perpProductIds.length === 0
+			? {}
+			: await this.sdkClient.perp.getMultiProductPerpPrices({
+				productIds: perpProductIds,
+			});
+		const snapshot = Object.values(
+			snapshots.snapshots[snapshots.subaccountHexIds[0] ?? ""] ?? {},
+		)[0];
+		const netEntriesByProductId = new Map(
+			(snapshot?.balances ?? []).map((balance) => [
+				balance.productId,
+				fromX18String(balance.trackedVars.netEntryUnrealized),
+			]),
+		);
+
 		return {
 			exists: summary.exists,
 			balances: summary.balances.map((balance) =>
-				mapNadoSdkSubaccountBalance(balance, symbolsByProductId)
+				mapNadoSdkSubaccountBalance(
+					balance,
+					symbolsByProductId,
+					netEntriesByProductId.get(balance.productId),
+					perpPrices[balance.productId]?.markPrice.toFixed(),
+				)
 			),
 		};
+	}
+
+	async getTradeHistory(params: {
+		subaccountName: string;
+		subaccountOwner: string;
+		limit?: number;
+	}): Promise<NadoTrade[]> {
+		const response = await this.sdkClient.context.indexerClient
+			.getPaginatedSubaccountMatchEvents({
+				limit: params.limit ?? 100,
+				subaccountName: params.subaccountName,
+				subaccountOwner: params.subaccountOwner,
+			});
+
+		return response.events.map((event) => {
+			const baseFilled = fromX18(event.baseFilled);
+			const quoteFilled = fromX18(event.quoteFilled);
+
+			return {
+				fee: fromX18(event.totalFee).toFixed(),
+				id: `${event.submissionIndex}:${event.digest}`,
+				price: baseFilled.isZero()
+					? "0"
+					: quoteFilled.dividedBy(baseFilled).abs().toFixed(),
+				productId: event.productId,
+				realizedPnl: fromX18(event.realizedPnl).toFixed(),
+				side: baseFilled.isPositive() ? "buy" : "sell",
+				size: baseFilled.abs().toFixed(),
+				timestamp: event.timestamp.toFixed(0),
+			};
+		});
 	}
 
 	createMarketDataSubscriptionMessages(
@@ -207,6 +268,8 @@ const mapNadoSdkMarketLiquidity = (
 const mapNadoSdkSubaccountBalance = (
 	balance: BalanceWithProduct,
 	symbolsByProductId: Map<number, string>,
+	netEntryUnrealized?: string,
+	markPrice?: string,
 ): NadoSubaccountBalance => {
 	const amount = fromX18String(balance.amount);
 	const oraclePrice = balance.oraclePrice.toFixed();
@@ -216,6 +279,8 @@ const mapNadoSdkSubaccountBalance = (
 
 	return {
 		amount,
+		...(markPrice === undefined ? {} : { markPrice }),
+		...(netEntryUnrealized === undefined ? {} : { netEntryUnrealized }),
 		oraclePrice,
 		productId: balance.productId,
 		symbol: symbolsByProductId.get(balance.productId),

@@ -3,6 +3,7 @@ import { log } from "../common/logger";
 import { observeHttpRequest } from "../common/metrics";
 import { authRoutes } from "./http/auth/auth.routes";
 import { fundingRoutes } from "./http/funding/funding.routes";
+import { healthRoutes } from "./http/health/health.routes";
 import { writeJsonResponse } from "./http/http-response.utils";
 import { marketSnapshotRoutes } from "./http/markets/market-snapshots.routes";
 import { metricsRoutes } from "./http/metrics/metrics.routes";
@@ -14,6 +15,7 @@ import { userExchangeTokenRoutes } from "./http/portfolio/user-exchange-tokens.r
 import { userPortfolioSourceRoutes } from "./http/portfolio/user-portfolio-sources.routes";
 import { userWalletTokenRoutes } from "./http/portfolio/user-wallet-tokens.routes";
 import { spreadRoutes } from "./http/spreads/spreads.routes";
+import { tradingPositionRoutes } from "./http/trading/trading-positions.routes";
 import {
 	MethodNotAllowedError,
 	NotFoundError,
@@ -25,6 +27,7 @@ import type { Route } from "./http/route.types";
 const routes: Route[] = [
 	...authRoutes,
 	...fundingRoutes,
+	...healthRoutes,
 	...marketSnapshotRoutes,
 	...metricsRoutes,
 	...assetPriceRoutes,
@@ -35,6 +38,7 @@ const routes: Route[] = [
 	...userPortfolioSourceRoutes,
 	...userWalletTokenRoutes,
 	...spreadRoutes,
+	...tradingPositionRoutes,
 ];
 
 /** Dispatches incoming HTTP requests to the matching KVEX route and normalizes errors. */

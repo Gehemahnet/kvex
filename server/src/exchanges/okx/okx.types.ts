@@ -48,3 +48,37 @@ export type OkxTradeFee = {
 	taker?: string;
 	ts?: string;
 };
+
+export type OkxPosition = {
+	avgPx?: string;
+	imr?: string;
+	instId: string;
+	instType: string;
+	lever?: string;
+	liqPx?: string;
+	margin?: string;
+	markPx?: string;
+	mgnMode?: string;
+	notionalUsd?: string;
+	pos: string;
+	posSide?: string;
+	uTime?: string;
+	upl?: string;
+	uplRatio?: string;
+};
+
+export type OkxPositionHistory = {
+	closeAvgPx: string;
+	closeTotalPos: string;
+	cTime: string;
+	direction: "long" | "short";
+	instId: string;
+	instType: string;
+	openAvgPx: string;
+	openMaxPos: string;
+	posId: string;
+	posSide: string;
+	realizedPnl: string;
+	type: string;
+	uTime: string;
+};

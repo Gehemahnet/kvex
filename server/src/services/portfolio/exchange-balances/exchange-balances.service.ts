@@ -1,3 +1,4 @@
+import { etherealRestClient } from "#exchanges/ethereal/ethereal";
 import { hyperliquidRestClient } from "#exchanges/hyperliquid/hyperliquid";
 import { nadoClient } from "#exchanges/nado/nado";
 import { okxClient } from "#exchanges/okx/okx";
@@ -76,7 +77,9 @@ const getUserExchangeBalance = async (
 
 		let result: UserExchangeBalanceSuccess;
 
-		if (account.exchange === "hyperliquid") {
+		if (account.exchange === "ethereal") {
+			result = { balance: await getEtherealUserExchangeBalance(account) };
+		} else if (account.exchange === "hyperliquid") {
 			result = await getHyperliquidUserExchangeBalance(account);
 		} else if (account.exchange === "nado") {
 			result = { balance: await getNadoUserExchangeBalance(account) };
@@ -221,6 +224,65 @@ const getHyperliquidUserExchangeBalance = async (
 				: { updatedAt: new Date(perpState.time).toISOString() }),
 		},
 		...(fees === undefined ? {} : { feeProfiles: fees }),
+	};
+};
+
+const getEtherealUserExchangeBalance = async (
+	account: UserExchangeAccount,
+): Promise<UserExchangeBalanceResult> => {
+	const data = account.publicData.exchange === "ethereal"
+		? account.publicData
+		: undefined;
+	const address = data?.address?.trim();
+
+	if (!address) {
+		throw new ExchangeBalanceError(
+			"EXCHANGE_BALANCE_CREDENTIALS_REQUIRED",
+			"Ethereal wallet address is required",
+		);
+	}
+
+	const subaccount = await etherealRestClient.resolveSubaccount(
+		address,
+		data?.subaccountName?.trim() || "primary",
+	);
+
+	if (!subaccount) {
+		throw new ExchangeBalanceError(
+			"EXCHANGE_BALANCE_CREDENTIALS_REQUIRED",
+			"Ethereal subaccount was not found for this wallet",
+		);
+	}
+
+	const balances = await etherealRestClient.getSubaccountBalances(subaccount.id);
+	const assets = balances.map<UserExchangeBalanceAsset>((balance) => {
+		const value = Number.parseFloat(balance.amount);
+
+		return {
+			asset: balance.tokenName,
+			available: balance.available,
+			equity: balance.amount,
+			hold: balance.totalUsed,
+			total: balance.amount,
+			...(Number.isFinite(value) && /^(USD|USDE)$/iu.test(balance.tokenName)
+				? { valueUsd: value }
+				: {}),
+		};
+	});
+	const totalValueUsd = assets.reduce(
+		(total, asset) => total + (asset.valueUsd ?? 0),
+		0,
+	);
+
+	return {
+		accountId: account.id,
+		exchange: "ethereal",
+		label: account.label,
+		assets,
+		...(assets.some((asset) => asset.valueUsd !== undefined) ? { totalValueUsd } : {}),
+		...(balances.length
+			? { updatedAt: new Date(Math.max(...balances.map((balance) => balance.updatedAt))).toISOString() }
+			: {}),
 	};
 };
 

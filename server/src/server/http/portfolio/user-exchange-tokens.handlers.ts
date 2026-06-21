@@ -69,7 +69,7 @@ export const updateUserExchangeTokenHandler = async (
 		csrfToken: getCsrfRequestToken(request),
 		token: getAuthRequestToken(request),
 	});
-	const body = await readJsonBody<unknown>(request);
+	const body = await readJsonBody<Record<string, unknown>>(request);
 	const input = parseUpdateUserExchangeTokenBody(body);
 	const token = await updateUserExchangeToken(
 		dependencies.db,

@@ -137,6 +137,24 @@ export type HyperliquidUserFees = {
 };
 
 export type HyperliquidClearinghouseState = {
+	assetPositions?: {
+		position: {
+			coin: string;
+			entryPx?: string;
+			leverage: {
+				type: "cross" | "isolated";
+				value: number;
+				rawUsd?: string;
+			};
+			liquidationPx?: string;
+			marginUsed: string;
+			positionValue: string;
+			returnOnEquity: string;
+			szi: string;
+			unrealizedPnl: string;
+		};
+		type: "oneWay";
+	}[];
 	marginSummary?: {
 		accountValue?: string;
 		totalRawUsd?: string;

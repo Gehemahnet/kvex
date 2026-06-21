@@ -75,11 +75,13 @@ export type NadoUserExchangeData = {
 
 export type EtherealUserExchangeData = {
 	exchange: "ethereal";
+	address?: string;
 	apiKey?: string;
 	apiSecret?: string;
 	expiresAt?: string;
 	feeProfiles?: UserExchangeFeeProfile[];
 	permissions?: UserExchangePermission[];
+	subaccountName?: string;
 };
 
 export type VariationalUserExchangeData = {

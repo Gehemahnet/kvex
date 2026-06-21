@@ -95,3 +95,18 @@ export type GetFundingRateHistoryParams = {
 	/** Cursor pagination to access records. Default to none*/
 	cursor?: string;
 };
+
+export type PacificaPosition = {
+	amount: string;
+	created_at: number;
+	entry_price: string;
+	funding: string;
+	isolated: boolean;
+	liquidation_price: string | null;
+	margin: string;
+	side: "ask" | "bid";
+	symbol: string;
+	updated_at: number;
+};
+
+export type GetPacificaPositionsResponse = PacificaResponse<PacificaPosition[]>;

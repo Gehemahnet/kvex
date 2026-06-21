@@ -30,6 +30,18 @@ const createMockResponse = (): MockResponse => ({
 });
 
 describe("router error handling", () => {
+	it("returns backend health without authentication", async () => {
+		const response = createMockResponse();
+
+		await router(
+			{ method: "GET", url: "/health" },
+			response as never,
+		);
+
+		expect(response.statusCode).toBe(200);
+		expect(JSON.parse(response.body ?? "")).toEqual({ status: "ok" });
+	});
+
 	it("returns 404 for unknown routes", async () => {
 		const response = createMockResponse();
 

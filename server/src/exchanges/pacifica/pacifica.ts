@@ -8,8 +8,10 @@ import {
 	GetFundingRateHistoryResponse,
 	GetMarketsResponse,
 	GetPricesResponse,
+	GetPacificaPositionsResponse,
 	MarketData,
 	PriceData,
+	PacificaPosition,
 } from "./pacifica.types";
 import { normalizeFundingHistory } from "./pacifica.utils";
 
@@ -18,6 +20,7 @@ class PacificaDexClient extends DexRestClient {
 		info: "info",
 		prices: "info/prices",
 		fundingRateHistory: "funding_rate/history",
+		positions: "positions",
 	};
 
 	async getMarkets(): Promise<MarketData[] | undefined> {
@@ -79,6 +82,19 @@ class PacificaDexClient extends DexRestClient {
 		}
 
 		return normalizeFundingHistory(period, allData);
+	}
+
+	async getPositions(account: string): Promise<PacificaPosition[]> {
+		const response = await this.fetchData<GetPacificaPositionsResponse>(
+			this.endpoints.positions,
+			{ query: { account } },
+		);
+
+		if (!response?.success) {
+			throw new Error("Pacifica positions request failed");
+		}
+
+		return response.data ?? [];
 	}
 }
 export const pacificaRestClient = new PacificaDexClient({

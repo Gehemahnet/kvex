@@ -3,20 +3,32 @@ import { upsertMarketSnapshot } from "#services/markets/market-snapshots/market-
 import { etherealRestClient } from "./ethereal";
 import type { ProductData } from "./ethereal.types";
 import {
+	appendEtherealAccountFills,
+	invalidateEtherealAccountPositionSnapshots,
+	updateEtherealAccountPositionMarks,
+	upsertEtherealAccountPositions,
+} from "./ethereal-account-state.store";
+import {
 	ETHEREAL_MARKET_DATA_WS_URL,
 	ETHEREAL_WS_HEARTBEAT_INTERVAL_MS,
 	ETHEREAL_WS_RECONNECT_DELAY_MS,
 } from "./ethereal.ws.constants";
 import {
+	createEtherealAccountSubscriptionMessage,
 	createEtherealL2BookSubscriptionMessage,
 	createEtherealTickerSubscriptionMessage,
 	isEtherealL2BookMessage,
+	isEtherealOrderFillMessage,
+	isEtherealPositionUpdateMessage,
 	isEtherealTickerMessage,
 	mapEtherealL2BookToMarketSnapshot,
+	mapEtherealOrderFill,
+	mapEtherealPositionUpdate,
 	mapEtherealTickerToMarketSnapshot,
 } from "./ethereal.ws.utils";
 
 class EtherealMarketDataStream {
+	private accountSubaccounts = new Set<string>();
 	private heartbeat?: NodeJS.Timeout;
 	private reconnect?: NodeJS.Timeout;
 	private shouldReconnect = true;
@@ -46,6 +58,7 @@ class EtherealMarketDataStream {
 		this.socket.on("open", () => {
 			this.startHeartbeat();
 			void this.subscribeToTickers();
+			this.subscribeToAccounts();
 		});
 
 		this.socket.on("message", (data) => {
@@ -67,6 +80,27 @@ class EtherealMarketDataStream {
 		this.cleanupConnection();
 		this.socket?.close();
 		this.socket = undefined;
+	}
+
+	subscribeToSubaccount(subaccountId: string): void {
+		this.accountSubaccounts.add(subaccountId);
+		this.sendAccountSubscriptions(subaccountId);
+	}
+
+	private subscribeToAccounts(): void {
+		for (const subaccountId of this.accountSubaccounts) {
+			this.sendAccountSubscriptions(subaccountId);
+		}
+	}
+
+	private sendAccountSubscriptions(subaccountId: string): void {
+		if (this.socket?.readyState !== WebSocket.OPEN) return;
+
+		for (const type of ["PositionUpdate", "OrderFill"] as const) {
+			this.socket.send(JSON.stringify(
+				createEtherealAccountSubscriptionMessage(type, subaccountId),
+			));
+		}
 	}
 
 	private async subscribeToTickers(): Promise<void> {
@@ -104,6 +138,13 @@ class EtherealMarketDataStream {
 		const parsedMessage = parseJson(message);
 
 		if (isEtherealTickerMessage(parsedMessage)) {
+			if (parsedMessage.data.markPx) {
+				updateEtherealAccountPositionMarks(
+					parsedMessage.data.s,
+					parsedMessage.data.markPx,
+					parsedMessage.data.t ?? parsedMessage.t,
+				);
+			}
 			upsertMarketSnapshot(
 				mapEtherealTickerToMarketSnapshot(
 					parsedMessage.data,
@@ -120,6 +161,20 @@ class EtherealMarketDataStream {
 					parsedMessage.t,
 				),
 			);
+			return;
+		}
+
+		if (isEtherealPositionUpdateMessage(parsedMessage)) {
+			for (const position of mapEtherealPositionUpdate(parsedMessage)) {
+				upsertEtherealAccountPositions(position.subaccountId, [position]);
+			}
+			return;
+		}
+
+		if (isEtherealOrderFillMessage(parsedMessage)) {
+			for (const fill of mapEtherealOrderFill(parsedMessage)) {
+				appendEtherealAccountFills(fill.subaccountId, [fill]);
+			}
 		}
 	}
 
@@ -143,6 +198,7 @@ class EtherealMarketDataStream {
 
 	private cleanupConnection(): void {
 		this.stopHeartbeat();
+		invalidateEtherealAccountPositionSnapshots();
 
 		if (this.reconnect) {
 			clearTimeout(this.reconnect);

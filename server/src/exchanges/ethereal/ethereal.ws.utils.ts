@@ -7,13 +7,17 @@ import {
 } from "#services/funding/funding-overview/funding-overview.utils";
 import { FUNDING_INTERVAL_HOURS } from "#services/funding/funding-core/funding.constants";
 import type {
+	EtherealAccountWsSubscriptionMessage,
 	EtherealL2BookData,
 	EtherealL2BookMessage,
+	EtherealOrderFillMessage,
+	EtherealPositionUpdateMessage,
 	EtherealTickerData,
 	EtherealTickerMessage,
 	EtherealWsSubscriptionMessage,
 } from "./ethereal.ws.types";
-import {DEFAULT_CURRENCY} from "#common/constants";
+import type { EtherealAccountFill, EtherealAccountPosition } from "./ethereal.types";
+import { DEFAULT_CURRENCY } from "#common/constants";
 
 /** Builds an Ethereal ticker subscription for one source symbol. */
 export const createEtherealTickerSubscriptionMessage = (
@@ -35,6 +39,14 @@ export const createEtherealL2BookSubscriptionMessage = (
 		type: "L2Book",
 		symbol,
 	},
+});
+
+export const createEtherealAccountSubscriptionMessage = (
+	type: "PositionUpdate" | "OrderFill",
+	subaccountId: string,
+): EtherealAccountWsSubscriptionMessage => ({
+	event: "subscribe",
+	data: { type, subaccountId },
 });
 
 /** Type guard for Ethereal ticker messages. */
@@ -60,6 +72,53 @@ export const isEtherealL2BookMessage = (
 		Array.isArray(message.data.a) &&
 		Array.isArray(message.data.b);
 };
+
+export const isEtherealPositionUpdateMessage = (
+	message: unknown,
+): message is EtherealPositionUpdateMessage =>
+	isRecord(message)
+	&& message.e === "PositionUpdate"
+	&& isRecord(message.data)
+	&& Array.isArray(message.data.d);
+
+export const isEtherealOrderFillMessage = (
+	message: unknown,
+): message is EtherealOrderFillMessage =>
+	isRecord(message)
+	&& message.e === "OrderFill"
+	&& isRecord(message.data)
+	&& Array.isArray(message.data.d);
+
+export const mapEtherealPositionUpdate = (
+	message: EtherealPositionUpdateMessage,
+): EtherealAccountPosition[] => message.data.d.map((position) => ({
+	cost: position.cost,
+	feesAccruedUsd: position.fee,
+	fundingAccruedUsd: position.fpnl,
+	id: position.id,
+	...(position.lpx ? { liquidationPrice: position.lpx } : {}),
+	realizedPnl: position.rpnl,
+	side: position.sd,
+	size: position.sz,
+	sourceSymbol: position.s,
+	subaccountId: position.sid,
+	updatedAt: message.data.t ?? message.t,
+}));
+
+export const mapEtherealOrderFill = (
+	message: EtherealOrderFillMessage,
+): EtherealAccountFill[] => message.data.d.map((fill) => ({
+	createdAt: fill.t,
+	feeUsd: fill.fee,
+	filled: fill.sz,
+	id: fill.id,
+	price: fill.px,
+	reduceOnly: fill.ro,
+	side: fill.sd,
+	sourceSymbol: fill.s,
+	subaccountId: fill.sid,
+	type: fill.typ,
+}));
 
 /** Maps an Ethereal ticker into normalized price, funding, and liquidity fields. */
 export const mapEtherealTickerToMarketSnapshot = (

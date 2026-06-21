@@ -6,6 +6,54 @@ export type EtherealWsSubscriptionMessage = {
 	};
 };
 
+export type EtherealAccountWsSubscriptionMessage = {
+	event: "subscribe" | "unsubscribe";
+	data: {
+		type: "PositionUpdate" | "OrderFill";
+		subaccountId: string;
+	};
+};
+
+export type EtherealPositionUpdateMessage = {
+	e: "PositionUpdate";
+	t: number;
+	data: {
+		t: number;
+		d: Array<{
+			cost: string;
+			fee: string;
+			fpnl: string;
+			id: string;
+			lpx?: string;
+			rpnl: string;
+			s: string;
+			sd: 0 | 1;
+			sid: string;
+			sz: string;
+		}>;
+	};
+};
+
+export type EtherealOrderFillMessage = {
+	e: "OrderFill";
+	t: number;
+	data: {
+		t: number;
+		d: Array<{
+			fee: string;
+			id: string;
+			px: string;
+			ro: boolean;
+			s: string;
+			sd: 0 | 1;
+			sid: string;
+			sz: string;
+			t: number;
+			typ: "LIMIT" | "MARKET";
+		}>;
+	};
+};
+
 export type EtherealTickerData = {
 	s: string;
 	t?: number;
